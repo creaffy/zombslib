@@ -1,0 +1,31 @@
+{
+    "name": "zombslib",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/index.js",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/creaffy/zombslib.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/creaffy/zombslib/issues"
+    },
+    "homepage": "https://github.com/creaffy/zombslib#readme",
+    "dependencies": {
+        "js-sha1": "^0.7.0",
+        "typescript": "^5.8.3",
+        "ws": "^8.18.2"
+    },
+    "devDependencies": {
+        "@types/js-sha1": "^0.6.3",
+        "@types/ws": "^8.18.1"
+    }
+}
