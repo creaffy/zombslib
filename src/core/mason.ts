@@ -1,15 +1,64 @@
 import { EventEmitter } from "node:events";
 import { RawData, WebSocket } from "ws";
+import {
+    ApiClan,
+    ApiFriend,
+    ApiFriendRequest,
+    ApiParty,
+    ApiPartyInvite,
+    ApiPartyMetadata,
+    ApiPartyPlayer,
+    ApiServer,
+    ApiUser,
+} from "../types/api";
+
+interface MasonEvents {
+    clansData: (clans: ApiClan[]) => void;
+    partyInviteReceived: (partyInvites: ApiPartyInvite) => void;
+    partyData: (party: ApiParty) => void;
+    friendsData: (friends: ApiFriend[]) => void;
+    partyStateUpdated: (state: string) => void;
+    partyLeft: () => void;
+    partyPlayerJoined: (player: ApiPartyPlayer) => void;
+    partyVersionUpdated: (version: string) => void;
+    partyMetadataUpdated: (metadata: ApiPartyMetadata) => void;
+    partyGameModeUpdated: (gameMode: string) => void;
+    // privateMessageReceived: () => void;
+    friendUpdated: (friend: ApiFriend) => void;
+    partyJoinServer: (party: ApiServer) => void;
+    friendRequestRejected: (friendRequest: ApiFriendRequest) => void;
+    partyPlayerUpdated: (player: ApiPartyPlayer) => void;
+    friendDeleted: (friend: ApiFriend) => void;
+    friendRequests: (friendRequests: ApiFriendRequest[]) => void;
+    partyPlayerLeft: (player: ApiPartyPlayer) => void;
+    // clanMessageReceived: () => void;
+    loggedIn: (userData: ApiUser) => void;
+    partyAutofillUpdated: (autofill: boolean) => void;
+    friendRequestReceived: (friendRequest: ApiFriendRequest) => void;
+    partyRegionUpdated: (region: string) => void;
+    any: (data: any) => void;
+}
 
 export class MasonService extends EventEmitter {
     private socket: WebSocket;
 
-    public constructor() {
+    override on<K extends keyof MasonEvents>(
+        event: K,
+        listener: MasonEvents[K]
+    ): this;
+
+    override on(event: string, listener: (...args: any[]) => void): this;
+
+    override on(event: string, listener: (...args: any[]) => void): this {
+        return super.on(event, listener);
+    }
+
+    public constructor(
+        url: string = "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket"
+    ) {
         super();
 
-        this.socket = new WebSocket(
-            "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket"
-        );
+        this.socket = new WebSocket(url);
 
         this.socket.on("error", (err: Error) => {
             this.emit("error", err);
@@ -25,9 +74,16 @@ export class MasonService extends EventEmitter {
 
         this.socket.on("message", (data: RawData, isBinary: boolean) => {
             if (!isBinary && data.toString().startsWith("42")) {
-                const parsed: any = JSON.parse(data.toString().slice(2));
-                this.emit("any", [parsed[0], parsed[1]]);
-                this.emit(parsed[0], parsed[1]);
+                const parsed = JSON.parse(data.toString().slice(2));
+                const event = parsed[0];
+                let parameter = parsed[1];
+
+                if (event === "partyMetadataUpdated")
+                    parameter = JSON.parse(parameter);
+                else if (event === "loggedIn") parameter = parameter.userData;
+
+                this.emit("any", [event, parameter]);
+                this.emit(event, parameter);
             }
         });
     }
@@ -114,11 +170,28 @@ export class MasonService extends EventEmitter {
         this.socket.send(`42["setPartyAutofill", "${autofill}"]`);
     }
 
-    public setPartyGameMode(gameMode: string): void {
+    public setPartyGameMode(
+        gameMode:
+            | "Solo"
+            | "Duo"
+            | "Squad"
+            | "Limited"
+            | "CrystalClash"
+            | "Hangout"
+            | "PrivateZombieDuo"
+            | "PrivateZombieSquad"
+    ): void {
         this.socket.send(`42["setPartyGameMode", "${gameMode}"]`);
     }
 
-    public setPartyRegion(region: string): void {
+    public setPartyRegion(
+        region:
+            | "vultr-frankfurt"
+            | "vultr-miami"
+            | "vultr-la"
+            | "vultr-singapore"
+            | "i3d-oceania"
+    ): void {
         this.socket.send(`42["setPartyRegion", "${region}"]`);
     }
 
@@ -130,7 +203,7 @@ export class MasonService extends EventEmitter {
         this.socket.send(`42["setPartyVersion", "${version}"]`);
     }
 
-    public setPlatform(platform: string): void {
+    public setPlatform(platform: "android" | "web" | "windows" | "ios"): void {
         this.socket.send(`42["setPlatform", "${platform}"]`);
     }
 

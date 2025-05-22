@@ -2,11 +2,97 @@ import { EventEmitter } from "node:events";
 import { RawData, WebSocket } from "ws";
 import { Codec } from "./codec";
 import { ApiServer } from "../types/api";
-import { InputRpc, MetricsRpc, PacketId, SetSkinRpc } from "../types/rpc";
+import {
+    AccountSessionRpc,
+    ACToClientRpc,
+    AirDropRpc,
+    CheatingDetectedRpc,
+    CompressedDataRpc,
+    DamageRpc,
+    DataFinishedRpc,
+    DataRpc,
+    DayNightRpc,
+    DeadRpc,
+    EndOfGameStatsRpc,
+    EnterWorldResponse,
+    EntityUpdate,
+    GameStatusRpc,
+    GameTimerRpc,
+    GunGameWeaponRpc,
+    InputRpc,
+    InventoryUpdateEquipRpc,
+    InventoryUpdateRpc,
+    KillFeedRpc,
+    LeaderboardRpc,
+    LoadoutUserRpc,
+    LoginResponseRpc,
+    LootCategoryOverrideRpc,
+    MetricsRpc,
+    PacketId,
+    PartyLeftRpc,
+    PartyUpdateRpc,
+    PlaceBuildingFailedRpc,
+    PlanePathRpc,
+    PlayerCountRpc,
+    ReceiveChatMessageRpc,
+    ResetGameRpc,
+    SetClientLoadoutRpc,
+    SetSkinRpc,
+    ShutdownRpc,
+    UpdateMarkerRpc,
+} from "../types/rpc";
+
+interface GameEvents {
+    EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
+    EntityUpdate: (entityUpdate: EntityUpdate) => void;
+    Rpc: (rpc: object) => void;
+    ACToClientRpc: (rpc: ACToClientRpc) => void;
+    DamageRpc: (rpc: DamageRpc) => void;
+    DeadRpc: (rpc: DeadRpc) => void;
+    InventoryUpdateEquipRpc: (rpc: InventoryUpdateEquipRpc) => void;
+    DayNightRpc: (rpc: DayNightRpc) => void;
+    ResetGameRpc: (rpc: ResetGameRpc) => void;
+    InventoryUpdateRpc: (rpc: InventoryUpdateRpc) => void;
+    AccountSessionRpc: (rpc: AccountSessionRpc) => void;
+    ShutdownRpc: (rpc: ShutdownRpc) => void;
+    GameTimerRpc: (rpc: GameTimerRpc) => void;
+    PartyLeftRpc: (rpc: PartyLeftRpc) => void;
+    AirDropRpc: (rpc: AirDropRpc) => void;
+    CheatingDetectedRpc: (rpc: CheatingDetectedRpc) => void;
+    LootCategoryOverrideRpc: (rpc: LootCategoryOverrideRpc) => void;
+    LeaderboardRpc: (rpc: LeaderboardRpc) => void;
+    PlanePathRpc: (rpc: PlanePathRpc) => void;
+    PartyUpdateRpc: (rpc: PartyUpdateRpc) => void;
+    PlayerCountRpc: (rpc: PlayerCountRpc) => void;
+    DataFinishedRpc: (rpc: DataFinishedRpc) => void;
+    GunGameWeaponRpc: (rpc: GunGameWeaponRpc) => void;
+    UpdateMarkerRpc: (rpc: UpdateMarkerRpc) => void;
+    KillFeedRpc: (rpc: KillFeedRpc) => void;
+    LoginResponseRpc: (rpc: LoginResponseRpc) => void;
+    LoadoutUserRpc: (rpc: LoadoutUserRpc) => void;
+    ReceiveChatMessageRpc: (rpc: ReceiveChatMessageRpc) => void;
+    CompressedDataRpc: (rpc: CompressedDataRpc) => void;
+    EndOfGameStatsRpc: (rpc: EndOfGameStatsRpc) => void;
+    GameStatusRpc: (rpc: GameStatusRpc) => void;
+    DataRpc: (rpc: DataRpc) => void;
+    PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
+    SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
+}
 
 export class Game extends EventEmitter {
     private socket: WebSocket;
     private codec = new Codec("./rpcs.json");
+
+    override on<K extends keyof GameEvents>(
+        event: K,
+        listener: GameEvents[K]
+    ): this;
+
+    override on(event: string, listener: (...args: any[]) => void): this;
+
+    override on(event: string, listener: (...args: any[]) => void): this {
+        return super.on(event, listener);
+    }
 
     public constructor(
         server: ApiServer,
@@ -132,7 +218,7 @@ export class Game extends EventEmitter {
         this.send(this.codec.encodeRpc("StartUdpStreamRpc", {}));
     }
 
-    public setPlatformRpc(platform: string) {
+    public setPlatformRpc(platform: "android" | "web" | "windows" | "ios") {
         this.send(
             this.codec.encodeRpc("SetPlatformRpc", { platform: platform })
         );
@@ -164,7 +250,7 @@ export class Game extends EventEmitter {
         this.send(this.codec.encodeRpc("StartCircleRpc", {}));
     }
 
-    public sendChatMessageRpc(channel: string, message: string) {
+    public sendChatMessageRpc(channel: "Local" | "Party", message: string) {
         this.send(
             this.codec.encodeRpc("SendChatMessageRpc", {
                 channel: channel,
