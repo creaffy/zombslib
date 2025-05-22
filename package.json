@@ -4,7 +4,8 @@
     "description": "",
     "main": "dist/index.js",
     "files": [
-        "dist"
+        "dist",
+        "rpcs.json"
     ],
     "scripts": {
         "build": "tsc"
