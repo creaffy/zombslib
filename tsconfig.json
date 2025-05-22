@@ -8,7 +8,11 @@
         "strict": true,
         "esModuleInterop": true,
         "moduleResolution": "Node",
-        "noImplicitAny": false
+        "noImplicitAny": false,
+        "baseUrl": ".",
+        "paths": {
+            "zombslib": ["node_modules/zombslib"]
+        }
     },
     "include": ["src"]
 }
