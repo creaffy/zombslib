@@ -1,5 +1,5 @@
 {
-    "Codec": 20,
+    "Codec": 19,
     "Platform": "Android",
     "Rpcs": [
         {
@@ -95,6 +95,24 @@
                     "Type": 8,
                     "XFieldName": "CBGPACEOFMH",
                     "FieldName": "isZombie"
+                },
+                {
+                    "InternalIndex": null,
+                    "Key": null,
+                    "NameHash": 1195718761,
+                    "Offset": null,
+                    "Type": 0,
+                    "XFieldName": null,
+                    "FieldName": null
+                },
+                {
+                    "InternalIndex": null,
+                    "Key": null,
+                    "NameHash": 3898376036,
+                    "Offset": null,
+                    "Type": 0,
+                    "XFieldName": null,
+                    "FieldName": null
                 }
             ],
             "XClassName": "EGLBEACOJPL",
