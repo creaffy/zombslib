@@ -400,67 +400,67 @@ export class Codec {
                     (p) => p.NameHash === param.nameHash
                 );
 
-                if (match === undefined) {
-                    reader.readUint8();
-                } else {
-                    const fieldName =
-                        match.FieldName !== null
-                            ? match.FieldName
-                            : `P_0x${match.NameHash.toString(16)}`;
+                const fieldName =
+                    match !== undefined && match.FieldName !== null
+                        ? match.FieldName
+                        : `P_0x${param.nameHash!.toString(16)}`;
 
-                    switch (match.Type) {
-                        case ParameterType.Uint32: {
-                            obj[fieldName] = reader.readUint32();
-                            break;
-                        }
-                        case ParameterType.Int32: {
-                            obj[fieldName] = reader.readInt32();
-                            break;
-                        }
-                        case ParameterType.Float: {
-                            obj[fieldName] = reader.readFloat();
-                            break;
-                        }
-                        case ParameterType.String: {
-                            obj[fieldName] = reader.readString();
-                            break;
-                        }
-                        case ParameterType.Uint64: {
-                            obj[fieldName] = reader.readUint64();
-                            break;
-                        }
-                        case ParameterType.Int64: {
-                            obj[fieldName] = reader.readInt64();
-                            break;
-                        }
-                        case ParameterType.Uint16: {
-                            obj[fieldName] = reader.readUint16();
-                            break;
-                        }
-                        case ParameterType.Int16: {
-                            obj[fieldName] = reader.readInt16();
-                            break;
-                        }
-                        case ParameterType.Uint8: {
-                            obj[fieldName] = reader.readUint8();
-                            break;
-                        }
-                        case ParameterType.Int8: {
-                            obj[fieldName] = reader.readInt8();
-                            break;
-                        }
-                        case ParameterType.VectorUint8: {
-                            obj[fieldName] = reader.readUint8Vector2();
-                            break;
-                        }
-                        case ParameterType.CompressedString: {
-                            obj[fieldName] = reader.readCompressedString();
-                            break;
-                        }
+                let value: any;
+
+                switch (param.type!) {
+                    case ParameterType.Uint32: {
+                        value = reader.readUint32();
+                        break;
                     }
+                    case ParameterType.Int32: {
+                        value = reader.readInt32();
+                        break;
+                    }
+                    case ParameterType.Float: {
+                        value = reader.readFloat();
+                        break;
+                    }
+                    case ParameterType.String: {
+                        value = reader.readString();
+                        break;
+                    }
+                    case ParameterType.Uint64: {
+                        value = reader.readUint64();
+                        break;
+                    }
+                    case ParameterType.Int64: {
+                        value = reader.readInt64();
+                        break;
+                    }
+                    case ParameterType.Uint16: {
+                        value = reader.readUint16();
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        value = reader.readInt16();
+                        break;
+                    }
+                    case ParameterType.Uint8: {
+                        value = reader.readUint8();
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        value = reader.readInt8();
+                        break;
+                    }
+                    case ParameterType.VectorUint8: {
+                        value = reader.readUint8Vector2();
+                        break;
+                    }
+                    case ParameterType.CompressedString: {
+                        value = reader.readCompressedString();
+                        break;
+                    }
+                }
 
+                if (match !== undefined) {
+                    obj[fieldName] = value;
                     if (match.Key !== null) obj[fieldName] ^= match.Key;
-
                     if (match.Type === ParameterType.Float)
                         obj[fieldName] /= 100;
                 }

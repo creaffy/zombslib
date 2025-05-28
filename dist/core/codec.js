@@ -302,63 +302,62 @@ class Codec {
         else {
             for (const param of def.parameters) {
                 const match = rpc.Parameters.find((p) => p.NameHash === param.nameHash);
-                if (match === undefined) {
-                    reader.readUint8();
-                }
-                else {
-                    const fieldName = match.FieldName !== null
-                        ? match.FieldName
-                        : `P_0x${match.NameHash.toString(16)}`;
-                    switch (match.Type) {
-                        case rpc_1.ParameterType.Uint32: {
-                            obj[fieldName] = reader.readUint32();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Int32: {
-                            obj[fieldName] = reader.readInt32();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Float: {
-                            obj[fieldName] = reader.readFloat();
-                            break;
-                        }
-                        case rpc_1.ParameterType.String: {
-                            obj[fieldName] = reader.readString();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Uint64: {
-                            obj[fieldName] = reader.readUint64();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Int64: {
-                            obj[fieldName] = reader.readInt64();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Uint16: {
-                            obj[fieldName] = reader.readUint16();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Int16: {
-                            obj[fieldName] = reader.readInt16();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Uint8: {
-                            obj[fieldName] = reader.readUint8();
-                            break;
-                        }
-                        case rpc_1.ParameterType.Int8: {
-                            obj[fieldName] = reader.readInt8();
-                            break;
-                        }
-                        case rpc_1.ParameterType.VectorUint8: {
-                            obj[fieldName] = reader.readUint8Vector2();
-                            break;
-                        }
-                        case rpc_1.ParameterType.CompressedString: {
-                            obj[fieldName] = reader.readCompressedString();
-                            break;
-                        }
+                const fieldName = match !== undefined && match.FieldName !== null
+                    ? match.FieldName
+                    : `P_0x${param.nameHash.toString(16)}`;
+                let value;
+                switch (param.type) {
+                    case rpc_1.ParameterType.Uint32: {
+                        value = reader.readUint32();
+                        break;
                     }
+                    case rpc_1.ParameterType.Int32: {
+                        value = reader.readInt32();
+                        break;
+                    }
+                    case rpc_1.ParameterType.Float: {
+                        value = reader.readFloat();
+                        break;
+                    }
+                    case rpc_1.ParameterType.String: {
+                        value = reader.readString();
+                        break;
+                    }
+                    case rpc_1.ParameterType.Uint64: {
+                        value = reader.readUint64();
+                        break;
+                    }
+                    case rpc_1.ParameterType.Int64: {
+                        value = reader.readInt64();
+                        break;
+                    }
+                    case rpc_1.ParameterType.Uint16: {
+                        value = reader.readUint16();
+                        break;
+                    }
+                    case rpc_1.ParameterType.Int16: {
+                        value = reader.readInt16();
+                        break;
+                    }
+                    case rpc_1.ParameterType.Uint8: {
+                        value = reader.readUint8();
+                        break;
+                    }
+                    case rpc_1.ParameterType.Int8: {
+                        value = reader.readInt8();
+                        break;
+                    }
+                    case rpc_1.ParameterType.VectorUint8: {
+                        value = reader.readUint8Vector2();
+                        break;
+                    }
+                    case rpc_1.ParameterType.CompressedString: {
+                        value = reader.readCompressedString();
+                        break;
+                    }
+                }
+                if (match !== undefined) {
+                    obj[fieldName] = value;
                     if (match.Key !== null)
                         obj[fieldName] ^= match.Key;
                     if (match.Type === rpc_1.ParameterType.Float)
