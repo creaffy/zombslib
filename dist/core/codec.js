@@ -258,6 +258,8 @@ class Codec {
         while (reader.canRead()) {
             const entityMapId = reader.readUint32();
             const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
+            if (entityMap === undefined || entityMap.sortedUids === undefined)
+                return entityUpdate;
             let absentEntitiesFlags = [];
             for (let i = 0; i < Math.floor((entityMap.sortedUids.length + 7) / 8); ++i) {
                 absentEntitiesFlags.push(reader.readUint8());

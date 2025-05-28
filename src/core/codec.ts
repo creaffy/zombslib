@@ -328,21 +328,22 @@ export class Codec {
 
         while (reader.canRead()) {
             const entityMapId = reader.readUint32();
-            const entityMap = this.entityMaps.find(
-                (e) => e.id === entityMapId
-            )!;
+            const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
+
+            if (entityMap === undefined || entityMap.sortedUids === undefined)
+                return entityUpdate;
 
             let absentEntitiesFlags: number[] = [];
             for (
                 let i = 0;
-                i < Math.floor((entityMap.sortedUids!.length + 7) / 8);
+                i < Math.floor((entityMap.sortedUids.length + 7) / 8);
                 ++i
             ) {
                 absentEntitiesFlags.push(reader.readUint8());
             }
 
-            for (let i = 0; i < entityMap.sortedUids!.length; ++i) {
-                const uid = entityMap.sortedUids![i];
+            for (let i = 0; i < entityMap.sortedUids.length; ++i) {
+                const uid = entityMap.sortedUids[i];
 
                 if (
                     (absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !==
