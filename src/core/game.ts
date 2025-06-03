@@ -115,7 +115,7 @@ export class Game extends EventEmitter {
             enterWorldRequest.writeUint8(Buffer.byteLength(displayName), 1);
             enterWorldRequest.write(displayName, 2);
             enterWorldRequest.writeUint32LE(
-                this.codec.rpcMapping.Version,
+                this.codec.rpcMapping.Codec,
                 2 + Buffer.byteLength(displayName)
             );
             enterWorldRequest.writeUint8(
@@ -127,7 +127,7 @@ export class Game extends EventEmitter {
             this.socket.send(new Uint8Array(enterWorldRequest));
 
             this.codec.computeRpcKey(
-                this.codec.rpcMapping.Version,
+                this.codec.rpcMapping.Codec,
                 new TextEncoder().encode("/" + server.endpoint),
                 pow
             );

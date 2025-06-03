@@ -593,7 +593,7 @@ interface DumpedRpc {
 }
 
 interface DumpedData {
-    Version: number;
+    Codec: number;
     Platform: string;
     Rpcs: DumpedRpc[];
 }

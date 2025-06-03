@@ -38,7 +38,7 @@ interface DumpedRpc {
     ParentName: string;
 }
 interface DumpedData {
-    Version: number;
+    Codec: number;
     Platform: string;
     Rpcs: DumpedRpc[];
 }
