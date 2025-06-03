@@ -94,12 +94,7 @@ export class Game extends EventEmitter {
         return super.on(event, listener);
     }
 
-    public constructor(
-        server: ApiServer,
-        platform: string,
-        codecVersion: number,
-        displayName: string
-    ) {
+    public constructor(server: ApiServer, displayName: string) {
         super();
 
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
@@ -109,7 +104,7 @@ export class Game extends EventEmitter {
         this.socket.on("open", () => {
             const pow = this.codec.generateProofOfWork(
                 server.endpoint,
-                platform,
+                this.codec.rpcMapping.Platform,
                 server.discreteFourierTransformBias
             );
 
@@ -120,7 +115,7 @@ export class Game extends EventEmitter {
             enterWorldRequest.writeUint8(Buffer.byteLength(displayName), 1);
             enterWorldRequest.write(displayName, 2);
             enterWorldRequest.writeUint32LE(
-                codecVersion,
+                this.codec.rpcMapping.Version,
                 2 + Buffer.byteLength(displayName)
             );
             enterWorldRequest.writeUint8(
@@ -132,7 +127,7 @@ export class Game extends EventEmitter {
             this.socket.send(new Uint8Array(enterWorldRequest));
 
             this.codec.computeRpcKey(
-                codecVersion,
+                this.codec.rpcMapping.Version,
                 new TextEncoder().encode("/" + server.endpoint),
                 pow
             );
@@ -197,6 +192,10 @@ export class Game extends EventEmitter {
 
     public getEntityList() {
         return this.codec.entityList;
+    }
+
+    public getUid() {
+        return this.codec.enterWorldResponse.uid!;
     }
 
     public getPlayerByName(name: string) {

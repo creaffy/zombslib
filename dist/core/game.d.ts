@@ -42,10 +42,11 @@ export declare class Game extends EventEmitter {
     private codec;
     on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
-    constructor(server: ApiServer, platform: string, codecVersion: number, displayName: string);
+    constructor(server: ApiServer, displayName: string);
     send(data: Uint8Array | undefined): void;
     shutdown(): void;
     getEntityList(): Map<number, import("../types/rpc").NetworkEntity>;
+    getUid(): number;
     getPlayerByName(name: string): import("../types/rpc").NetworkEntity | undefined;
     getEnterWorldResponse(): EnterWorldResponse;
     acToServerRpc(data: number[]): void;

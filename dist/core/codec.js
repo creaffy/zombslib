@@ -25,14 +25,14 @@ class Codec {
         for (let i = 0; i < targetUrl.length; ++i)
             this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
     }
-    generateProofOfWork(endpoint, platform = "android", difficulty = 16, size = 24) {
+    generateProofOfWork(endpoint, platform = "Android", difficulty = 16, size = 24) {
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
         const powBuffer = Buffer.alloc(size + pathBytes.length);
         powBuffer.set(pathBytes, size);
         let platformLogic;
         let hashState;
         switch (platform) {
-            case "windows": {
+            case "Windows": {
                 hashState = {
                     h0: 0xcde4bac7,
                     h1: 0xb6217224,
@@ -47,7 +47,7 @@ class Codec {
                 };
                 break;
             }
-            case "web": {
+            case "Web": {
                 hashState = {
                     h0: 0x04c82ad0,
                     h1: 0x2beacb85,
@@ -62,7 +62,7 @@ class Codec {
                 };
                 break;
             }
-            case "android": {
+            case "Android": {
                 hashState = {
                     h0: 0xa9c9f023,
                     h1: 0x14f071e7,

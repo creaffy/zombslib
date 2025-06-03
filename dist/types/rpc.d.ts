@@ -15,8 +15,23 @@ export interface RpcParameter {
 }
 export interface NetworkEntity {
     uid?: number;
-    modelHash?: number;
+    modelHash?: ModelHash;
     tick?: Tick;
+}
+export declare enum ModelHash {
+    BaseHash = 3189039072,
+    BuildingHash = 3750051221,
+    GasHash = 4049394616,
+    ItemHash = 2817316692,
+    NpcHash = 4108209120,
+    PlaneHash = 2414203739,
+    PlayerBuildingHash = 4131010518,
+    PlayerHash = 1112845922,
+    PortalHash = 580082061,
+    ProjectileHash = 3067001770,
+    PropHash = 3970592772,
+    SprayHash = 504903628,
+    ZombieHash = 249036071
 }
 export interface Rpc {
     nameHash?: number;

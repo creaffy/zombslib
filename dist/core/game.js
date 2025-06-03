@@ -9,23 +9,23 @@ class Game extends node_events_1.EventEmitter {
     on(event, listener) {
         return super.on(event, listener);
     }
-    constructor(server, platform, codecVersion, displayName) {
+    constructor(server, displayName) {
         super();
         this.codec = new codec_1.Codec("./rpcs.json");
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
         this.socket = new ws_1.WebSocket(url);
         this.socket.binaryType = "arraybuffer";
         this.socket.on("open", () => {
-            const pow = this.codec.generateProofOfWork(server.endpoint, platform, server.discreteFourierTransformBias);
+            const pow = this.codec.generateProofOfWork(server.endpoint, this.codec.rpcMapping.Platform, server.discreteFourierTransformBias);
             const enterWorldRequest = Buffer.alloc(7 + Buffer.byteLength(displayName) + pow.length);
             enterWorldRequest.writeUint8(4, 0);
             enterWorldRequest.writeUint8(Buffer.byteLength(displayName), 1);
             enterWorldRequest.write(displayName, 2);
-            enterWorldRequest.writeUint32LE(codecVersion, 2 + Buffer.byteLength(displayName));
+            enterWorldRequest.writeUint32LE(this.codec.rpcMapping.Version, 2 + Buffer.byteLength(displayName));
             enterWorldRequest.writeUint8(pow.length, 6 + Buffer.byteLength(displayName));
             enterWorldRequest.set(pow, 7 + Buffer.byteLength(displayName));
             this.socket.send(new Uint8Array(enterWorldRequest));
-            this.codec.computeRpcKey(codecVersion, new TextEncoder().encode("/" + server.endpoint), pow);
+            this.codec.computeRpcKey(this.codec.rpcMapping.Version, new TextEncoder().encode("/" + server.endpoint), pow);
         });
         this.socket.on("message", (data) => {
             const view = new DataView(data);
@@ -65,6 +65,9 @@ class Game extends node_events_1.EventEmitter {
     }
     getEntityList() {
         return this.codec.entityList;
+    }
+    getUid() {
+        return this.codec.enterWorldResponse.uid;
     }
     getPlayerByName(name) {
         for (const [uid, entity] of this.getEntityList()) {

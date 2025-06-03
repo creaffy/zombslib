@@ -18,9 +18,9 @@ import {
 export class Codec {
     private rpcKey = new Uint8Array(8);
     private entityMaps: EntityMap[] = [];
-    private rpcMapping: DumpedData;
     public enterWorldResponse: EnterWorldResponse = {};
-    public entityList = new Map<number, NetworkEntity>();
+    public readonly rpcMapping: DumpedData;
+    public readonly entityList = new Map<number, NetworkEntity>();
 
     public constructor(path: string) {
         this.rpcMapping = JSON.parse(
@@ -47,7 +47,7 @@ export class Codec {
 
     public generateProofOfWork(
         endpoint: string,
-        platform: string = "android",
+        platform: string = "Android",
         difficulty: number = 16,
         size: number = 24
     ): Buffer<ArrayBuffer> {
@@ -59,7 +59,7 @@ export class Codec {
         let hashState;
 
         switch (platform) {
-            case "windows": {
+            case "Windows": {
                 hashState = {
                     h0: 0xcde4bac7,
                     h1: 0xb6217224,
@@ -76,7 +76,7 @@ export class Codec {
 
                 break;
             }
-            case "web": {
+            case "Web": {
                 hashState = {
                     h0: 0x04c82ad0,
                     h1: 0x2beacb85,
@@ -93,7 +93,7 @@ export class Codec {
 
                 break;
             }
-            case "android": {
+            case "Android": {
                 hashState = {
                     h0: 0xa9c9f023,
                     h1: 0x14f071e7,

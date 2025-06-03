@@ -2,9 +2,9 @@ import { EnterWorldResponse, Rpc, NetworkEntity, EntityUpdate } from "../types/r
 export declare class Codec {
     private rpcKey;
     private entityMaps;
-    private rpcMapping;
     enterWorldResponse: EnterWorldResponse;
-    entityList: Map<number, NetworkEntity>;
+    readonly rpcMapping: DumpedData;
+    readonly entityList: Map<number, NetworkEntity>;
     constructor(path: string);
     computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array): void;
     generateProofOfWork(endpoint: string, platform?: string, difficulty?: number, size?: number): Buffer<ArrayBuffer>;
@@ -19,3 +19,27 @@ export declare class Codec {
     private encodeRpcParams;
     encodeRpc(name: string, data: object | object[]): Uint8Array<ArrayBufferLike> | undefined;
 }
+interface DumpedRpcParam {
+    InternalIndex: number;
+    Key: number | null;
+    NameHash: number;
+    Offset: number;
+    Type: number;
+    XFieldName: string | null;
+    FieldName: string | null;
+}
+interface DumpedRpc {
+    IsArray: boolean;
+    NameHash: number;
+    Parameters: DumpedRpcParam[];
+    XClassName: string;
+    XParentName: string;
+    ClassName: string | null;
+    ParentName: string;
+}
+interface DumpedData {
+    Version: number;
+    Platform: string;
+    Rpcs: DumpedRpc[];
+}
+export {};

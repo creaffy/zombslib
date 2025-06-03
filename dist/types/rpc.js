@@ -1,6 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AttributeType = exports.ParameterType = exports.PacketId = void 0;
+exports.AttributeType = exports.ParameterType = exports.PacketId = exports.ModelHash = void 0;
+var ModelHash;
+(function (ModelHash) {
+    ModelHash[ModelHash["BaseHash"] = 3189039072] = "BaseHash";
+    ModelHash[ModelHash["BuildingHash"] = 3750051221] = "BuildingHash";
+    ModelHash[ModelHash["GasHash"] = 4049394616] = "GasHash";
+    ModelHash[ModelHash["ItemHash"] = 2817316692] = "ItemHash";
+    ModelHash[ModelHash["NpcHash"] = 4108209120] = "NpcHash";
+    ModelHash[ModelHash["PlaneHash"] = 2414203739] = "PlaneHash";
+    ModelHash[ModelHash["PlayerBuildingHash"] = 4131010518] = "PlayerBuildingHash";
+    ModelHash[ModelHash["PlayerHash"] = 1112845922] = "PlayerHash";
+    ModelHash[ModelHash["PortalHash"] = 580082061] = "PortalHash";
+    ModelHash[ModelHash["ProjectileHash"] = 3067001770] = "ProjectileHash";
+    ModelHash[ModelHash["PropHash"] = 3970592772] = "PropHash";
+    ModelHash[ModelHash["SprayHash"] = 504903628] = "SprayHash";
+    ModelHash[ModelHash["ZombieHash"] = 249036071] = "ZombieHash";
+})(ModelHash || (exports.ModelHash = ModelHash = {}));
 var PacketId;
 (function (PacketId) {
     PacketId[PacketId["EntityUpdate"] = 0] = "EntityUpdate";
