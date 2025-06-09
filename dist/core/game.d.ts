@@ -4,6 +4,7 @@ import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, Comp
 interface GameEvents {
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
+    RawEntityUpdate: (data: ArrayBuffer) => void;
     Rpc: (rpc: object) => void;
     ACToClientRpc: (rpc: ACToClientRpc) => void;
     DamageRpc: (rpc: DamageRpc) => void;

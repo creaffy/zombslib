@@ -45,6 +45,7 @@ import {
 interface GameEvents {
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
+    RawEntityUpdate: (data: ArrayBuffer) => void;
     Rpc: (rpc: object) => void;
     ACToClientRpc: (rpc: ACToClientRpc) => void;
     DamageRpc: (rpc: DamageRpc) => void;
@@ -154,6 +155,7 @@ export class Game extends EventEmitter {
                         new Uint8Array(data)
                     );
                     this.emit("EntityUpdate", entityUpdate);
+                    this.emit("RawEntityUpdate", data);
                     break;
                 }
                 case PacketId.Rpc: {
