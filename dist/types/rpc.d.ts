@@ -23,7 +23,7 @@ export declare enum EntityType {
     SprayEntity = 504903628,
     PortalEntity = 580082061,
     PlayerEntity = 1112845922,
-    UnknownEntity1 = 1491795389,// Prop Hash
+    CrystalEntity = 1491795389,
     VehicleEntity = 1561019755,
     PhysicsEntity = 2383969827,// 3647459127 Hash
     PlaneEntity = 2414203739,
@@ -33,7 +33,7 @@ export declare enum EntityType {
     PropEntity = 3970592772,
     GasEntity = 4049394616,
     NpcEntity = 4108209120,
-    UnknownEntity2 = 4124010558,// Player Hash
+    UnknownEntity = 4124010558,// Player Hash
     PlayerBuildingEntity = 4131010518
 }
 export declare enum ModelHash {
