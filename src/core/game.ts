@@ -43,6 +43,7 @@ import {
 } from "../types/rpc";
 
 interface GameEvents {
+    RawData: (data: ArrayBuffer) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
     Rpc: (rpc: object) => void;
@@ -135,6 +136,9 @@ export class Game extends EventEmitter {
 
         this.socket.on("message", (data: ArrayBuffer) => {
             const view = new DataView(data);
+
+            this.emit("RawData", data);
+
             switch (view.getUint8(0) as PacketId) {
                 case PacketId.EnterWorld: {
                     this.codec.enterWorldResponse =
