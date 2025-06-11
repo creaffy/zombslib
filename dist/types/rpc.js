@@ -1,6 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AttributeType = exports.ParameterType = exports.PacketId = exports.ModelHash = void 0;
+exports.AttributeType = exports.ParameterType = exports.PacketId = exports.ModelHash = exports.EntityType = void 0;
+var EntityType;
+(function (EntityType) {
+    EntityType[EntityType["ZombieEntity"] = 249036071] = "ZombieEntity";
+    EntityType[EntityType["SprayEntity"] = 504903628] = "SprayEntity";
+    EntityType[EntityType["PortalEntity"] = 580082061] = "PortalEntity";
+    EntityType[EntityType["PlayerEntity"] = 1112845922] = "PlayerEntity";
+    EntityType[EntityType["UnknownEntity1"] = 1491795389] = "UnknownEntity1";
+    EntityType[EntityType["VehicleEntity"] = 1561019755] = "VehicleEntity";
+    EntityType[EntityType["PhysicsEntity"] = 2383969827] = "PhysicsEntity";
+    EntityType[EntityType["PlaneEntity"] = 2414203739] = "PlaneEntity";
+    EntityType[EntityType["ItemEntity"] = 2817316692] = "ItemEntity";
+    EntityType[EntityType["ProjectileEntity"] = 3067001770] = "ProjectileEntity";
+    EntityType[EntityType["BuildingEntity"] = 3750051221] = "BuildingEntity";
+    EntityType[EntityType["PropEntity"] = 3970592772] = "PropEntity";
+    EntityType[EntityType["GasEntity"] = 4049394616] = "GasEntity";
+    EntityType[EntityType["NpcEntity"] = 4108209120] = "NpcEntity";
+    EntityType[EntityType["UnknownEntity2"] = 4124010558] = "UnknownEntity2";
+    EntityType[EntityType["PlayerBuildingEntity"] = 4131010518] = "PlayerBuildingEntity";
+})(EntityType || (exports.EntityType = EntityType = {}));
 var ModelHash;
 (function (ModelHash) {
     ModelHash[ModelHash["BaseHash"] = 3189039072] = "BaseHash";

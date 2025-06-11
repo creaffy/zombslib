@@ -22,7 +22,7 @@ export interface NetworkEntity {
     type?: EntityType;
 }
 
-export declare enum EntityType {
+export enum EntityType {
     ZombieEntity = 249036071,
     SprayEntity = 504903628,
     PortalEntity = 580082061,
