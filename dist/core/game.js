@@ -39,6 +39,7 @@ class Game extends node_events_1.EventEmitter {
                 case rpc_1.PacketId.EntityUpdate: {
                     const entityUpdate = this.codec.decodeEntityUpdate(new Uint8Array(data));
                     this.emit("EntityUpdate", entityUpdate);
+                    this.emit("RawEntityUpdate", data);
                     break;
                 }
                 case rpc_1.PacketId.Rpc: {
