@@ -29,6 +29,7 @@ class Game extends node_events_1.EventEmitter {
         });
         this.socket.on("message", (data) => {
             const view = new DataView(data);
+            this.emit("RawData", data);
             switch (view.getUint8(0)) {
                 case rpc_1.PacketId.EnterWorld: {
                     this.codec.enterWorldResponse =
