@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { ApiServer } from "../types/api";
-import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc, Vector2 } from "../types/rpc";
+import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityType, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc, Vector2 } from "../types/rpc";
 interface GameEvents {
     RawData: (data: ArrayBuffer) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
@@ -48,6 +48,7 @@ export declare class Game extends EventEmitter {
     shutdown(): void;
     getEnterWorldResponse(): EnterWorldResponse;
     getEntityList(): Map<number, import("../types/rpc").NetworkEntity>;
+    getEntitiesByType(type: EntityType): Map<number, import("../types/rpc").NetworkEntity>;
     getMyUid(): number;
     getEntityByUid(uid: number): import("../types/rpc").NetworkEntity | undefined;
     getPlayerByName(name: string): import("../types/rpc").NetworkEntity | undefined;

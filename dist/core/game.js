@@ -71,6 +71,9 @@ class Game extends node_events_1.EventEmitter {
     getEntityList() {
         return this.codec.entityList;
     }
+    getEntitiesByType(type) {
+        return new Map(Array.from(this.codec.entityList).filter(([k, v]) => v.type === type));
+    }
     getMyUid() {
         return this.codec.enterWorldResponse.uid;
     }

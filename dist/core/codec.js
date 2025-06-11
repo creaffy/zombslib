@@ -183,7 +183,8 @@ class Codec {
                 let entityMapAttribute = {};
                 entityMapAttribute.nameHash = reader.readUint32();
                 entityMapAttribute.type = reader.readUint32();
-                entityMap.defaultTick[tickFieldMap.get(entityMapAttribute.nameHash)] = this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
+                entityMap.defaultTick[tickFieldMap.get(entityMapAttribute.nameHash) ??
+                    `A_0x${entityMapAttribute.nameHash.toString(16)}`] = this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
                 entityMap.attributes.push(entityMapAttribute);
             }
             enterWorldResponse.entities.push(entityMap);
@@ -245,7 +246,7 @@ class Codec {
                 entityMap.sortedUids.push(uid);
                 this.entityList.set(uid, {
                     uid: uid,
-                    modelHash: entityMapId,
+                    type: entityMapId,
                     tick: structuredClone(entityMap.defaultTick),
                 });
                 entityUpdate.createdEntities.push(uid);
@@ -279,13 +280,8 @@ class Codec {
                     const attribute = entityMap.attributes[j];
                     if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
                         const value = this.decodeEntityMapAttribute(reader, attribute.type);
-                        const key = tickFieldMap.get(attribute.nameHash);
-                        if (key !== undefined) {
-                            entityTick[key] = value;
-                        }
-                        else {
-                            entityTick[attribute.nameHash?.toString()] = value;
-                        }
+                        entityTick[tickFieldMap.get(attribute.nameHash) ??
+                            `A_0x${attribute.nameHash.toString(16)}`] = value;
                     }
                 }
             }

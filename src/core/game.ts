@@ -15,6 +15,7 @@ import {
     DeadRpc,
     EndOfGameStatsRpc,
     EnterWorldResponse,
+    EntityType,
     EntityUpdate,
     GameStatusRpc,
     GameTimerRpc,
@@ -203,6 +204,14 @@ export class Game extends EventEmitter {
 
     public getEntityList() {
         return this.codec.entityList;
+    }
+
+    public getEntitiesByType(type: EntityType) {
+        return new Map(
+            Array.from(this.codec.entityList).filter(
+                ([k, v]) => v.type === type
+            )
+        );
     }
 
     public getMyUid() {
