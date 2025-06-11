@@ -84,10 +84,10 @@ class Game extends node_events_1.EventEmitter {
         }
         return undefined;
     }
-    toServer(worldPos) {
+    toServerPos(worldPos) {
         return { x: worldPos.x * 100, y: -worldPos.y * 100 };
     }
-    toWorld(serverPos) {
+    toWorldPos(serverPos) {
         return { x: serverPos.x / 100, y: -serverPos.y / 100 };
     }
     // --- Generated ---

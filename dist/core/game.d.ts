@@ -51,8 +51,8 @@ export declare class Game extends EventEmitter {
     getMyUid(): number;
     getEntityByUid(uid: number): import("../types/rpc").NetworkEntity | undefined;
     getPlayerByName(name: string): import("../types/rpc").NetworkEntity | undefined;
-    toServer(worldPos: Vector2): Vector2;
-    toWorld(serverPos: Vector2): Vector2;
+    toServerPos(worldPos: Vector2): Vector2;
+    toWorldPos(serverPos: Vector2): Vector2;
     acToServerRpc(data: number[]): void;
     startUdpStreamRpc(): void;
     setPlatformRpc(platform: "android" | "web" | "windows" | "ios"): void;
