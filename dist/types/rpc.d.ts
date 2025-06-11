@@ -33,7 +33,7 @@ export declare enum EntityType {
     PropEntity = 3970592772,
     GasEntity = 4049394616,
     NpcEntity = 4108209120,
-    UnknownEntity = 4124010558,// Player Hash
+    GunGamePlayerEntity = 4124010558,
     PlayerBuildingEntity = 4131010518
 }
 export declare enum ModelHash {
