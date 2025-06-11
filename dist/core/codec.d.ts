@@ -13,7 +13,7 @@ export declare class Codec {
     decodeEnterWorldResponse(data: Uint8Array): EnterWorldResponse;
     decodeEntityUpdate(data: Uint8Array): EntityUpdate;
     decodeRpc(def: Rpc, data: Uint8Array): {
-        name: string;
+        name: string | null;
         data: {};
     } | undefined;
     private encodeRpcParams;

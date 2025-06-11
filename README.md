@@ -6,8 +6,6 @@ Inspired by [Zombs.io Client Library](https://github.com/particle99/zombs-client
 
 The idea behind zombslib is to lay the foundation for all future ZR network based projects. It is supposed to be a minimal library focused on delivering an easy-to-use artificial player controller API with little to none extra features in order to stay clean and reliable.
 
-For more information regarding API, Mason and The Protocol, refer to the community-maintained [ZombsRoyale.io Wiki](https://zombsroyale.wiki).
-
 ## Example usage
 
 ### I. Matchmaking
@@ -76,6 +74,10 @@ game.on("ReceiveChatMessageRpc", (rpc: ReceiveChatMessageRpc) => {
     -   Support multiple mapping files,
     -   Emulate anticheat's behavior (Windows).
 
+-   RPC support:
+
+    -   Add an auto pseudo-decoder for unknown RPC's not listed in the supplied mapping.
+
 -   Protocol support:
 
     -   Allow for game server connection over UDP.
@@ -86,4 +88,4 @@ game.on("ReceiveChatMessageRpc", (rpc: ReceiveChatMessageRpc) => {
 
 -   Documentation:
 
-    -   Create a detailed documentation of Mason, ZR API, in-game Protocol and all their components.
+    -   Create a detailed documentation of Mason, ZR API, in-game protocol and all their components.
