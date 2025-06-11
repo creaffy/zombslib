@@ -64,11 +64,18 @@ class Game extends node_events_1.EventEmitter {
     shutdown() {
         this.socket.close();
     }
+    // --- Utility ---
+    getEnterWorldResponse() {
+        return this.codec.enterWorldResponse;
+    }
     getEntityList() {
         return this.codec.entityList;
     }
-    getUid() {
+    getMyUid() {
         return this.codec.enterWorldResponse.uid;
+    }
+    getEntityByUid(uid) {
+        return this.getEntityList().get(uid);
     }
     getPlayerByName(name) {
         for (const [uid, entity] of this.getEntityList()) {
@@ -77,9 +84,13 @@ class Game extends node_events_1.EventEmitter {
         }
         return undefined;
     }
-    getEnterWorldResponse() {
-        return this.codec.enterWorldResponse;
+    toServer(worldPos) {
+        return { x: worldPos.x * 100, y: -worldPos.y * 100 };
     }
+    toWorld(serverPos) {
+        return { x: serverPos.x / 100, y: -serverPos.y / 100 };
+    }
+    // --- Generated ---
     acToServerRpc(data) {
         this.send(this.codec.encodeRpc("ACToServerRpc", { data: data }));
     }

@@ -40,6 +40,7 @@ import {
     SetSkinRpc,
     ShutdownRpc,
     UpdateMarkerRpc,
+    Vector2,
 } from "../types/rpc";
 
 interface GameEvents {
@@ -194,12 +195,22 @@ export class Game extends EventEmitter {
         this.socket.close();
     }
 
+    // --- Utility ---
+
+    public getEnterWorldResponse() {
+        return this.codec.enterWorldResponse;
+    }
+
     public getEntityList() {
         return this.codec.entityList;
     }
 
-    public getUid() {
+    public getMyUid() {
         return this.codec.enterWorldResponse.uid!;
+    }
+
+    public getEntityByUid(uid: number) {
+        return this.getEntityList().get(uid);
     }
 
     public getPlayerByName(name: string) {
@@ -209,9 +220,15 @@ export class Game extends EventEmitter {
         return undefined;
     }
 
-    public getEnterWorldResponse() {
-        return this.codec.enterWorldResponse;
+    public toServerPos(worldPos: Vector2) {
+        return { x: worldPos.x * 100, y: -worldPos.y * 100 } as Vector2;
     }
+
+    public toWorldPos(serverPos: Vector2) {
+        return { x: serverPos.x / 100, y: -serverPos.y / 100 } as Vector2;
+    }
+
+    // --- Generated ---
 
     public acToServerRpc(data: number[]) {
         this.send(this.codec.encodeRpc("ACToServerRpc", { data: data }));

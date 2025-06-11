@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { ApiServer } from "../types/api";
-import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc } from "../types/rpc";
+import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc, Vector2 } from "../types/rpc";
 interface GameEvents {
     RawData: (data: ArrayBuffer) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
@@ -46,10 +46,13 @@ export declare class Game extends EventEmitter {
     constructor(server: ApiServer, displayName: string);
     send(data: Uint8Array | undefined): void;
     shutdown(): void;
-    getEntityList(): Map<number, import("../types/rpc").NetworkEntity>;
-    getUid(): number;
-    getPlayerByName(name: string): import("../types/rpc").NetworkEntity | undefined;
     getEnterWorldResponse(): EnterWorldResponse;
+    getEntityList(): Map<number, import("../types/rpc").NetworkEntity>;
+    getMyUid(): number;
+    getEntityByUid(uid: number): import("../types/rpc").NetworkEntity | undefined;
+    getPlayerByName(name: string): import("../types/rpc").NetworkEntity | undefined;
+    toServer(worldPos: Vector2): Vector2;
+    toWorld(serverPos: Vector2): Vector2;
     acToServerRpc(data: number[]): void;
     startUdpStreamRpc(): void;
     setPlatformRpc(platform: "android" | "web" | "windows" | "ios"): void;
