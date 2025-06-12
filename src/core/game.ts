@@ -67,7 +67,7 @@ import {
 
 interface GameEvents {
     RawData: (data: ArrayBuffer) => void; // Any packet
-    Rpc: (rpc: object, name: string) => void; // Any rpc
+    Rpc: (name: string, rpc: object) => void; // Any rpc
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
 
@@ -103,26 +103,26 @@ interface GameEvents {
     PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
     SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
 
-    SchemaAmmos: (schemas: SchemaAmmo[]) => void;
-    SchemaBuildings: (schemas: SchemaBuilding[]) => void;
-    SchemaEmotes: (schemas: SchemaEmote[]) => void;
-    SchemaGas: (schemas: SchemaGas[]) => void;
-    SchemaGeneral: (schema: SchemaGeneral) => void;
-    SchemaGunGameGuns: (schemas: SchemaGunGameGun[]) => void;
-    SchemaHealingItems: (schemas: SchemaHealingItem[]) => void;
-    SchemaLoadouts: (schemas: SchemaLoadout[]) => void;
-    SchemaMaps: (schemas: SchemaMap[]) => void;
-    SchemaModifiers: (schemas: SchemaModifier[]) => void;
-    SchemaNpcs: (schemas: SchemaNpc[]) => void;
-    SchemaPlane: (schema: object) => void;
-    SchemaPlayer: (schema: SchemaPlayer[]) => void;
-    SchemaPlayerBuildings: (schemas: SchemaPlayerBuilding[]) => void;
-    SchemaProjectiles: (schemas: SchemaProjectile[]) => void;
-    SchemaProps: (schemas: SchemaProp[]) => void;
-    SchemaTiers: (schemas: SchemaTier[]) => void;
-    SchemaVehicles: (schemas: SchemaVehicle[]) => void;
-    SchemaWeapons: (schemas: SchemaWeapon[]) => void;
-    SchemaZombies: (schemas: SchemaZombie[]) => void;
+    SchemaAmmos: (data: SchemaAmmo[]) => void;
+    SchemaBuildings: (data: SchemaBuilding[]) => void;
+    SchemaEmotes: (data: SchemaEmote[]) => void;
+    SchemaGas: (data: SchemaGas[]) => void;
+    SchemaGeneral: (data: SchemaGeneral) => void;
+    SchemaGunGameGuns: (data: SchemaGunGameGun[]) => void;
+    SchemaHealingItems: (data: SchemaHealingItem[]) => void;
+    SchemaLoadouts: (data: SchemaLoadout[]) => void;
+    SchemaMaps: (data: SchemaMap[]) => void;
+    SchemaModifiers: (data: SchemaModifier[]) => void;
+    SchemaNpcs: (data: SchemaNpc[]) => void;
+    SchemaPlane: (data: object) => void;
+    SchemaPlayer: (data: SchemaPlayer[]) => void;
+    SchemaPlayerBuildings: (data: SchemaPlayerBuilding[]) => void;
+    SchemaProjectiles: (data: SchemaProjectile[]) => void;
+    SchemaProps: (data: SchemaProp[]) => void;
+    SchemaTiers: (data: SchemaTier[]) => void;
+    SchemaVehicles: (data: SchemaVehicle[]) => void;
+    SchemaWeapons: (data: SchemaWeapon[]) => void;
+    SchemaZombies: (data: SchemaZombie[]) => void;
 }
 
 export class Game extends EventEmitter {
@@ -217,7 +217,7 @@ export class Game extends EventEmitter {
                     const rpc = this.codec.decodeRpc(definition!, decrypedData);
 
                     if (rpc !== undefined && rpc.name !== null) {
-                        this.emit("Rpc", rpc.data, rpc.name);
+                        this.emit("Rpc", rpc.name, rpc.data);
                         this.emit(rpc.name, rpc.data);
                     }
 

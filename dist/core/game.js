@@ -47,7 +47,7 @@ class Game extends node_events_1.EventEmitter {
                     const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
                     const rpc = this.codec.decodeRpc(definition, decrypedData);
                     if (rpc !== undefined && rpc.name !== null) {
-                        this.emit("Rpc", rpc.data, rpc.name);
+                        this.emit("Rpc", rpc.name, rpc.data);
                         this.emit(rpc.name, rpc.data);
                     }
                     break;

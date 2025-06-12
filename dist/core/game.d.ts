@@ -4,7 +4,7 @@ import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, Comp
 import { SchemaAmmo, SchemaBuilding, SchemaEmote, SchemaGas, SchemaGeneral, SchemaGunGameGun, SchemaHealingItem, SchemaLoadout, SchemaMap, SchemaModifier, SchemaNpc, SchemaPlayer, SchemaPlayerBuilding, SchemaProjectile, SchemaProp, SchemaTier, SchemaVehicle, SchemaWeapon, SchemaZombie } from "../types/schema";
 interface GameEvents {
     RawData: (data: ArrayBuffer) => void;
-    Rpc: (rpc: object, name: string) => void;
+    Rpc: (name: string, rpc: object) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
     ACToClientRpc: (rpc: ACToClientRpc) => void;
@@ -38,26 +38,26 @@ interface GameEvents {
     DataRpc: (rpc: DataRpc) => void;
     PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
     SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
-    SchemaAmmos: (schemas: SchemaAmmo[]) => void;
-    SchemaBuildings: (schemas: SchemaBuilding[]) => void;
-    SchemaEmotes: (schemas: SchemaEmote[]) => void;
-    SchemaGas: (schemas: SchemaGas[]) => void;
-    SchemaGeneral: (schema: SchemaGeneral) => void;
-    SchemaGunGameGuns: (schemas: SchemaGunGameGun[]) => void;
-    SchemaHealingItems: (schemas: SchemaHealingItem[]) => void;
-    SchemaLoadouts: (schemas: SchemaLoadout[]) => void;
-    SchemaMaps: (schemas: SchemaMap[]) => void;
-    SchemaModifiers: (schemas: SchemaModifier[]) => void;
-    SchemaNpcs: (schemas: SchemaNpc[]) => void;
-    SchemaPlane: (schema: object) => void;
-    SchemaPlayer: (schema: SchemaPlayer[]) => void;
-    SchemaPlayerBuildings: (schemas: SchemaPlayerBuilding[]) => void;
-    SchemaProjectiles: (schemas: SchemaProjectile[]) => void;
-    SchemaProps: (schemas: SchemaProp[]) => void;
-    SchemaTiers: (schemas: SchemaTier[]) => void;
-    SchemaVehicles: (schemas: SchemaVehicle[]) => void;
-    SchemaWeapons: (schemas: SchemaWeapon[]) => void;
-    SchemaZombies: (schemas: SchemaZombie[]) => void;
+    SchemaAmmos: (data: SchemaAmmo[]) => void;
+    SchemaBuildings: (data: SchemaBuilding[]) => void;
+    SchemaEmotes: (data: SchemaEmote[]) => void;
+    SchemaGas: (data: SchemaGas[]) => void;
+    SchemaGeneral: (data: SchemaGeneral) => void;
+    SchemaGunGameGuns: (data: SchemaGunGameGun[]) => void;
+    SchemaHealingItems: (data: SchemaHealingItem[]) => void;
+    SchemaLoadouts: (data: SchemaLoadout[]) => void;
+    SchemaMaps: (data: SchemaMap[]) => void;
+    SchemaModifiers: (data: SchemaModifier[]) => void;
+    SchemaNpcs: (data: SchemaNpc[]) => void;
+    SchemaPlane: (data: object) => void;
+    SchemaPlayer: (data: SchemaPlayer[]) => void;
+    SchemaPlayerBuildings: (data: SchemaPlayerBuilding[]) => void;
+    SchemaProjectiles: (data: SchemaProjectile[]) => void;
+    SchemaProps: (data: SchemaProp[]) => void;
+    SchemaTiers: (data: SchemaTier[]) => void;
+    SchemaVehicles: (data: SchemaVehicle[]) => void;
+    SchemaWeapons: (data: SchemaWeapon[]) => void;
+    SchemaZombies: (data: SchemaZombie[]) => void;
 }
 export declare class Game extends EventEmitter {
     private socket;

@@ -28,7 +28,7 @@ class MasonService extends node_events_1.EventEmitter {
                     parameter = JSON.parse(parameter);
                 else if (event === "loggedIn")
                     parameter = parameter.userData;
-                this.emit("any", [event, parameter]);
+                this.emit("any", event, parameter);
                 this.emit(event, parameter);
             }
         });

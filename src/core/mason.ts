@@ -36,7 +36,7 @@ interface MasonEvents {
     partyAutofillUpdated: (autofill: boolean) => void;
     friendRequestReceived: (friendRequest: ApiFriendRequest) => void;
     partyRegionUpdated: (region: string) => void;
-    any: (data: any) => void;
+    any: (event: string, data: any) => void;
 }
 
 export class MasonService extends EventEmitter {
@@ -82,7 +82,7 @@ export class MasonService extends EventEmitter {
                     parameter = JSON.parse(parameter);
                 else if (event === "loggedIn") parameter = parameter.userData;
 
-                this.emit("any", [event, parameter]);
+                this.emit("any", event, parameter);
                 this.emit(event, parameter);
             }
         });
