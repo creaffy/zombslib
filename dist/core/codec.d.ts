@@ -1,4 +1,4 @@
-import { EnterWorldResponse, Rpc, NetworkEntity, EntityUpdate } from "../types/rpc";
+import { EnterWorldResponse, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
 export declare class Codec {
     private rpcKey;
     private entityMaps;

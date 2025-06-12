@@ -13,7 +13,7 @@ import {
     NetworkEntity,
     EntityUpdate,
     ParameterType,
-} from "../types/rpc";
+} from "../types/network";
 
 export class Codec {
     private rpcKey = new Uint8Array(8);

@@ -14,6 +14,7 @@ export interface SchemaBuildingWindow {
 export interface SchemaBuildingSensor {
     DefinedBoundary?: boolean;
 }
+
 export interface SchemaBuildingDoor {
     Name?: string;
     PropClass?: string;

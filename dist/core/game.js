@@ -4,7 +4,7 @@ exports.Game = void 0;
 const node_events_1 = require("node:events");
 const ws_1 = require("ws");
 const codec_1 = require("./codec");
-const rpc_1 = require("../types/rpc");
+const network_1 = require("../types/network");
 class Game extends node_events_1.EventEmitter {
     on(event, listener) {
         return super.on(event, listener);
@@ -29,21 +29,22 @@ class Game extends node_events_1.EventEmitter {
         });
         this.socket.on("message", (data) => {
             const view = new DataView(data);
-            this.emit("RawData", data);
+            const data2 = new Uint8Array(data);
+            this.emit("RawData", data2);
             switch (view.getUint8(0)) {
-                case rpc_1.PacketId.EnterWorld: {
+                case network_1.PacketId.EnterWorld: {
                     this.codec.enterWorldResponse =
                         this.codec.decodeEnterWorldResponse(new Uint8Array(data));
                     this.emit("EnterWorldResponse", this.codec.enterWorldResponse);
                     break;
                 }
-                case rpc_1.PacketId.EntityUpdate: {
-                    const entityUpdate = this.codec.decodeEntityUpdate(new Uint8Array(data));
+                case network_1.PacketId.EntityUpdate: {
+                    const entityUpdate = this.codec.decodeEntityUpdate(data2);
                     this.emit("EntityUpdate", entityUpdate);
                     break;
                 }
-                case rpc_1.PacketId.Rpc: {
-                    const decrypedData = this.codec.cryptRpc(new Uint8Array(data));
+                case network_1.PacketId.Rpc: {
+                    const decrypedData = this.codec.cryptRpc(data2);
                     const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
                     const rpc = this.codec.decodeRpc(definition, decrypedData);
                     if (rpc !== undefined && rpc.name !== null) {

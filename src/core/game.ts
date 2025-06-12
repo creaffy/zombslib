@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { RawData, WebSocket } from "ws";
+import { WebSocket } from "ws";
 import { Codec } from "./codec";
 import { ApiServer } from "../types/api";
 import {
@@ -42,7 +42,7 @@ import {
     ShutdownRpc,
     UpdateMarkerRpc,
     Vector2,
-} from "../types/rpc";
+} from "../types/network";
 import {
     SchemaAmmo,
     SchemaBuilding,
@@ -66,11 +66,12 @@ import {
 } from "../types/schema";
 
 interface GameEvents {
-    RawData: (data: ArrayBuffer) => void; // Any packet
+    // --- Misc ---
+    RawData: (data: Uint8Array) => void; // Any packet
     Rpc: (name: string, rpc: object) => void; // Any rpc
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
-
+    /// --- Specific Rpcs ---
     ACToClientRpc: (rpc: ACToClientRpc) => void;
     DamageRpc: (rpc: DamageRpc) => void;
     DeadRpc: (rpc: DeadRpc) => void;
@@ -102,7 +103,7 @@ interface GameEvents {
     DataRpc: (rpc: DataRpc) => void;
     PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
     SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
-
+    // --- Schemas ---
     SchemaAmmos: (data: SchemaAmmo[]) => void;
     SchemaBuildings: (data: SchemaBuilding[]) => void;
     SchemaEmotes: (data: SchemaEmote[]) => void;
@@ -181,8 +182,9 @@ export class Game extends EventEmitter {
 
         this.socket.on("message", (data: ArrayBuffer) => {
             const view = new DataView(data);
+            const data2 = new Uint8Array(data);
 
-            this.emit("RawData", data);
+            this.emit("RawData", data2);
 
             switch (view.getUint8(0) as PacketId) {
                 case PacketId.EnterWorld: {
@@ -199,16 +201,12 @@ export class Game extends EventEmitter {
                     break;
                 }
                 case PacketId.EntityUpdate: {
-                    const entityUpdate = this.codec.decodeEntityUpdate(
-                        new Uint8Array(data)
-                    );
+                    const entityUpdate = this.codec.decodeEntityUpdate(data2);
                     this.emit("EntityUpdate", entityUpdate);
                     break;
                 }
                 case PacketId.Rpc: {
-                    const decrypedData = this.codec.cryptRpc(
-                        new Uint8Array(data)
-                    );
+                    const decrypedData = this.codec.cryptRpc(data2);
 
                     const definition = this.codec.enterWorldResponse.rpcs!.find(
                         (rpc) => rpc.index === decrypedData[1]

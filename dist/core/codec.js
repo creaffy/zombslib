@@ -6,7 +6,7 @@ const node_fs_1 = require("node:fs");
 const node_path_1 = require("node:path");
 const reader_1 = require("../utility/reader");
 const writer_1 = require("../utility/writer");
-const rpc_1 = require("../types/rpc");
+const network_1 = require("../types/network");
 class Codec {
     constructor(path) {
         this.rpcKey = new Uint8Array(8);
@@ -114,21 +114,21 @@ class Codec {
     }
     decodeEntityMapAttribute(reader, type) {
         switch (type) {
-            case rpc_1.AttributeType.Uint32:
+            case network_1.AttributeType.Uint32:
                 return reader.readUint32();
-            case rpc_1.AttributeType.Int32:
+            case network_1.AttributeType.Int32:
                 return reader.readInt32();
-            case rpc_1.AttributeType.Float:
+            case network_1.AttributeType.Float:
                 return reader.readFloat() / 100;
-            case rpc_1.AttributeType.String:
+            case network_1.AttributeType.String:
                 return reader.readString();
-            case rpc_1.AttributeType.Vector2: {
+            case network_1.AttributeType.Vector2: {
                 const v = reader.readVector2();
                 v.x /= 100;
                 v.y /= -100;
                 return v;
             }
-            case rpc_1.AttributeType.ArrayVector2: {
+            case network_1.AttributeType.ArrayVector2: {
                 const v = reader.readArrayVector2();
                 for (let e of v) {
                     e.x /= 100;
@@ -136,19 +136,19 @@ class Codec {
                 }
                 return v;
             }
-            case rpc_1.AttributeType.ArrayUint32:
+            case network_1.AttributeType.ArrayUint32:
                 return reader.readArrayUint32();
-            case rpc_1.AttributeType.Uint16:
+            case network_1.AttributeType.Uint16:
                 return reader.readUint16();
-            case rpc_1.AttributeType.Uint8:
+            case network_1.AttributeType.Uint8:
                 return reader.readUint8();
-            case rpc_1.AttributeType.Int16:
+            case network_1.AttributeType.Int16:
                 return reader.readInt16();
-            case rpc_1.AttributeType.Int8:
+            case network_1.AttributeType.Int8:
                 return reader.readInt8();
-            case rpc_1.AttributeType.ArrayInt32:
+            case network_1.AttributeType.ArrayInt32:
                 return reader.readArrayInt32();
-            case rpc_1.AttributeType.ArrayUint8:
+            case network_1.AttributeType.ArrayUint8:
                 return reader.readArrayUint8();
         }
         return undefined;
@@ -305,51 +305,51 @@ class Codec {
                     : `P_0x${param.nameHash.toString(16)}`;
                 let value;
                 switch (param.type) {
-                    case rpc_1.ParameterType.Uint32: {
+                    case network_1.ParameterType.Uint32: {
                         value = reader.readUint32();
                         break;
                     }
-                    case rpc_1.ParameterType.Int32: {
+                    case network_1.ParameterType.Int32: {
                         value = reader.readInt32();
                         break;
                     }
-                    case rpc_1.ParameterType.Float: {
+                    case network_1.ParameterType.Float: {
                         value = reader.readFloat();
                         break;
                     }
-                    case rpc_1.ParameterType.String: {
+                    case network_1.ParameterType.String: {
                         value = reader.readString();
                         break;
                     }
-                    case rpc_1.ParameterType.Uint64: {
+                    case network_1.ParameterType.Uint64: {
                         value = reader.readUint64();
                         break;
                     }
-                    case rpc_1.ParameterType.Int64: {
+                    case network_1.ParameterType.Int64: {
                         value = reader.readInt64();
                         break;
                     }
-                    case rpc_1.ParameterType.Uint16: {
+                    case network_1.ParameterType.Uint16: {
                         value = reader.readUint16();
                         break;
                     }
-                    case rpc_1.ParameterType.Int16: {
+                    case network_1.ParameterType.Int16: {
                         value = reader.readInt16();
                         break;
                     }
-                    case rpc_1.ParameterType.Uint8: {
+                    case network_1.ParameterType.Uint8: {
                         value = reader.readUint8();
                         break;
                     }
-                    case rpc_1.ParameterType.Int8: {
+                    case network_1.ParameterType.Int8: {
                         value = reader.readInt8();
                         break;
                     }
-                    case rpc_1.ParameterType.VectorUint8: {
+                    case network_1.ParameterType.VectorUint8: {
                         value = reader.readUint8Vector2();
                         break;
                     }
-                    case rpc_1.ParameterType.CompressedString: {
+                    case network_1.ParameterType.CompressedString: {
                         value = reader.readCompressedString();
                         break;
                     }
@@ -358,7 +358,7 @@ class Codec {
                     obj[fieldName] = value;
                     if (match.Key !== null)
                         obj[fieldName] ^= match.Key;
-                    if (match.Type === rpc_1.ParameterType.Float)
+                    if (match.Type === network_1.ParameterType.Float)
                         obj[fieldName] /= 100;
                 }
             }
@@ -379,47 +379,47 @@ class Codec {
                 if (match.Key !== null)
                     paramData ^= match.Key;
                 switch (match.Type) {
-                    case rpc_1.ParameterType.Uint32: {
+                    case network_1.ParameterType.Uint32: {
                         writer.writeUint32(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Int32: {
+                    case network_1.ParameterType.Int32: {
                         writer.writeInt32(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Float: {
+                    case network_1.ParameterType.Float: {
                         writer.writeFloat(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.String: {
+                    case network_1.ParameterType.String: {
                         writer.writeString(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Uint64: {
+                    case network_1.ParameterType.Uint64: {
                         writer.writeUint64(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Int64: {
+                    case network_1.ParameterType.Int64: {
                         writer.writeInt64(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Uint16: {
+                    case network_1.ParameterType.Uint16: {
                         writer.writeUint16(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Int16: {
+                    case network_1.ParameterType.Int16: {
                         writer.writeInt16(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Uint8: {
+                    case network_1.ParameterType.Uint8: {
                         writer.writeUint8(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.Int8: {
+                    case network_1.ParameterType.Int8: {
                         writer.writeInt8(paramData);
                         break;
                     }
-                    case rpc_1.ParameterType.VectorUint8: {
+                    case network_1.ParameterType.VectorUint8: {
                         writer.writeUint8Vector2(paramData);
                         break;
                     }

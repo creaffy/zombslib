@@ -52,40 +52,17 @@ The server will begin sending you entity updates once you've delivered it SetPla
 ```ts
 // Iterating players
 game.on("EntityUpdate", (update: EntityUpdate) => {
-    for (const [uid, entity] of game.getEntityList()) {
-        if (entity.modelHash === ModelHash.PlayerHash) {
-            // ...
-        }
+    for (const [uid, entity] of game.getEntitiesByType(
+        EntityType.PlayerEntity
+    )) {
+        // ...
     }
 });
 
 // Echo example
 game.on("ReceiveChatMessageRpc", (rpc: ReceiveChatMessageRpc) => {
-    if (rpc.uid !== game.getUid()) {
+    if (rpc.uid !== game.getMyUid()) {
         game.sendChatMessageRpc("Local", rpc.message);
     }
 });
 ```
-
-## Future goals
-
--   Platform support:
-
-    -   Support multiple mapping files,
-    -   Emulate anticheat's behavior (Windows).
-
--   RPC support:
-
-    -   Add an auto pseudo-decoder for unknown RPC's not listed in the supplied mapping.
-
--   Protocol support:
-
-    -   Allow for game server connection over UDP.
-
--   API support:
-
-    -   Add a complete module to make utilizing game's REST API easier.
-
--   Documentation:
-
-    -   Create a detailed documentation of Mason, ZR API, in-game protocol and all their components.

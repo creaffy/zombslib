@@ -1,9 +1,9 @@
 import { EventEmitter } from "node:events";
 import { ApiServer } from "../types/api";
-import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityType, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc, Vector2 } from "../types/rpc";
+import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityType, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc, Vector2 } from "../types/network";
 import { SchemaAmmo, SchemaBuilding, SchemaEmote, SchemaGas, SchemaGeneral, SchemaGunGameGun, SchemaHealingItem, SchemaLoadout, SchemaMap, SchemaModifier, SchemaNpc, SchemaPlayer, SchemaPlayerBuilding, SchemaProjectile, SchemaProp, SchemaTier, SchemaVehicle, SchemaWeapon, SchemaZombie } from "../types/schema";
 interface GameEvents {
-    RawData: (data: ArrayBuffer) => void;
+    RawData: (data: Uint8Array) => void;
     Rpc: (name: string, rpc: object) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
@@ -68,11 +68,11 @@ export declare class Game extends EventEmitter {
     send(data: Uint8Array | undefined): void;
     shutdown(): void;
     getEnterWorldResponse(): EnterWorldResponse;
-    getEntityList(): Map<number, import("../types/rpc").NetworkEntity>;
-    getEntitiesByType(type: EntityType): Map<number, import("../types/rpc").NetworkEntity>;
+    getEntityList(): Map<number, import("../types/network").NetworkEntity>;
+    getEntitiesByType(type: EntityType): Map<number, import("../types/network").NetworkEntity>;
     getMyUid(): number;
-    getEntityByUid(uid: number): import("../types/rpc").NetworkEntity | undefined;
-    getPlayerByName(name: string): import("../types/rpc").NetworkEntity | undefined;
+    getEntityByUid(uid: number): import("../types/network").NetworkEntity | undefined;
+    getPlayerByName(name: string): import("../types/network").NetworkEntity | undefined;
     toServerPos(worldPos: Vector2): Vector2;
     toWorldPos(serverPos: Vector2): Vector2;
     acToServerRpc(data: number[]): void;
