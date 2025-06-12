@@ -4,7 +4,7 @@ import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, Comp
 import { SchemaAmmo, SchemaBuilding, SchemaEmote, SchemaGas, SchemaGeneral, SchemaGunGameGun, SchemaHealingItem, SchemaLoadout, SchemaMap, SchemaModifier, SchemaNpc, SchemaPlayer, SchemaPlayerBuilding, SchemaProjectile, SchemaProp, SchemaTier, SchemaVehicle, SchemaWeapon, SchemaZombie } from "../types/schema";
 interface GameEvents {
     RawData: (data: ArrayBuffer) => void;
-    Rpc: (rpc: object) => void;
+    Rpc: (rpc: object, name: string) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
     ACToClientRpc: (rpc: ACToClientRpc) => void;

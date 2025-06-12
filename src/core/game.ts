@@ -67,7 +67,7 @@ import {
 
 interface GameEvents {
     RawData: (data: ArrayBuffer) => void; // Any packet
-    Rpc: (rpc: object) => void; // Any rpc
+    Rpc: (rpc: object, name: string) => void; // Any rpc
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
 
@@ -210,16 +210,16 @@ export class Game extends EventEmitter {
                         new Uint8Array(data)
                     );
 
-                    this.emit("Rpc", decrypedData);
-
                     const definition = this.codec.enterWorldResponse.rpcs!.find(
                         (rpc) => rpc.index === decrypedData[1]
                     );
 
                     const rpc = this.codec.decodeRpc(definition!, decrypedData);
 
-                    if (rpc !== undefined && rpc.name !== null)
+                    if (rpc !== undefined && rpc.name !== null) {
+                        this.emit("Rpc", rpc.data, rpc.name);
                         this.emit(rpc.name, rpc.data);
+                    }
 
                     break;
                 }

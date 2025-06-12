@@ -44,11 +44,12 @@ class Game extends node_events_1.EventEmitter {
                 }
                 case rpc_1.PacketId.Rpc: {
                     const decrypedData = this.codec.cryptRpc(new Uint8Array(data));
-                    this.emit("Rpc", decrypedData);
                     const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
                     const rpc = this.codec.decodeRpc(definition, decrypedData);
-                    if (rpc !== undefined && rpc.name !== null)
+                    if (rpc !== undefined && rpc.name !== null) {
+                        this.emit("Rpc", rpc.data, rpc.name);
                         this.emit(rpc.name, rpc.data);
+                    }
                     break;
                 }
             }
