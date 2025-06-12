@@ -29,7 +29,7 @@ export enum EntityType {
     PlayerEntity = 1112845922,
     CrystalEntity = 1491795389,
     VehicleEntity = 1561019755,
-    PhysicsEntity = 2383969827, // 3647459127 Hash
+    PhysicsEntity = 2383969827,
     PlaneEntity = 2414203739,
     ItemEntity = 2817316692,
     ProjectileEntity = 3067001770,

@@ -43,12 +43,34 @@ import {
     UpdateMarkerRpc,
     Vector2,
 } from "../types/rpc";
+import {
+    SchemaAmmo,
+    SchemaBuilding,
+    SchemaEmote,
+    SchemaGas,
+    SchemaGeneral,
+    SchemaGunGameGun,
+    SchemaHealingItem,
+    SchemaLoadout,
+    SchemaMap,
+    SchemaModifier,
+    SchemaNpc,
+    SchemaPlayer,
+    SchemaPlayerBuilding,
+    SchemaProjectile,
+    SchemaProp,
+    SchemaTier,
+    SchemaVehicle,
+    SchemaWeapon,
+    SchemaZombie,
+} from "../types/schema";
 
 interface GameEvents {
-    RawData: (data: ArrayBuffer) => void;
+    RawData: (data: ArrayBuffer) => void; // Any packet
+    Rpc: (rpc: object) => void; // Any rpc
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
-    Rpc: (rpc: object) => void;
+
     ACToClientRpc: (rpc: ACToClientRpc) => void;
     DamageRpc: (rpc: DamageRpc) => void;
     DeadRpc: (rpc: DeadRpc) => void;
@@ -80,6 +102,27 @@ interface GameEvents {
     DataRpc: (rpc: DataRpc) => void;
     PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
     SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
+
+    SchemaAmmos: (schemas: SchemaAmmo[]) => void;
+    SchemaBuildings: (schemas: SchemaBuilding[]) => void;
+    SchemaEmotes: (schemas: SchemaEmote[]) => void;
+    SchemaGas: (schemas: SchemaGas[]) => void;
+    SchemaGeneral: (schema: SchemaGeneral) => void;
+    SchemaGunGameGuns: (schemas: SchemaGunGameGun[]) => void;
+    SchemaHealingItems: (schemas: SchemaHealingItem[]) => void;
+    SchemaLoadouts: (schemas: SchemaLoadout[]) => void;
+    SchemaMaps: (schemas: SchemaMap[]) => void;
+    SchemaModifiers: (schemas: SchemaModifier[]) => void;
+    SchemaNpcs: (schemas: SchemaNpc[]) => void;
+    SchemaPlane: (schema: object) => void;
+    SchemaPlayer: (schema: SchemaPlayer[]) => void;
+    SchemaPlayerBuildings: (schemas: SchemaPlayerBuilding[]) => void;
+    SchemaProjectiles: (schemas: SchemaProjectile[]) => void;
+    SchemaProps: (schemas: SchemaProp[]) => void;
+    SchemaTiers: (schemas: SchemaTier[]) => void;
+    SchemaVehicles: (schemas: SchemaVehicle[]) => void;
+    SchemaWeapons: (schemas: SchemaWeapon[]) => void;
+    SchemaZombies: (schemas: SchemaZombie[]) => void;
 }
 
 export class Game extends EventEmitter {
@@ -185,6 +228,10 @@ export class Game extends EventEmitter {
 
         this.socket.on("close", (code) => {
             this.emit("close", code);
+        });
+
+        this.on("CompressedDataRpc", (rpc: CompressedDataRpc) => {
+            this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
         });
     }
 

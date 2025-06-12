@@ -1,11 +1,12 @@
 import { EventEmitter } from "node:events";
 import { ApiServer } from "../types/api";
 import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityType, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc, Vector2 } from "../types/rpc";
+import { SchemaAmmo, SchemaBuilding, SchemaEmote, SchemaGas, SchemaGeneral, SchemaGunGameGun, SchemaHealingItem, SchemaLoadout, SchemaMap, SchemaModifier, SchemaNpc, SchemaPlayer, SchemaPlayerBuilding, SchemaProjectile, SchemaProp, SchemaTier, SchemaVehicle, SchemaWeapon, SchemaZombie } from "../types/schema";
 interface GameEvents {
     RawData: (data: ArrayBuffer) => void;
+    Rpc: (rpc: object) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
-    Rpc: (rpc: object) => void;
     ACToClientRpc: (rpc: ACToClientRpc) => void;
     DamageRpc: (rpc: DamageRpc) => void;
     DeadRpc: (rpc: DeadRpc) => void;
@@ -37,6 +38,26 @@ interface GameEvents {
     DataRpc: (rpc: DataRpc) => void;
     PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
     SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
+    SchemaAmmos: (schemas: SchemaAmmo[]) => void;
+    SchemaBuildings: (schemas: SchemaBuilding[]) => void;
+    SchemaEmotes: (schemas: SchemaEmote[]) => void;
+    SchemaGas: (schemas: SchemaGas[]) => void;
+    SchemaGeneral: (schema: SchemaGeneral) => void;
+    SchemaGunGameGuns: (schemas: SchemaGunGameGun[]) => void;
+    SchemaHealingItems: (schemas: SchemaHealingItem[]) => void;
+    SchemaLoadouts: (schemas: SchemaLoadout[]) => void;
+    SchemaMaps: (schemas: SchemaMap[]) => void;
+    SchemaModifiers: (schemas: SchemaModifier[]) => void;
+    SchemaNpcs: (schemas: SchemaNpc[]) => void;
+    SchemaPlane: (schema: object) => void;
+    SchemaPlayer: (schema: SchemaPlayer[]) => void;
+    SchemaPlayerBuildings: (schemas: SchemaPlayerBuilding[]) => void;
+    SchemaProjectiles: (schemas: SchemaProjectile[]) => void;
+    SchemaProps: (schemas: SchemaProp[]) => void;
+    SchemaTiers: (schemas: SchemaTier[]) => void;
+    SchemaVehicles: (schemas: SchemaVehicle[]) => void;
+    SchemaWeapons: (schemas: SchemaWeapon[]) => void;
+    SchemaZombies: (schemas: SchemaZombie[]) => void;
 }
 export declare class Game extends EventEmitter {
     private socket;

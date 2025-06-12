@@ -56,6 +56,9 @@ class Game extends node_events_1.EventEmitter {
         this.socket.on("close", (code) => {
             this.emit("close", code);
         });
+        this.on("CompressedDataRpc", (rpc) => {
+            this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
+        });
     }
     send(data) {
         if (data)

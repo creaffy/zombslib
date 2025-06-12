@@ -19,3 +19,4 @@ __exportStar(require("./core/game"), exports);
 __exportStar(require("./core/mason"), exports);
 __exportStar(require("./types/api"), exports);
 __exportStar(require("./types/rpc"), exports);
+__exportStar(require("./types/schema"), exports);
