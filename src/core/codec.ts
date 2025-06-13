@@ -148,7 +148,7 @@ export class Codec {
     }
 
     public validateProofOfWork(
-        powBuffer: Buffer,
+        proofOfWork: Uint8Array,
         endpoint: string,
         difficulty: number = 13,
         size: number = 24
@@ -198,6 +198,7 @@ export class Codec {
             },
         };
 
+        const powBuffer = Buffer.from(proofOfWork);
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
 
         for (const [platformName, { hashState, logic }] of Object.entries(

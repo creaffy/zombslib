@@ -9,7 +9,7 @@ export declare class Codec {
     constructor(path: string);
     computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array): void;
     generateProofOfWork(endpoint: string, platform?: string, difficulty?: number, size?: number): Buffer<ArrayBuffer>;
-    validateProofOfWork(powBuffer: Buffer, endpoint: string, difficulty?: number, size?: number): {
+    validateProofOfWork(proofOfWork: Uint8Array, endpoint: string, difficulty?: number, size?: number): {
         valid: boolean;
         platform: string | null;
     };

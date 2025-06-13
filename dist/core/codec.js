@@ -106,7 +106,7 @@ class Codec {
             }
         }
     }
-    validateProofOfWork(powBuffer, endpoint, difficulty = 13, size = 24) {
+    validateProofOfWork(proofOfWork, endpoint, difficulty = 13, size = 24) {
         const platforms = {
             Windows: {
                 hashState: {
@@ -151,6 +151,7 @@ class Codec {
                 },
             },
         };
+        const powBuffer = Buffer.from(proofOfWork);
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
         for (const [platformName, { hashState, logic }] of Object.entries(platforms)) {
             const fullBuffer = Buffer.alloc(size + pathBytes.length);
