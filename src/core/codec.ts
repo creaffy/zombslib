@@ -6,6 +6,7 @@ import { BinaryWriter } from "../utility/writer";
 import {
     AttributeType,
     EnterWorldResponse,
+    EnterWorldRequest,
     EntityMap,
     EntityMapAttribute,
     Rpc,
@@ -594,6 +595,23 @@ export class Codec {
         }
 
         return entityUpdate;
+    }
+
+    public decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest {
+        const reader = new BinaryReader(data, 1);
+        const displayName = reader.readString();
+        const version = reader.readUint32();
+        const proofOfWork = new Uint8Array(reader.readArrayUint8());
+        return { displayName, version, proofOfWork };
+    }
+
+    public encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array {
+        const writer = new BinaryWriter(0);
+        writer.writeUint8(PacketId.EnterWorld);
+        writer.writeString(request.displayName);
+        writer.writeUint32(request.version);
+        writer.writeArrayUint8(request.proofOfWork);
+        return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
     public encodeEntityUpdate(update: EntityUpdate): Uint8Array {

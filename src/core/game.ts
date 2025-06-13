@@ -15,6 +15,7 @@ import {
     DeadRpc,
     EndOfGameStatsRpc,
     EnterWorldResponse,
+    EnterWorldRequest,
     EntityType,
     EntityUpdate,
     GameStatusRpc,
@@ -155,23 +156,14 @@ export class Game extends EventEmitter {
                 server.discreteFourierTransformBias
             );
 
-            const enterWorldRequest = Buffer.alloc(
-                7 + Buffer.byteLength(displayName) + pow.length
+            const enterWorldRequest: EnterWorldRequest = {
+                displayName: displayName,
+                version: this.codec.rpcMapping.Codec,
+                proofOfWork: pow,
+            };
+            this.socket.send(
+                this.codec.encodeEnterWorldRequest(enterWorldRequest)
             );
-            enterWorldRequest.writeUint8(4, 0);
-            enterWorldRequest.writeUint8(Buffer.byteLength(displayName), 1);
-            enterWorldRequest.write(displayName, 2);
-            enterWorldRequest.writeUint32LE(
-                this.codec.rpcMapping.Codec,
-                2 + Buffer.byteLength(displayName)
-            );
-            enterWorldRequest.writeUint8(
-                pow.length,
-                6 + Buffer.byteLength(displayName)
-            );
-            enterWorldRequest.set(pow, 7 + Buffer.byteLength(displayName));
-
-            this.socket.send(new Uint8Array(enterWorldRequest));
 
             this.codec.computeRpcKey(
                 this.codec.rpcMapping.Codec,
