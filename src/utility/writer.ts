@@ -1,4 +1,5 @@
 import { Vector2 } from "../types/network";
+import { gzipSync } from "zlib";
 
 export class BinaryWriter {
     public view: DataView;
@@ -61,6 +62,17 @@ export class BinaryWriter {
         this.checkBufferSize(length);
         for (let i = 0; i < length; i++) {
             this.view.setUint8(this.offset + i, value.charCodeAt(i));
+        }
+        this.offset += length;
+    }
+
+    writeCompressedString(value: string) {
+        const compressed = gzipSync(value);
+        const length = compressed.length;
+        this.writeUint32(length);
+        this.checkBufferSize(length);
+        for (let i = 0; i < length; i++) {
+            this.view.setUint8(this.offset + i, compressed[i]);
         }
         this.offset += length;
     }
