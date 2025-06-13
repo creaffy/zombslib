@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BinaryWriter = void 0;
+const zlib_1 = require("zlib");
 class BinaryWriter {
     constructor(length) {
         this.view = new DataView(new ArrayBuffer(length));
@@ -51,6 +52,16 @@ class BinaryWriter {
         this.checkBufferSize(length);
         for (let i = 0; i < length; i++) {
             this.view.setUint8(this.offset + i, value.charCodeAt(i));
+        }
+        this.offset += length;
+    }
+    writeCompressedString(value) {
+        const compressed = (0, zlib_1.gzipSync)(value);
+        const length = compressed.length;
+        this.writeUint32(length);
+        this.checkBufferSize(length);
+        for (let i = 0; i < length; i++) {
+            this.view.setUint8(this.offset + i, compressed[i]);
         }
         this.offset += length;
     }

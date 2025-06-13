@@ -131,6 +131,11 @@ export interface EnterWorldResponse {
     udpCookie?: number;
     udpPort?: number;
 }
+export interface EnterWorldRequest {
+    displayName: string;
+    version: number;
+    proofOfWork: Uint8Array;
+}
 export interface EntityUpdate {
     tick?: number;
     createdEntities?: number[];
