@@ -472,21 +472,6 @@ class Codec {
         }
         return entityUpdate;
     }
-    decodeEnterWorldRequest(data) {
-        const reader = new reader_1.BinaryReader(data, 1);
-        const displayName = reader.readString();
-        const version = reader.readUint32();
-        const proofOfWork = new Uint8Array(reader.readArrayUint8());
-        return { displayName, version, proofOfWork };
-    }
-    encodeEnterWorldRequest(request) {
-        const writer = new writer_1.BinaryWriter(0);
-        writer.writeUint8(network_1.PacketId.EnterWorld);
-        writer.writeString(request.displayName);
-        writer.writeUint32(request.version);
-        writer.writeArrayUint8(request.proofOfWork);
-        return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
-    }
     encodeEntityUpdate(update) {
         const writer = new writer_1.BinaryWriter(0);
         writer.writeUint8(network_1.PacketId.EntityUpdate);
@@ -565,6 +550,21 @@ class Codec {
                 }
             }
         }
+        return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
+    }
+    decodeEnterWorldRequest(data) {
+        const reader = new reader_1.BinaryReader(data, 1);
+        const displayName = reader.readString();
+        const version = reader.readUint32();
+        const proofOfWork = new Uint8Array(reader.readArrayUint8());
+        return { displayName, version, proofOfWork };
+    }
+    encodeEnterWorldRequest(request) {
+        const writer = new writer_1.BinaryWriter(0);
+        writer.writeUint8(network_1.PacketId.EnterWorld);
+        writer.writeString(request.displayName);
+        writer.writeUint32(request.version);
+        writer.writeArrayUint8(request.proofOfWork);
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
     decodeRpc(def, data) {

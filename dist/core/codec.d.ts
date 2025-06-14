@@ -19,9 +19,9 @@ export declare class Codec {
     decodeEnterWorldResponse(data: Uint8Array): EnterWorldResponse;
     encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array;
     decodeEntityUpdate(data: Uint8Array): EntityUpdate;
+    encodeEntityUpdate(update: EntityUpdate): Uint8Array;
     decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest;
     encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array;
-    encodeEntityUpdate(update: EntityUpdate): Uint8Array;
     decodeRpc(def: Rpc, data: Uint8Array): {
         name: string | null;
         data: {};
