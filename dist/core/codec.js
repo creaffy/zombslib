@@ -472,81 +472,67 @@ class Codec {
         }
         return entityUpdate;
     }
-    encodeEntityUpdate(update) {
+    encodeEntityUpdate(entityUpdate) {
         const writer = new writer_1.BinaryWriter(0);
         writer.writeUint8(network_1.PacketId.EntityUpdate);
-        writer.writeUint32(update.tick);
-        writer.writeInt8(update.deletedEntities?.length ?? 0);
-        for (const uid of update.deletedEntities ?? []) {
+        writer.writeUint32(entityUpdate.tick);
+        writer.writeInt8(entityUpdate.deletedEntities.length);
+        for (const uid of entityUpdate.deletedEntities) {
             writer.writeUint32(uid);
         }
-        const createdByMap = new Map();
-        for (const uid of update.createdEntities ?? []) {
-            const entity = this.entityList.get(uid);
-            if (!entity)
-                continue;
-            if (!createdByMap.has(entity.type)) {
-                createdByMap.set(entity.type, []);
-            }
-            createdByMap.get(entity.type).push(uid);
-        }
-        writer.writeInt8(createdByMap.size);
-        for (const [entityMapId, uids] of createdByMap.entries()) {
-            writer.writeInt8(uids.length);
-            writer.writeUint32(entityMapId);
-            for (const uid of uids) {
+        const entityMaps = this.entityMaps.filter((e) => entityUpdate.createdEntities.some((uid) => this.entityList.get(uid)?.type === e.id));
+        writer.writeInt8(entityMaps.length);
+        for (const entityMap of entityMaps) {
+            const brandNewEntities = entityUpdate.createdEntities.filter((uid) => this.entityList.get(uid)?.type === entityMap.id);
+            writer.writeInt8(brandNewEntities.length);
+            writer.writeUint32(entityMap.id);
+            for (const uid of brandNewEntities) {
                 writer.writeUint32(uid);
             }
         }
         for (const entityMap of this.entityMaps) {
-            if (!entityMap.sortedUids || entityMap.sortedUids.length === 0)
+            const uids = entityMap.sortedUids || [];
+            const filteredUids = uids.filter((uid) => !entityUpdate.deletedEntities.includes(uid));
+            if (filteredUids.length === 0)
                 continue;
             writer.writeUint32(entityMap.id);
-            for (let i = 0; i < Math.ceil(entityMap.sortedUids.length / 8); i++) {
-                let flag = 0;
-                for (let j = 0; j < 8; j++) {
+            for (let i = 0; i < Math.ceil(filteredUids.length / 8); ++i) {
+                let byte = 0;
+                for (let j = 0; j < 8; ++j) {
                     const index = i * 8 + j;
-                    if (index >= entityMap.sortedUids.length)
+                    if (index >= filteredUids.length)
                         break;
-                    const uid = entityMap.sortedUids[index];
+                    const uid = filteredUids[index];
                     if (!this.entityList.has(uid)) {
-                        flag |= 1 << j;
+                        byte |= 1 << j;
                     }
                 }
-                writer.writeUint8(flag);
+                writer.writeUint8(byte);
             }
-            for (let i = 0; i < entityMap.sortedUids.length; i++) {
-                const uid = entityMap.sortedUids[i];
+            for (let i = 0; i < filteredUids.length; ++i) {
+                const uid = filteredUids[i];
                 if (!this.entityList.has(uid))
                     continue;
-                const entity = this.entityList.get(uid);
-                const tick = entity.tick ?? {};
-                const attributeFlags = [];
-                for (let j = 0; j < entityMap.attributes.length; j++) {
+                const tick = this.entityList.get(uid).tick;
+                const flags = [];
+                const values = [];
+                for (let j = 0; j < Math.ceil(entityMap.attributes.length / 8); ++j) {
+                    flags.push(0);
+                }
+                for (let j = 0; j < entityMap.attributes.length; ++j) {
                     const attr = entityMap.attributes[j];
                     const key = tickFieldMap.get(attr.nameHash) ??
                         `A_0x${attr.nameHash.toString(16)}`;
-                    const value = tick[key];
-                    if (value !== undefined) {
-                        const flagIndex = Math.floor(j / 8);
-                        const bitIndex = j % 8;
-                        while (attributeFlags.length <= flagIndex) {
-                            attributeFlags.push(0);
-                        }
-                        attributeFlags[flagIndex] |= 1 << bitIndex;
+                    if (tick.hasOwnProperty(key)) {
+                        flags[Math.floor(j / 8)] |= 1 << j % 8;
+                        values.push({ type: attr.type, value: tick[key] });
                     }
                 }
-                for (const flag of attributeFlags) {
-                    writer.writeUint8(flag);
+                for (const f of flags) {
+                    writer.writeUint8(f);
                 }
-                for (let j = 0; j < entityMap.attributes.length; j++) {
-                    const attr = entityMap.attributes[j];
-                    const key = tickFieldMap.get(attr.nameHash) ??
-                        `A_0x${attr.nameHash.toString(16)}`;
-                    const value = tick[key];
-                    if (value !== undefined) {
-                        this.encodeEntityMapAttribute(writer, attr.type, value);
-                    }
+                for (const { type, value } of values) {
+                    this.encodeEntityMapAttribute(writer, type, value);
                 }
             }
         }
