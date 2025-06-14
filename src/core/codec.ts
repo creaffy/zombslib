@@ -17,6 +17,21 @@ import {
     PacketId,
 } from "../types/network";
 
+const ParameterSize = {
+    [ParameterType.Uint32]: 32,
+    [ParameterType.Int32]: 32,
+    [ParameterType.Float]: 32,
+    [ParameterType.String]: -1,
+    [ParameterType.Uint64]: 64,
+    [ParameterType.Int64]: 64,
+    [ParameterType.Uint16]: 16,
+    [ParameterType.Int16]: 16,
+    [ParameterType.Uint8]: 8,
+    [ParameterType.Int8]: 8,
+    [ParameterType.VectorUint8]: -1,
+    [ParameterType.CompressedString]: -1
+};
+
 export class Codec {
     private rpcKey = new Uint8Array(8);
     public entityMaps: EntityMap[] = [];
@@ -782,10 +797,27 @@ export class Codec {
                 }
 
                 if (match !== undefined) {
+                    const mask = (2 ** ParameterSize[match.Type] - 1);
+
                     obj[fieldName] = value;
-                    if (match.Key !== null) obj[fieldName] ^= match.Key;
-                    if (match.Type === ParameterType.Float)
-                        obj[fieldName] /= 100;
+                    if (match.Key !== null) (obj[fieldName] ^= match.Key) & mask;
+                    
+                    switch (match.Type) {
+                        case ParameterType.Float: {
+                            obj[fieldName] /= 100;
+                            break;
+                        }
+                        case ParameterType.Int16: {
+                            obj[fieldName] = obj[fieldName] >>> 0;
+                            if (obj[fieldName] > 32767) obj[fieldName] -= 65536;
+                            break;
+                        }
+                        case ParameterType.Int8: {
+                            obj[fieldName] = obj[fieldName] >>> 0;
+                            if (obj[fieldName] > 127) obj[fieldName] -= 256;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -812,9 +844,27 @@ export class Codec {
                         ? match.FieldName
                         : `P_0x${match.NameHash.toString(16)}`;
 
+                const mask = (2 ** ParameterSize[match.Type] - 1);
                 let paramData = data[fieldName];
 
-                if (match.Key !== null) paramData ^= match.Key;
+                switch (match.Type) {
+                    case ParameterType.Float: {
+                        paramData *= 100;
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 32767) paramData += 65536;
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 127) paramData += 256;
+                        break;
+                    }
+                }
+
+                if (match.Key !== null) (paramData ^= match.Key) & mask;
 
                 switch (match.Type) {
                     case ParameterType.Uint32: {
