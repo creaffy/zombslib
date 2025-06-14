@@ -71,7 +71,7 @@ interface GameEvents {
     Rpc: (name: string, rpc: object) => void; // Any rpc
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
-    /// --- Specific Rpcs ---
+    /// --- Rpcs ---
     ACToClientRpc: (rpc: ACToClientRpc) => void;
     DamageRpc: (rpc: DamageRpc) => void;
     DeadRpc: (rpc: DeadRpc) => void;
@@ -203,6 +203,7 @@ export class Game extends EventEmitter {
                 case PacketId.EntityUpdate: {
                     const entityUpdate = this.codec.decodeEntityUpdate(data2);
                     this.emit("EntityUpdate", entityUpdate);
+
                     break;
                 }
                 case PacketId.Rpc: {
@@ -282,7 +283,7 @@ export class Game extends EventEmitter {
         return { x: serverPos.x / 100, y: -serverPos.y / 100 } as Vector2;
     }
 
-    // --- Generated ---
+    // --- Rpcs ---
 
     public acToServerRpc(data: number[]) {
         this.send(this.codec.encodeRpc("ACToServerRpc", { data: data }));
