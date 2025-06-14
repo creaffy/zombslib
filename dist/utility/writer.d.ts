@@ -11,6 +11,7 @@ export declare class BinaryWriter {
     writeUint64(value: bigint): void;
     writeFloat(value: number): void;
     writeString(value: string): void;
+    writeCompressedString(value: string): void;
     writeUint8Vector2(value: Vector2): void;
     writeVector2(value: Vector2): void;
     writeArrayVector2(data: Vector2[]): void;

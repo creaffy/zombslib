@@ -6,6 +6,7 @@ import { BinaryWriter } from "../utility/writer";
 import {
     AttributeType,
     EnterWorldResponse,
+    EnterWorldRequest,
     EntityMap,
     EntityMapAttribute,
     Rpc,
@@ -13,11 +14,27 @@ import {
     NetworkEntity,
     EntityUpdate,
     ParameterType,
+    PacketId,
 } from "../types/network";
+
+const ParameterSize = {
+    [ParameterType.Uint32]: 32,
+    [ParameterType.Int32]: 32,
+    [ParameterType.Float]: 32,
+    [ParameterType.String]: -1,
+    [ParameterType.Uint64]: 64,
+    [ParameterType.Int64]: 64,
+    [ParameterType.Uint16]: 16,
+    [ParameterType.Int16]: 16,
+    [ParameterType.Uint8]: 8,
+    [ParameterType.Int8]: 8,
+    [ParameterType.VectorUint8]: -1,
+    [ParameterType.CompressedString]: -1
+};
 
 export class Codec {
     private rpcKey = new Uint8Array(8);
-    private entityMaps: EntityMap[] = [];
+    public entityMaps: EntityMap[] = [];
     public enterWorldResponse: EnterWorldResponse = {};
     public readonly rpcMapping: DumpedData;
     public readonly entityList = new Map<number, NetworkEntity>();
@@ -48,7 +65,7 @@ export class Codec {
     public generateProofOfWork(
         endpoint: string,
         platform: string = "Android",
-        difficulty: number = 16,
+        difficulty: number = 13,
         size: number = 24
     ): Buffer<ArrayBuffer> {
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
@@ -145,6 +162,94 @@ export class Codec {
         }
     }
 
+    public validateProofOfWork(
+        proofOfWork: Uint8Array,
+        endpoint: string,
+        difficulty: number = 13,
+        size: number = 24
+    ): { valid: boolean; platform: string | null } {
+        const platforms = {
+            Windows: {
+                hashState: {
+                    h0: 0xcde4bac7,
+                    h1: 0xb6217224,
+                    h2: 0x872a5994,
+                    h3: 0xcf538f47,
+                    h4: 0xec8dc5a1,
+                },
+                logic(buf: Buffer) {
+                    buf[7] |= 8;
+                    buf[6] &= 239;
+                    buf[3] &= 127;
+                },
+            },
+            Web: {
+                hashState: {
+                    h0: 0x04c82ad0,
+                    h1: 0x2beacb85,
+                    h2: 0x4ccc8e6b,
+                    h3: 0x849ad64a,
+                    h4: 0x57ada298,
+                },
+                logic(buf: Buffer) {
+                    buf[7] &= 247;
+                    buf[6] |= 16;
+                    buf[3] &= 127;
+                },
+            },
+            Android: {
+                hashState: {
+                    h0: 0xa9c9f023,
+                    h1: 0x14f071e7,
+                    h2: 0xc2d99914,
+                    h3: 0x8e8dda42,
+                    h4: 0xb8acc665,
+                },
+                logic(buf: Buffer) {
+                    buf[7] &= 247;
+                    buf[6] &= 239;
+                    buf[3] |= 128;
+                },
+            },
+        };
+
+        const powBuffer = Buffer.from(proofOfWork);
+        const pathBytes = Buffer.from("/" + endpoint, "utf8");
+
+        for (const [platformName, { hashState, logic }] of Object.entries(
+            platforms
+        )) {
+            const fullBuffer = Buffer.alloc(size + pathBytes.length);
+            powBuffer.copy(fullBuffer, 0, 0, size);
+            pathBytes.copy(fullBuffer, size);
+
+            logic(fullBuffer);
+
+            fullBuffer[4] &= 253;
+            fullBuffer[2] &= 254;
+            fullBuffer[5] &= 223;
+            fullBuffer[8] |= 32;
+            fullBuffer[9] &= 251;
+
+            const hash = sha1.create();
+            Object.assign(hash, hashState);
+            hash.update(fullBuffer);
+
+            const digest = Buffer.from(hash.digest()).swap32();
+
+            let d = 0;
+            while (true) {
+                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) break;
+                d++;
+                if (d === difficulty) {
+                    return { valid: true, platform: platformName };
+                }
+            }
+        }
+
+        return { valid: false, platform: null };
+    }
+
     public cryptRpc(data: Uint8Array): Uint8Array {
         let rpc = new Uint8Array(data);
 
@@ -197,6 +302,71 @@ export class Codec {
                 return reader.readArrayUint8();
         }
         return undefined;
+    }
+
+    encodeEntityMapAttribute(
+        writer: BinaryWriter,
+        type: AttributeType | undefined,
+        value: any
+    ) {
+        switch (type) {
+            case AttributeType.Uint32:
+                writer.writeUint32(value || 0);
+                break;
+            case AttributeType.Int32:
+                writer.writeInt32(value || 0);
+                break;
+            case AttributeType.Float:
+                writer.writeFloat(value !== null ? Math.round(value * 100) : 0);
+                break;
+            case AttributeType.String:
+                writer.writeString(value || "");
+                break;
+            case AttributeType.Vector2:
+                if (value) {
+                    writer.writeVector2({
+                        x: Math.round(value.x * 100),
+                        y: Math.round(value.y * -100),
+                    });
+                } else {
+                    writer.writeVector2({ x: 0, y: 0 });
+                }
+                break;
+            case AttributeType.ArrayVector2:
+                if (Array.isArray(value)) {
+                    const vectors = value.map((v) => ({
+                        x: Math.round(v.x * 100),
+                        y: Math.round(v.y * -100),
+                    }));
+                    writer.writeArrayVector2(vectors);
+                } else {
+                    writer.writeArrayVector2([]);
+                }
+                break;
+            case AttributeType.ArrayUint32:
+                writer.writeArrayUint32(value || []);
+                break;
+            case AttributeType.Uint16:
+                writer.writeUint16(value || 0);
+                break;
+            case AttributeType.Uint8:
+                writer.writeUint8(value || 0);
+                break;
+            case AttributeType.Int16:
+                writer.writeInt16(value || 0);
+                break;
+            case AttributeType.Int8:
+                writer.writeInt8(value || 0);
+                break;
+            case AttributeType.ArrayInt32:
+                writer.writeArrayInt32(value || []);
+                break;
+            case AttributeType.ArrayUint8:
+                writer.writeArrayUint8(value || []);
+                break;
+            default:
+                writer.writeUint32(0);
+        }
     }
 
     public decodeEnterWorldResponse(data: Uint8Array) {
@@ -280,6 +450,66 @@ export class Codec {
         this.entityMaps = enterWorldResponse.entities;
 
         return enterWorldResponse;
+    }
+
+    public encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array {
+        const writer = new BinaryWriter(0);
+
+        writer.writeUint8(PacketId.EnterWorld);
+        writer.writeUint32(response.version!);
+        writer.writeUint32(response.allowed!);
+        writer.writeUint32(response.uid!);
+        writer.writeUint32(response.startingTick!);
+        writer.writeUint32(response.tickRate!);
+        writer.writeUint32(response.effectiveTickRate!);
+        writer.writeUint32(response.players!);
+        writer.writeUint32(response.maxPlayers!);
+        writer.writeUint32(response.chatChannel!);
+        writer.writeString(response.effectiveDisplayName!);
+        writer.writeInt32(response.x1!);
+        writer.writeInt32(response.y1!);
+        writer.writeInt32(response.x2!);
+        writer.writeInt32(response.y2!);
+
+        writer.writeUint32(response.entities!.length);
+        for (const entity of response.entities!) {
+            writer.writeUint32(entity.id!);
+
+            writer.writeUint32(entity.attributes!.length);
+            for (const attr of entity.attributes!) {
+                writer.writeUint32(attr.nameHash!);
+                writer.writeUint32(attr.type!);
+
+                const key =
+                    tickFieldMap.get(attr.nameHash!) ??
+                    `A_0x${attr.nameHash!.toString(16)}`;
+                this.encodeEntityMapAttribute(
+                    writer,
+                    attr.type,
+                    entity.defaultTick![key]
+                );
+            }
+        }
+
+        writer.writeUint32(response.rpcs!.length);
+        for (const rpc of response.rpcs!) {
+            writer.writeUint32(rpc.nameHash!);
+            writer.writeUint8(rpc.parameters!.length);
+            writer.writeUint8(rpc.isArray ? 1 : 0);
+            for (const param of rpc.parameters!) {
+                writer.writeUint32(param.nameHash!);
+                writer.writeUint8(param.type!);
+            }
+        }
+
+        if (response.mode !== undefined) writer.writeString(response.mode);
+        if (response.map !== undefined) writer.writeString(response.map);
+        if (response.udpCookie !== undefined)
+            writer.writeUint32(response.udpCookie);
+        if (response.udpPort !== undefined)
+            writer.writeUint32(response.udpPort);
+
+        return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
     public decodeEntityUpdate(data: Uint8Array) {
@@ -383,6 +613,114 @@ export class Codec {
         return entityUpdate;
     }
 
+    public encodeEntityUpdate(entityUpdate: EntityUpdate): Uint8Array {
+        const writer = new BinaryWriter(0);
+
+        writer.writeUint8(PacketId.EntityUpdate);
+        writer.writeUint32(entityUpdate.tick!);
+
+        writer.writeInt8(entityUpdate.deletedEntities!.length);
+        for (const uid of entityUpdate.deletedEntities!) {
+            writer.writeUint32(uid);
+        }
+
+        const entityMaps = this.entityMaps.filter((e) =>
+            entityUpdate.createdEntities!.some(
+                (uid) => this.entityList.get(uid)?.type === e.id
+            )
+        );
+        writer.writeInt8(entityMaps.length);
+
+        for (const entityMap of entityMaps) {
+            const brandNewEntities = entityUpdate.createdEntities!.filter(
+                (uid) => this.entityList.get(uid)?.type === entityMap.id
+            );
+            writer.writeInt8(brandNewEntities.length);
+            writer.writeUint32(entityMap.id!);
+            for (const uid of brandNewEntities) {
+                writer.writeUint32(uid);
+            }
+        }
+
+        for (const entityMap of this.entityMaps) {
+            const uids = entityMap.sortedUids || [];
+            const filteredUids = uids.filter(
+                (uid) => !entityUpdate.deletedEntities!.includes(uid)
+            );
+            if (filteredUids.length === 0) continue;
+
+            writer.writeUint32(entityMap.id!);
+
+            for (let i = 0; i < Math.ceil(filteredUids.length / 8); ++i) {
+                let byte = 0;
+                for (let j = 0; j < 8; ++j) {
+                    const index = i * 8 + j;
+                    if (index >= filteredUids.length) break;
+                    const uid = filteredUids[index];
+                    if (!this.entityList.has(uid)) {
+                        byte |= 1 << j;
+                    }
+                }
+                writer.writeUint8(byte);
+            }
+
+            for (let i = 0; i < filteredUids.length; ++i) {
+                const uid = filteredUids[i];
+                if (!this.entityList.has(uid)) continue;
+
+                const tick = this.entityList.get(uid)!.tick!;
+                const flags: number[] = [];
+                const values: any[] = [];
+
+                for (
+                    let j = 0;
+                    j < Math.ceil(entityMap.attributes!.length / 8);
+                    ++j
+                ) {
+                    flags.push(0);
+                }
+
+                for (let j = 0; j < entityMap.attributes!.length; ++j) {
+                    const attr = entityMap.attributes![j];
+                    const key =
+                        tickFieldMap.get(attr.nameHash!) ??
+                        `A_0x${attr.nameHash!.toString(16)}`;
+                    if (tick.hasOwnProperty(key)) {
+                        flags[Math.floor(j / 8)] |= 1 << j % 8;
+                        values.push({ type: attr.type!, value: tick[key] });
+                    }
+                }
+
+                for (const f of flags) {
+                    writer.writeUint8(f);
+                }
+
+                for (const { type, value } of values) {
+                    this.encodeEntityMapAttribute(writer, type, value);
+                }
+            }
+        }
+
+        return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
+    }
+
+    public decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest {
+        const reader = new BinaryReader(data, 1);
+        const displayName = reader.readString();
+        const version = reader.readUint32();
+        const proofOfWork = new Uint8Array(reader.readArrayUint8());
+        return { displayName, version, proofOfWork };
+    }
+
+    public encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array {
+        const writer = new BinaryWriter(0);
+        writer.writeUint8(PacketId.EnterWorld);
+        writer.writeString(request.displayName);
+        writer.writeUint32(request.version);
+        writer.writeArrayUint8(request.proofOfWork);
+        return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
+    }
+
     public decodeRpc(def: Rpc, data: Uint8Array) {
         const reader = new BinaryReader(data, 5);
         let obj = {};
@@ -459,10 +797,27 @@ export class Codec {
                 }
 
                 if (match !== undefined) {
+                    const mask = (2 ** ParameterSize[match.Type] - 1);
+
                     obj[fieldName] = value;
-                    if (match.Key !== null) obj[fieldName] ^= match.Key;
-                    if (match.Type === ParameterType.Float)
-                        obj[fieldName] /= 100;
+                    if (match.Key !== null) (obj[fieldName] ^= match.Key) & mask;
+                    
+                    switch (match.Type) {
+                        case ParameterType.Float: {
+                            obj[fieldName] /= 100;
+                            break;
+                        }
+                        case ParameterType.Int16: {
+                            obj[fieldName] = obj[fieldName] >>> 0;
+                            if (obj[fieldName] > 32767) obj[fieldName] -= 65536;
+                            break;
+                        }
+                        case ParameterType.Int8: {
+                            obj[fieldName] = obj[fieldName] >>> 0;
+                            if (obj[fieldName] > 127) obj[fieldName] -= 256;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -489,9 +844,27 @@ export class Codec {
                         ? match.FieldName
                         : `P_0x${match.NameHash.toString(16)}`;
 
+                const mask = (2 ** ParameterSize[match.Type] - 1);
                 let paramData = data[fieldName];
 
-                if (match.Key !== null) paramData ^= match.Key;
+                switch (match.Type) {
+                    case ParameterType.Float: {
+                        paramData *= 100;
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 32767) paramData += 65536;
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 127) paramData += 256;
+                        break;
+                    }
+                }
+
+                if (match.Key !== null) (paramData ^= match.Key) & mask;
 
                 switch (match.Type) {
                     case ParameterType.Uint32: {
@@ -536,6 +909,10 @@ export class Codec {
                     }
                     case ParameterType.VectorUint8: {
                         writer.writeUint8Vector2(paramData);
+                        break;
+                    }
+                    case ParameterType.CompressedString: {
+                        writer.writeCompressedString(paramData);
                         break;
                     }
                 }

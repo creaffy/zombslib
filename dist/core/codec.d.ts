@@ -1,17 +1,27 @@
-import { EnterWorldResponse, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
+import { BinaryWriter } from "../utility/writer";
+import { AttributeType, EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
 export declare class Codec {
     private rpcKey;
-    private entityMaps;
+    entityMaps: EntityMap[];
     enterWorldResponse: EnterWorldResponse;
     readonly rpcMapping: DumpedData;
     readonly entityList: Map<number, NetworkEntity>;
     constructor(path: string);
     computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array): void;
     generateProofOfWork(endpoint: string, platform?: string, difficulty?: number, size?: number): Buffer<ArrayBuffer>;
+    validateProofOfWork(proofOfWork: Uint8Array, endpoint: string, difficulty?: number, size?: number): {
+        valid: boolean;
+        platform: string | null;
+    };
     cryptRpc(data: Uint8Array): Uint8Array;
     private decodeEntityMapAttribute;
+    encodeEntityMapAttribute(writer: BinaryWriter, type: AttributeType | undefined, value: any): void;
     decodeEnterWorldResponse(data: Uint8Array): EnterWorldResponse;
+    encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array;
     decodeEntityUpdate(data: Uint8Array): EntityUpdate;
+    encodeEntityUpdate(entityUpdate: EntityUpdate): Uint8Array;
+    decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest;
+    encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array;
     decodeRpc(def: Rpc, data: Uint8Array): {
         name: string | null;
         data: {};
