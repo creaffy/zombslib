@@ -1,5 +1,4 @@
-import { BinaryWriter } from "../utility/writer";
-import { AttributeType, EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
+import { EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
 export declare class Codec {
     private rpcKey;
     entityMaps: EntityMap[];
@@ -15,7 +14,8 @@ export declare class Codec {
     };
     cryptRpc(data: Uint8Array): Uint8Array;
     private decodeEntityMapAttribute;
-    encodeEntityMapAttribute(writer: BinaryWriter, type: AttributeType | undefined, value: any): void;
+    private encodeEntityMapAttribute;
+    private encodeRpcParams;
     decodeEnterWorldResponse(data: Uint8Array): EnterWorldResponse;
     encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array;
     decodeEntityUpdate(data: Uint8Array): EntityUpdate;
@@ -26,7 +26,6 @@ export declare class Codec {
         name: string | null;
         data: {};
     } | undefined;
-    private encodeRpcParams;
     encodeRpc(name: string, data: object | object[]): Uint8Array<ArrayBufferLike> | undefined;
 }
 interface DumpedRpcParam {

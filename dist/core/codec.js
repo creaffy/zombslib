@@ -7,20 +7,6 @@ const node_path_1 = require("node:path");
 const reader_1 = require("../utility/reader");
 const writer_1 = require("../utility/writer");
 const network_1 = require("../types/network");
-const ParameterSize = {
-    [network_1.ParameterType.Uint32]: 32,
-    [network_1.ParameterType.Int32]: 32,
-    [network_1.ParameterType.Float]: 32,
-    [network_1.ParameterType.String]: -1,
-    [network_1.ParameterType.Uint64]: 64,
-    [network_1.ParameterType.Int64]: 64,
-    [network_1.ParameterType.Uint16]: 16,
-    [network_1.ParameterType.Int16]: 16,
-    [network_1.ParameterType.Uint8]: 8,
-    [network_1.ParameterType.Int8]: 8,
-    [network_1.ParameterType.VectorUint8]: -1,
-    [network_1.ParameterType.CompressedString]: -1
-};
 class Codec {
     constructor(path) {
         this.rpcKey = new Uint8Array(8);
@@ -300,6 +286,91 @@ class Codec {
                 break;
             default:
                 writer.writeUint32(0);
+        }
+    }
+    encodeRpcParams(rpc, def, writer, data) {
+        for (const param of def.parameters) {
+            const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
+            if (!match) {
+                writer.writeUint8(0);
+            }
+            else {
+                const fieldName = match.FieldName !== null
+                    ? match.FieldName
+                    : `P_0x${match.NameHash.toString(16)}`;
+                const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
+                let paramData = data[fieldName];
+                switch (match.Type) {
+                    case network_1.ParameterType.Float: {
+                        paramData *= 100;
+                        break;
+                    }
+                    case network_1.ParameterType.Int16: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 32767)
+                            paramData += 65536;
+                        break;
+                    }
+                    case network_1.ParameterType.Int8: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 127)
+                            paramData += 256;
+                        break;
+                    }
+                }
+                if (match.Key !== null)
+                    (paramData ^= match.Key) & mask;
+                switch (match.Type) {
+                    case network_1.ParameterType.Uint32: {
+                        writer.writeUint32(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Int32: {
+                        writer.writeInt32(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Float: {
+                        writer.writeFloat(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.String: {
+                        writer.writeString(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Uint64: {
+                        writer.writeUint64(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Int64: {
+                        writer.writeInt64(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Uint16: {
+                        writer.writeUint16(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Int16: {
+                        writer.writeInt16(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Uint8: {
+                        writer.writeUint8(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.Int8: {
+                        writer.writeInt8(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.VectorUint8: {
+                        writer.writeUint8Vector2(paramData);
+                        break;
+                    }
+                    case network_1.ParameterType.CompressedString: {
+                        writer.writeCompressedString(paramData);
+                        break;
+                    }
+                }
+            }
         }
     }
     decodeEnterWorldResponse(data) {
@@ -634,7 +705,7 @@ class Codec {
                     }
                 }
                 if (match !== undefined) {
-                    const mask = (2 ** ParameterSize[match.Type] - 1);
+                    const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
                     obj[fieldName] = value;
                     if (match.Key !== null)
                         (obj[fieldName] ^= match.Key) & mask;
@@ -659,91 +730,6 @@ class Codec {
                 }
             }
             return { name: rpc.ClassName, data: obj };
-        }
-    }
-    encodeRpcParams(rpc, def, writer, data) {
-        for (const param of def.parameters) {
-            const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
-            if (!match) {
-                writer.writeUint8(0);
-            }
-            else {
-                const fieldName = match.FieldName !== null
-                    ? match.FieldName
-                    : `P_0x${match.NameHash.toString(16)}`;
-                const mask = (2 ** ParameterSize[match.Type] - 1);
-                let paramData = data[fieldName];
-                switch (match.Type) {
-                    case network_1.ParameterType.Float: {
-                        paramData *= 100;
-                        break;
-                    }
-                    case network_1.ParameterType.Int16: {
-                        paramData = paramData >>> 0;
-                        if (paramData < 32767)
-                            paramData += 65536;
-                        break;
-                    }
-                    case network_1.ParameterType.Int8: {
-                        paramData = paramData >>> 0;
-                        if (paramData < 127)
-                            paramData += 256;
-                        break;
-                    }
-                }
-                if (match.Key !== null)
-                    (paramData ^= match.Key) & mask;
-                switch (match.Type) {
-                    case network_1.ParameterType.Uint32: {
-                        writer.writeUint32(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Int32: {
-                        writer.writeInt32(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Float: {
-                        writer.writeFloat(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.String: {
-                        writer.writeString(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Uint64: {
-                        writer.writeUint64(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Int64: {
-                        writer.writeInt64(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Uint16: {
-                        writer.writeUint16(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Int16: {
-                        writer.writeInt16(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Uint8: {
-                        writer.writeUint8(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.Int8: {
-                        writer.writeInt8(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.VectorUint8: {
-                        writer.writeUint8Vector2(paramData);
-                        break;
-                    }
-                    case network_1.ParameterType.CompressedString: {
-                        writer.writeCompressedString(paramData);
-                        break;
-                    }
-                }
-            }
         }
     }
     encodeRpc(name, data) {
@@ -899,3 +885,17 @@ const tickFieldMap = new Map([
     [2201028498, "airDropLandTick"],
     [791445081, "vehicleOccupants"],
 ]);
+const paramTypeSizeMap = {
+    [network_1.ParameterType.Uint32]: 32,
+    [network_1.ParameterType.Int32]: 32,
+    [network_1.ParameterType.Float]: 32,
+    [network_1.ParameterType.String]: -1,
+    [network_1.ParameterType.Uint64]: 64,
+    [network_1.ParameterType.Int64]: 64,
+    [network_1.ParameterType.Uint16]: 16,
+    [network_1.ParameterType.Int16]: 16,
+    [network_1.ParameterType.Uint8]: 8,
+    [network_1.ParameterType.Int8]: 8,
+    [network_1.ParameterType.VectorUint8]: -1,
+    [network_1.ParameterType.CompressedString]: -1,
+};

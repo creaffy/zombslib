@@ -17,21 +17,6 @@ import {
     PacketId,
 } from "../types/network";
 
-const ParameterSize = {
-    [ParameterType.Uint32]: 32,
-    [ParameterType.Int32]: 32,
-    [ParameterType.Float]: 32,
-    [ParameterType.String]: -1,
-    [ParameterType.Uint64]: 64,
-    [ParameterType.Int64]: 64,
-    [ParameterType.Uint16]: 16,
-    [ParameterType.Int16]: 16,
-    [ParameterType.Uint8]: 8,
-    [ParameterType.Int8]: 8,
-    [ParameterType.VectorUint8]: -1,
-    [ParameterType.CompressedString]: -1
-};
-
 export class Codec {
     private rpcKey = new Uint8Array(8);
     public entityMaps: EntityMap[] = [];
@@ -304,7 +289,7 @@ export class Codec {
         return undefined;
     }
 
-    encodeEntityMapAttribute(
+    private encodeEntityMapAttribute(
         writer: BinaryWriter,
         type: AttributeType | undefined,
         value: any
@@ -366,6 +351,101 @@ export class Codec {
                 break;
             default:
                 writer.writeUint32(0);
+        }
+    }
+
+    private encodeRpcParams(
+        rpc: DumpedRpc,
+        def: Rpc,
+        writer: BinaryWriter,
+        data: object
+    ) {
+        for (const param of def.parameters!) {
+            const match = rpc.Parameters.find(
+                (p) => param.nameHash === p.NameHash
+            );
+
+            if (!match) {
+                writer.writeUint8(0);
+            } else {
+                const fieldName =
+                    match.FieldName !== null
+                        ? match.FieldName
+                        : `P_0x${match.NameHash.toString(16)}`;
+
+                const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
+                let paramData = data[fieldName];
+
+                switch (match.Type) {
+                    case ParameterType.Float: {
+                        paramData *= 100;
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 32767) paramData += 65536;
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 127) paramData += 256;
+                        break;
+                    }
+                }
+
+                if (match.Key !== null) (paramData ^= match.Key) & mask;
+
+                switch (match.Type) {
+                    case ParameterType.Uint32: {
+                        writer.writeUint32(paramData);
+                        break;
+                    }
+                    case ParameterType.Int32: {
+                        writer.writeInt32(paramData);
+                        break;
+                    }
+                    case ParameterType.Float: {
+                        writer.writeFloat(paramData);
+                        break;
+                    }
+                    case ParameterType.String: {
+                        writer.writeString(paramData);
+                        break;
+                    }
+                    case ParameterType.Uint64: {
+                        writer.writeUint64(paramData);
+                        break;
+                    }
+                    case ParameterType.Int64: {
+                        writer.writeInt64(paramData);
+                        break;
+                    }
+                    case ParameterType.Uint16: {
+                        writer.writeUint16(paramData);
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        writer.writeInt16(paramData);
+                        break;
+                    }
+                    case ParameterType.Uint8: {
+                        writer.writeUint8(paramData);
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        writer.writeInt8(paramData);
+                        break;
+                    }
+                    case ParameterType.VectorUint8: {
+                        writer.writeUint8Vector2(paramData);
+                        break;
+                    }
+                    case ParameterType.CompressedString: {
+                        writer.writeCompressedString(paramData);
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -797,11 +877,12 @@ export class Codec {
                 }
 
                 if (match !== undefined) {
-                    const mask = (2 ** ParameterSize[match.Type] - 1);
+                    const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
 
                     obj[fieldName] = value;
-                    if (match.Key !== null) (obj[fieldName] ^= match.Key) & mask;
-                    
+                    if (match.Key !== null)
+                        (obj[fieldName] ^= match.Key) & mask;
+
                     switch (match.Type) {
                         case ParameterType.Float: {
                             obj[fieldName] /= 100;
@@ -822,101 +903,6 @@ export class Codec {
             }
 
             return { name: rpc.ClassName, data: obj };
-        }
-    }
-
-    private encodeRpcParams(
-        rpc: DumpedRpc,
-        def: Rpc,
-        writer: BinaryWriter,
-        data: object
-    ) {
-        for (const param of def.parameters!) {
-            const match = rpc.Parameters.find(
-                (p) => param.nameHash === p.NameHash
-            );
-
-            if (!match) {
-                writer.writeUint8(0);
-            } else {
-                const fieldName =
-                    match.FieldName !== null
-                        ? match.FieldName
-                        : `P_0x${match.NameHash.toString(16)}`;
-
-                const mask = (2 ** ParameterSize[match.Type] - 1);
-                let paramData = data[fieldName];
-
-                switch (match.Type) {
-                    case ParameterType.Float: {
-                        paramData *= 100;
-                        break;
-                    }
-                    case ParameterType.Int16: {
-                        paramData = paramData >>> 0;
-                        if (paramData < 32767) paramData += 65536;
-                        break;
-                    }
-                    case ParameterType.Int8: {
-                        paramData = paramData >>> 0;
-                        if (paramData < 127) paramData += 256;
-                        break;
-                    }
-                }
-
-                if (match.Key !== null) (paramData ^= match.Key) & mask;
-
-                switch (match.Type) {
-                    case ParameterType.Uint32: {
-                        writer.writeUint32(paramData);
-                        break;
-                    }
-                    case ParameterType.Int32: {
-                        writer.writeInt32(paramData);
-                        break;
-                    }
-                    case ParameterType.Float: {
-                        writer.writeFloat(paramData);
-                        break;
-                    }
-                    case ParameterType.String: {
-                        writer.writeString(paramData);
-                        break;
-                    }
-                    case ParameterType.Uint64: {
-                        writer.writeUint64(paramData);
-                        break;
-                    }
-                    case ParameterType.Int64: {
-                        writer.writeInt64(paramData);
-                        break;
-                    }
-                    case ParameterType.Uint16: {
-                        writer.writeUint16(paramData);
-                        break;
-                    }
-                    case ParameterType.Int16: {
-                        writer.writeInt16(paramData);
-                        break;
-                    }
-                    case ParameterType.Uint8: {
-                        writer.writeUint8(paramData);
-                        break;
-                    }
-                    case ParameterType.Int8: {
-                        writer.writeInt8(paramData);
-                        break;
-                    }
-                    case ParameterType.VectorUint8: {
-                        writer.writeUint8Vector2(paramData);
-                        break;
-                    }
-                    case ParameterType.CompressedString: {
-                        writer.writeCompressedString(paramData);
-                        break;
-                    }
-                }
-            }
         }
     }
 
@@ -1103,3 +1089,18 @@ const tickFieldMap = new Map<number, string>([
     [2201028498, "airDropLandTick"],
     [791445081, "vehicleOccupants"],
 ]);
+
+const paramTypeSizeMap = {
+    [ParameterType.Uint32]: 32,
+    [ParameterType.Int32]: 32,
+    [ParameterType.Float]: 32,
+    [ParameterType.String]: -1,
+    [ParameterType.Uint64]: 64,
+    [ParameterType.Int64]: 64,
+    [ParameterType.Uint16]: 16,
+    [ParameterType.Int16]: 16,
+    [ParameterType.Uint8]: 8,
+    [ParameterType.Int8]: 8,
+    [ParameterType.VectorUint8]: -1,
+    [ParameterType.CompressedString]: -1,
+};

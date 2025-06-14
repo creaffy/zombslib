@@ -96,7 +96,7 @@ class Game extends node_events_1.EventEmitter {
     toWorldPos(serverPos) {
         return { x: serverPos.x / 100, y: -serverPos.y / 100 };
     }
-    // --- Generated ---
+    // --- Rpcs ---
     acToServerRpc(data) {
         this.send(this.codec.encodeRpc("ACToServerRpc", { data: data }));
     }
