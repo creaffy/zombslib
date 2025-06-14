@@ -1,8 +1,8 @@
 import { BinaryWriter } from "../utility/writer";
-import { AttributeType, EnterWorldResponse, EnterWorldRequest, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
+import { AttributeType, EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
 export declare class Codec {
     private rpcKey;
-    private entityMaps;
+    entityMaps: EntityMap[];
     enterWorldResponse: EnterWorldResponse;
     readonly rpcMapping: DumpedData;
     readonly entityList: Map<number, NetworkEntity>;

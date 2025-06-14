@@ -19,7 +19,7 @@ import {
 
 export class Codec {
     private rpcKey = new Uint8Array(8);
-    private entityMaps: EntityMap[] = [];
+    public entityMaps: EntityMap[] = [];
     public enterWorldResponse: EnterWorldResponse = {};
     public readonly rpcMapping: DumpedData;
     public readonly entityList = new Map<number, NetworkEntity>();
