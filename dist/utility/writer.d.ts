@@ -10,6 +10,7 @@ export declare class BinaryWriter {
     writeUint32(value: number): void;
     writeUint64(value: bigint): void;
     writeFloat(value: number): void;
+    writeULEB128(value: number): void;
     writeString(value: string): void;
     writeCompressedString(value: string): void;
     writeUint8Vector2(value: Vector2): void;

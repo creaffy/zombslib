@@ -7,6 +7,7 @@ export declare class Codec {
     readonly entityList: Map<number, NetworkEntity>;
     constructor(path: string);
     computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array): void;
+    private applyCommonMask;
     generateProofOfWork(endpoint: string, platform?: string, difficulty?: number, size?: number): Buffer<ArrayBuffer>;
     validateProofOfWork(proofOfWork: Uint8Array, endpoint: string, difficulty?: number, size?: number): {
         valid: boolean;

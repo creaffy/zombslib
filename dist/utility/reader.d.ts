@@ -9,6 +9,7 @@ export declare class BinaryReader {
     readFloat(): number;
     readUint32(): number;
     readUint64(): bigint;
+    readULEB128(): number;
     readString(): string;
     readCompressedString(): string;
     readUint8Vector2(): {

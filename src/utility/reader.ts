@@ -49,8 +49,28 @@ export class BinaryReader {
         return value;
     }
 
+    readULEB128() {
+        let result = 0;
+        let shift = 0;
+        let byte = 0;
+        do {
+            byte = this.view.getUint8(this.offset);
+            this.offset++;
+            result |= (byte & 0x7F) << shift;
+            shift += 7;
+        } while ((byte & 0x80) !== 0);
+        return result;
+    }
+
     readString() {
-        const length = this.readUint8();
+        const firstByte = this.view.getUint8(this.offset);
+        let length = 0;
+        if ((firstByte & 0x80) === 0) {
+            length = firstByte; // MSB = 0, single-byte length (Uint8)
+            this.offset += 1;
+        } else {
+            length = this.readULEB128(); // MSB = 1, multi-byte unsigned LEB128 length
+        }
         let value = "";
         for (let i = 0; i < length; i++) {
             const charCode = this.view.getUint8(this.offset + i);

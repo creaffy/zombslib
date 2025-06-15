@@ -46,9 +46,24 @@ class BinaryWriter {
         this.view.setInt32(this.offset, value, true);
         this.offset += 4;
     }
+    writeULEB128(value) {
+        do {
+            let byte = value & 0x7f;
+            value >>>= 7;
+            if (value !== 0) {
+                byte |= 0x80;
+            }
+            this.writeUint8(byte);
+        } while (value !== 0);
+    }
     writeString(value) {
         const length = value.length;
-        this.writeUint8(length);
+        if (length < 0x80) {
+            this.writeUint8(length); // Single-byte length
+        }
+        else {
+            this.writeULEB128(length); // Multi-byte ULEB128 length
+        }
         this.checkBufferSize(length);
         for (let i = 0; i < length; i++) {
             this.view.setUint8(this.offset + i, value.charCodeAt(i));
