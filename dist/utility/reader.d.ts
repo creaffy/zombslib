@@ -3,31 +3,31 @@ export declare class BinaryReader {
     offset: number;
     constructor(data: Uint8Array, offset?: number);
     canRead(n?: number): boolean;
-    readUint8(): number;
-    readInt32(): number;
-    readInt64(): bigint;
-    readFloat(): number;
-    readUint32(): number;
-    readUint64(): bigint;
-    readULEB128(): number;
-    readString(): string;
-    readCompressedString(): string;
+    readUint8(): number | undefined;
+    readInt32(): number | undefined;
+    readInt64(): bigint | undefined;
+    readFloat(): number | undefined;
+    readUint32(): number | undefined;
+    readUint64(): bigint | undefined;
+    readULEB128(): number | undefined;
+    readString(): string | undefined;
+    readCompressedString(): string | undefined;
     readUint8Vector2(): {
         x: number;
         y: number;
-    };
+    } | undefined;
     readVector2(): {
         x: number;
         y: number;
-    };
+    } | undefined;
     readArrayVector2(): {
         x: number;
         y: number;
-    }[];
-    readArrayUint32(): any[];
-    readUint16(): number;
-    readInt16(): number;
-    readInt8(): number;
-    readArrayInt32(): any[];
-    readArrayUint8(): any[];
+    }[] | undefined;
+    readArrayUint32(): any[] | undefined;
+    readUint16(): number | undefined;
+    readInt16(): number | undefined;
+    readInt8(): number | undefined;
+    readArrayInt32(): any[] | undefined;
+    readArrayUint8(): any[] | undefined;
 }

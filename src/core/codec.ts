@@ -254,17 +254,20 @@ export class Codec {
             case AttributeType.Int32:
                 return reader.readInt32();
             case AttributeType.Float:
-                return reader.readFloat() / 100;
+                const v = reader.readFloat();
+                return v === undefined ? undefined : v / 100;
             case AttributeType.String:
                 return reader.readString();
             case AttributeType.Vector2: {
                 const v = reader.readVector2();
+                if (v === undefined) return undefined;
                 v.x /= 100;
                 v.y /= -100;
                 return v;
             }
             case AttributeType.ArrayVector2: {
                 const v = reader.readArrayVector2();
+                if (v === undefined) return undefined;
                 for (let e of v) {
                     e.x /= 100;
                     e.y /= -100;
@@ -468,7 +471,7 @@ export class Codec {
         enterWorldResponse.x2 = reader.readInt32();
         enterWorldResponse.y2 = reader.readInt32();
 
-        const entityMapCount = reader.readUint32();
+        const entityMapCount = reader.readUint32()!;
         enterWorldResponse.entities = [];
         for (let i = 0; i < entityMapCount; ++i) {
             let entityMap: EntityMap = {};
@@ -477,11 +480,11 @@ export class Codec {
             entityMap.sortedUids = [];
             entityMap.defaultTick = {};
 
-            const attributesCount = reader.readUint32();
+            const attributesCount = reader.readUint32()!;
             for (let j = 0; j < attributesCount; ++j) {
                 let entityMapAttribute: EntityMapAttribute = {};
-                entityMapAttribute.nameHash = reader.readUint32();
-                entityMapAttribute.type = reader.readUint32();
+                entityMapAttribute.nameHash = reader.readUint32()!;
+                entityMapAttribute.type = reader.readUint32()!;
 
                 entityMap.defaultTick[
                     tickFieldMap.get(entityMapAttribute.nameHash) ??
@@ -497,14 +500,14 @@ export class Codec {
             enterWorldResponse.entities.push(entityMap);
         }
 
-        const rpcCount = reader.readUint32();
+        const rpcCount = reader.readUint32()!;
         enterWorldResponse.rpcs = [];
         for (let i = 0; i < rpcCount; ++i) {
             let rpc: Rpc = {};
             rpc.index = i;
             rpc.nameHash = reader.readUint32();
 
-            const parameterCount = reader.readUint8();
+            const parameterCount = reader.readUint8()!;
             rpc.isArray = reader.readUint8() != 0;
             rpc.parameters = [];
             for (let j = 0; j < parameterCount; ++j) {
@@ -600,16 +603,20 @@ export class Codec {
         entityUpdate.tick = reader.readUint32();
 
         const deletedEntitiesCount = reader.readInt8();
+        if (deletedEntitiesCount === undefined) return undefined;
         entityUpdate.deletedEntities = [];
         for (let i = 0; i < deletedEntitiesCount; ++i) {
             const uid = reader.readUint32();
+            if (uid === undefined) return undefined;
             entityUpdate.deletedEntities.push(uid);
             this.entityList.delete(uid);
         }
 
         const entityMapsCount = reader.readInt8();
+        if (entityMapsCount === undefined) return undefined;
         for (let i = 0; i < entityMapsCount; ++i) {
             const brandNewEntitiesCount = reader.readInt8();
+            if (brandNewEntitiesCount === undefined) return undefined;
             const entityMapId = reader.readUint32();
             let entityMap = this.entityMaps.find((e) => e.id === entityMapId);
             if (entityMap === undefined) {
@@ -620,6 +627,7 @@ export class Codec {
             }
             for (let j = 0; j < brandNewEntitiesCount; ++j) {
                 const uid = reader.readUint32();
+                if (uid === undefined) return undefined;
                 entityMap.sortedUids!.push(uid);
                 this.entityList.set(uid, {
                     uid: uid,
@@ -650,7 +658,9 @@ export class Codec {
                 i < Math.floor((entityMap.sortedUids.length + 7) / 8);
                 ++i
             ) {
-                absentEntitiesFlags.push(reader.readUint8());
+                const flag = reader.readUint8();
+                if (flag === undefined) return undefined;
+                absentEntitiesFlags.push(flag);
             }
 
             for (let i = 0; i < entityMap.sortedUids.length; ++i) {
@@ -669,7 +679,9 @@ export class Codec {
                     j < Math.ceil(entityMap.attributes!.length / 8);
                     ++j
                 ) {
-                    updatedEntityFlags.push(reader.readUint8());
+                    const flag = reader.readUint8();
+                    if (flag === undefined) return undefined;
+                    updatedEntityFlags.push(flag);
                 }
 
                 let entityTick = this.entityList.get(uid)!.tick!;
@@ -784,12 +796,16 @@ export class Codec {
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
-    public decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest {
+    public decodeEnterWorldRequest(data: Uint8Array) {
         const reader = new BinaryReader(data, 1);
         const displayName = reader.readString();
+        if (displayName === undefined) return undefined;
         const version = reader.readUint32();
-        const proofOfWork = new Uint8Array(reader.readArrayUint8());
-        return { displayName, version, proofOfWork };
+        if (version === undefined) return undefined;
+        const proofOfWork = reader.readArrayUint8();
+        if (proofOfWork === undefined) return undefined;
+        const pow2 = new Uint8Array(proofOfWork);
+        return { displayName, version, pow2 };
     }
 
     public encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array {
@@ -875,6 +891,8 @@ export class Codec {
                         break;
                     }
                 }
+
+                if (value === undefined) return undefined;
 
                 if (match !== undefined) {
                     const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
