@@ -499,22 +499,22 @@ class Codec {
         entityUpdate.tick = reader.readUint32();
         const deletedEntitiesCount = reader.readInt8();
         if (deletedEntitiesCount === undefined)
-            return undefined;
+            return entityUpdate;
         entityUpdate.deletedEntities = [];
         for (let i = 0; i < deletedEntitiesCount; ++i) {
             const uid = reader.readUint32();
             if (uid === undefined)
-                return undefined;
+                return entityUpdate;
             entityUpdate.deletedEntities.push(uid);
             this.entityList.delete(uid);
         }
         const entityMapsCount = reader.readInt8();
         if (entityMapsCount === undefined)
-            return undefined;
+            return entityUpdate;
         for (let i = 0; i < entityMapsCount; ++i) {
             const brandNewEntitiesCount = reader.readInt8();
             if (brandNewEntitiesCount === undefined)
-                return undefined;
+                return entityUpdate;
             const entityMapId = reader.readUint32();
             let entityMap = this.entityMaps.find((e) => e.id === entityMapId);
             if (entityMap === undefined) {
@@ -526,7 +526,7 @@ class Codec {
             for (let j = 0; j < brandNewEntitiesCount; ++j) {
                 const uid = reader.readUint32();
                 if (uid === undefined)
-                    return undefined;
+                    return entityUpdate;
                 entityMap.sortedUids.push(uid);
                 this.entityList.set(uid, {
                     uid: uid,
@@ -549,7 +549,7 @@ class Codec {
             for (let i = 0; i < Math.floor((entityMap.sortedUids.length + 7) / 8); ++i) {
                 const flag = reader.readUint8();
                 if (flag === undefined)
-                    return undefined;
+                    return entityUpdate;
                 absentEntitiesFlags.push(flag);
             }
             for (let i = 0; i < entityMap.sortedUids.length; ++i) {
@@ -562,7 +562,7 @@ class Codec {
                 for (let j = 0; j < Math.ceil(entityMap.attributes.length / 8); ++j) {
                     const flag = reader.readUint8();
                     if (flag === undefined)
-                        return undefined;
+                        return entityUpdate;
                     updatedEntityFlags.push(flag);
                 }
                 let entityTick = this.entityList.get(uid).tick;
@@ -570,6 +570,8 @@ class Codec {
                     const attribute = entityMap.attributes[j];
                     if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
                         const value = this.decodeEntityMapAttribute(reader, attribute.type);
+                        if (value === undefined)
+                            return entityUpdate;
                         entityTick[tickFieldMap.get(attribute.nameHash) ??
                             `A_0x${attribute.nameHash.toString(16)}`] = value;
                     }

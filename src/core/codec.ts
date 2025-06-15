@@ -603,20 +603,20 @@ export class Codec {
         entityUpdate.tick = reader.readUint32();
 
         const deletedEntitiesCount = reader.readInt8();
-        if (deletedEntitiesCount === undefined) return undefined;
+        if (deletedEntitiesCount === undefined) return entityUpdate;
         entityUpdate.deletedEntities = [];
         for (let i = 0; i < deletedEntitiesCount; ++i) {
             const uid = reader.readUint32();
-            if (uid === undefined) return undefined;
+            if (uid === undefined) return entityUpdate;
             entityUpdate.deletedEntities.push(uid);
             this.entityList.delete(uid);
         }
 
         const entityMapsCount = reader.readInt8();
-        if (entityMapsCount === undefined) return undefined;
+        if (entityMapsCount === undefined) return entityUpdate;
         for (let i = 0; i < entityMapsCount; ++i) {
             const brandNewEntitiesCount = reader.readInt8();
-            if (brandNewEntitiesCount === undefined) return undefined;
+            if (brandNewEntitiesCount === undefined) return entityUpdate;
             const entityMapId = reader.readUint32();
             let entityMap = this.entityMaps.find((e) => e.id === entityMapId);
             if (entityMap === undefined) {
@@ -627,7 +627,7 @@ export class Codec {
             }
             for (let j = 0; j < brandNewEntitiesCount; ++j) {
                 const uid = reader.readUint32();
-                if (uid === undefined) return undefined;
+                if (uid === undefined) return entityUpdate;
                 entityMap.sortedUids!.push(uid);
                 this.entityList.set(uid, {
                     uid: uid,
@@ -659,7 +659,7 @@ export class Codec {
                 ++i
             ) {
                 const flag = reader.readUint8();
-                if (flag === undefined) return undefined;
+                if (flag === undefined) return entityUpdate;
                 absentEntitiesFlags.push(flag);
             }
 
@@ -680,7 +680,7 @@ export class Codec {
                     ++j
                 ) {
                     const flag = reader.readUint8();
-                    if (flag === undefined) return undefined;
+                    if (flag === undefined) return entityUpdate;
                     updatedEntityFlags.push(flag);
                 }
 
@@ -693,6 +693,7 @@ export class Codec {
                             attribute.type!
                         );
 
+                        if (value === undefined) return entityUpdate;
                         entityTick[
                             tickFieldMap.get(attribute.nameHash!) ??
                                 `A_0x${attribute.nameHash!.toString(16)}`
