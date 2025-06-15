@@ -217,14 +217,14 @@ class Codec {
                     }
                     case network_1.ParameterType.Int16: {
                         paramData = paramData >>> 0;
-                        if (paramData < 32767)
-                            paramData += 65536;
+                        if (paramData < 0x7fff)
+                            paramData += 0x10000;
                         break;
                     }
                     case network_1.ParameterType.Int8: {
                         paramData = paramData >>> 0;
-                        if (paramData < 127)
-                            paramData += 256;
+                        if (paramData < 0x7f)
+                            paramData += 0x100;
                         break;
                     }
                 }
@@ -643,6 +643,10 @@ class Codec {
                     return undefined;
                 if (match !== undefined) {
                     const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
+                    if (match.Type === network_1.ParameterType.Uint16)
+                        value = swap16(value & mask);
+                    if (match.Type === network_1.ParameterType.Int16)
+                        value = swap16(value & mask);
                     if (match.Key !== null)
                         value = (value ^ match.Key) & mask;
                     switch (match.Type) {
@@ -652,14 +656,14 @@ class Codec {
                         }
                         case network_1.ParameterType.Int16: {
                             value = value >>> 0;
-                            if (value > 32767)
-                                value -= 65536;
+                            if (value > 0x7fff)
+                                value -= 0x10000;
                             break;
                         }
                         case network_1.ParameterType.Int8: {
                             value = value >>> 0;
-                            if (value > 127)
-                                value -= 256;
+                            if (value > 0x7f)
+                                value -= 0x100;
                             break;
                         }
                     }
@@ -822,6 +826,9 @@ const tickFieldMap = new Map([
     [2201028498, "airDropLandTick"],
     [791445081, "vehicleOccupants"],
 ]);
+function swap16(value) {
+    return ((value & 0xff) << 8) | ((value >> 8) & 0xff);
+}
 const paramTypeSizeMap = {
     [network_1.ParameterType.Uint32]: 32,
     [network_1.ParameterType.Int32]: 32,

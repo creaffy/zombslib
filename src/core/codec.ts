@@ -123,7 +123,8 @@ export class Codec {
             let d = 0;
             while (true) {
                 if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) break;
-                if (++d === difficulty) return { valid: true, platform: platformName };
+                if (++d === difficulty)
+                    return { valid: true, platform: platformName };
             }
         }
 
@@ -281,12 +282,12 @@ export class Codec {
                     }
                     case ParameterType.Int16: {
                         paramData = paramData >>> 0;
-                        if (paramData < 32767) paramData += 65536;
+                        if (paramData < 0x7fff) paramData += 0x10000;
                         break;
                     }
                     case ParameterType.Int8: {
                         paramData = paramData >>> 0;
-                        if (paramData < 127) paramData += 256;
+                        if (paramData < 0x7f) paramData += 0x100;
                         break;
                     }
                 }
@@ -693,7 +694,9 @@ export class Codec {
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
-    public decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest | undefined {
+    public decodeEnterWorldRequest(
+        data: Uint8Array
+    ): EnterWorldRequest | undefined {
         const reader = new BinaryReader(data, 1);
         const displayName = reader.readString();
         if (displayName === undefined) return undefined;
@@ -793,8 +796,12 @@ export class Codec {
 
                 if (match !== undefined) {
                     const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                    if (match.Key !== null)
-                        value = (value ^ match.Key) & mask;
+                    if (match.Type === ParameterType.Uint16)
+                        value = swap16(value & mask);
+                    if (match.Type === ParameterType.Int16)
+                        value = swap16(value & mask);
+                    
+                    if (match.Key !== null) value = (value ^ match.Key) & mask;
 
                     switch (match.Type) {
                         case ParameterType.Float: {
@@ -803,12 +810,12 @@ export class Codec {
                         }
                         case ParameterType.Int16: {
                             value = value >>> 0;
-                            if (value > 32767) value -= 65536;
+                            if (value > 0x7fff) value -= 0x10000;
                             break;
                         }
                         case ParameterType.Int8: {
                             value = value >>> 0;
-                            if (value > 127) value -= 256;
+                            if (value > 0x7f) value -= 0x100;
                             break;
                         }
                     }
@@ -1003,6 +1010,10 @@ const tickFieldMap = new Map<number, string>([
     [2201028498, "airDropLandTick"],
     [791445081, "vehicleOccupants"],
 ]);
+
+function swap16(value: number) {
+    return ((value & 0xff) << 8) | ((value >> 8) & 0xff);
+}
 
 const paramTypeSizeMap = {
     [ParameterType.Uint32]: 32,
