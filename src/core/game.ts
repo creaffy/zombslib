@@ -156,7 +156,7 @@ export class Game extends EventEmitter {
                 server.discreteFourierTransformBias
             );
 
-            const enterWorldRequest: EnterWorldRequest = {
+            const enterWorldRequest: EnterWorldRequest | undefined = {
                 displayName: displayName,
                 version: this.codec.rpcMapping.Codec,
                 proofOfWork: pow,

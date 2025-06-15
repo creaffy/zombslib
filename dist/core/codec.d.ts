@@ -7,6 +7,7 @@ export declare class Codec {
     readonly entityList: Map<number, NetworkEntity>;
     constructor(path: string);
     computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array): void;
+    private applyCommonMask;
     generateProofOfWork(endpoint: string, platform?: string, difficulty?: number, size?: number): Buffer<ArrayBuffer>;
     validateProofOfWork(proofOfWork: Uint8Array, endpoint: string, difficulty?: number, size?: number): {
         valid: boolean;
@@ -20,11 +21,7 @@ export declare class Codec {
     encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array;
     decodeEntityUpdate(data: Uint8Array): EntityUpdate;
     encodeEntityUpdate(entityUpdate: EntityUpdate): Uint8Array;
-    decodeEnterWorldRequest(data: Uint8Array): {
-        displayName: string;
-        version: number;
-        pow2: Uint8Array<ArrayBuffer>;
-    } | undefined;
+    decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest | undefined;
     encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array;
     decodeRpc(def: Rpc, data: Uint8Array): {
         name: string | null;

@@ -25,59 +25,18 @@ class Codec {
         for (let i = 0; i < targetUrl.length; ++i)
             this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
     }
+    applyCommonMask(buf) {
+        buf[4] &= 253;
+        buf[2] &= 254;
+        buf[5] &= 223;
+        buf[8] |= 32;
+        buf[9] &= 251;
+    }
     generateProofOfWork(endpoint, platform = "Android", difficulty = 13, size = 24) {
+        const config = platformConfigs[platform];
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
         const powBuffer = Buffer.alloc(size + pathBytes.length);
         powBuffer.set(pathBytes, size);
-        let platformLogic;
-        let hashState;
-        switch (platform) {
-            case "Windows": {
-                hashState = {
-                    h0: 0xcde4bac7,
-                    h1: 0xb6217224,
-                    h2: 0x872a5994,
-                    h3: 0xcf538f47,
-                    h4: 0xec8dc5a1,
-                };
-                platformLogic = () => {
-                    powBuffer[7] |= 8;
-                    powBuffer[6] &= 239;
-                    powBuffer[3] &= 127;
-                };
-                break;
-            }
-            case "Web": {
-                hashState = {
-                    h0: 0x04c82ad0,
-                    h1: 0x2beacb85,
-                    h2: 0x4ccc8e6b,
-                    h3: 0x849ad64a,
-                    h4: 0x57ada298,
-                };
-                platformLogic = () => {
-                    powBuffer[7] &= 247;
-                    powBuffer[6] |= 16;
-                    powBuffer[3] &= 127;
-                };
-                break;
-            }
-            case "Android": {
-                hashState = {
-                    h0: 0xa9c9f023,
-                    h1: 0x14f071e7,
-                    h2: 0xc2d99914,
-                    h3: 0x8e8dda42,
-                    h4: 0xb8acc665,
-                };
-                platformLogic = () => {
-                    powBuffer[7] &= 247;
-                    powBuffer[6] &= 239;
-                    powBuffer[3] |= 128;
-                };
-                break;
-            }
-        }
         let state = Math.random() * 0xffffffff ||
             Math.floor(Math.random() * Math.pow(2, 32));
         while (true) {
@@ -87,14 +46,10 @@ class Codec {
                 state ^= state << 5;
                 powBuffer[i] = state;
             }
-            platformLogic();
-            powBuffer[4] &= 253;
-            powBuffer[2] &= 254;
-            powBuffer[5] &= 223;
-            powBuffer[8] |= 32;
-            powBuffer[9] &= 251;
+            config.logic(powBuffer);
+            this.applyCommonMask(powBuffer);
             const hash = js_sha1_1.sha1.create();
-            Object.assign(hash, hashState);
+            Object.assign(hash, config.hashState);
             hash.update(powBuffer);
             const digest = Buffer.from(hash.digest()).swap32();
             let d = 0;
@@ -107,62 +62,14 @@ class Codec {
         }
     }
     validateProofOfWork(proofOfWork, endpoint, difficulty = 13, size = 24) {
-        const platforms = {
-            Windows: {
-                hashState: {
-                    h0: 0xcde4bac7,
-                    h1: 0xb6217224,
-                    h2: 0x872a5994,
-                    h3: 0xcf538f47,
-                    h4: 0xec8dc5a1,
-                },
-                logic(buf) {
-                    buf[7] |= 8;
-                    buf[6] &= 239;
-                    buf[3] &= 127;
-                },
-            },
-            Web: {
-                hashState: {
-                    h0: 0x04c82ad0,
-                    h1: 0x2beacb85,
-                    h2: 0x4ccc8e6b,
-                    h3: 0x849ad64a,
-                    h4: 0x57ada298,
-                },
-                logic(buf) {
-                    buf[7] &= 247;
-                    buf[6] |= 16;
-                    buf[3] &= 127;
-                },
-            },
-            Android: {
-                hashState: {
-                    h0: 0xa9c9f023,
-                    h1: 0x14f071e7,
-                    h2: 0xc2d99914,
-                    h3: 0x8e8dda42,
-                    h4: 0xb8acc665,
-                },
-                logic(buf) {
-                    buf[7] &= 247;
-                    buf[6] &= 239;
-                    buf[3] |= 128;
-                },
-            },
-        };
         const powBuffer = Buffer.from(proofOfWork);
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
-        for (const [platformName, { hashState, logic }] of Object.entries(platforms)) {
+        for (const [platformName, { hashState, logic }] of Object.entries(platformConfigs)) {
             const fullBuffer = Buffer.alloc(size + pathBytes.length);
             powBuffer.copy(fullBuffer, 0, 0, size);
             pathBytes.copy(fullBuffer, size);
             logic(fullBuffer);
-            fullBuffer[4] &= 253;
-            fullBuffer[2] &= 254;
-            fullBuffer[5] &= 223;
-            fullBuffer[8] |= 32;
-            fullBuffer[9] &= 251;
+            this.applyCommonMask(fullBuffer);
             const hash = js_sha1_1.sha1.create();
             Object.assign(hash, hashState);
             hash.update(fullBuffer);
@@ -171,10 +78,8 @@ class Codec {
             while (true) {
                 if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0)
                     break;
-                d++;
-                if (d === difficulty) {
+                if (++d === difficulty)
                     return { valid: true, platform: platformName };
-                }
             }
         }
         return { valid: false, platform: null };
@@ -324,7 +229,7 @@ class Codec {
                     }
                 }
                 if (match.Key !== null)
-                    (paramData ^= match.Key) & mask;
+                    paramData = (paramData ^ match.Key) & mask;
                 switch (match.Type) {
                     case network_1.ParameterType.Uint32: {
                         writer.writeUint32(paramData);
@@ -654,11 +559,11 @@ class Codec {
         const version = reader.readUint32();
         if (version === undefined)
             return undefined;
-        const proofOfWork = reader.readArrayUint8();
-        if (proofOfWork === undefined)
+        const pow = reader.readArrayUint8();
+        if (pow === undefined)
             return undefined;
-        const pow2 = new Uint8Array(proofOfWork);
-        return { displayName, version, pow2 };
+        const proofOfWork = new Uint8Array(pow);
+        return { displayName, version, proofOfWork };
     }
     encodeEnterWorldRequest(request) {
         const writer = new writer_1.BinaryWriter(0);
@@ -738,27 +643,27 @@ class Codec {
                     return undefined;
                 if (match !== undefined) {
                     const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                    obj[fieldName] = value;
                     if (match.Key !== null)
-                        (obj[fieldName] ^= match.Key) & mask;
+                        value = (value ^ match.Key) & mask;
                     switch (match.Type) {
                         case network_1.ParameterType.Float: {
-                            obj[fieldName] /= 100;
+                            value /= 100;
                             break;
                         }
                         case network_1.ParameterType.Int16: {
-                            obj[fieldName] = obj[fieldName] >>> 0;
-                            if (obj[fieldName] > 32767)
-                                obj[fieldName] -= 65536;
+                            value = value >>> 0;
+                            if (value > 32767)
+                                value -= 65536;
                             break;
                         }
                         case network_1.ParameterType.Int8: {
-                            obj[fieldName] = obj[fieldName] >>> 0;
-                            if (obj[fieldName] > 127)
-                                obj[fieldName] -= 256;
+                            value = value >>> 0;
+                            if (value > 127)
+                                value -= 256;
                             break;
                         }
                     }
+                    obj[fieldName] = value;
                 }
             }
             return { name: rpc.ClassName, data: obj };
@@ -930,4 +835,48 @@ const paramTypeSizeMap = {
     [network_1.ParameterType.Int8]: 8,
     [network_1.ParameterType.VectorUint8]: -1,
     [network_1.ParameterType.CompressedString]: -1,
+};
+const platformConfigs = {
+    Windows: {
+        hashState: {
+            h0: 0xcde4bac7,
+            h1: 0xb6217224,
+            h2: 0x872a5994,
+            h3: 0xcf538f47,
+            h4: 0xec8dc5a1,
+        },
+        logic(buf) {
+            buf[7] |= 8;
+            buf[6] &= 239;
+            buf[3] &= 127;
+        },
+    },
+    Web: {
+        hashState: {
+            h0: 0x04c82ad0,
+            h1: 0x2beacb85,
+            h2: 0x4ccc8e6b,
+            h3: 0x849ad64a,
+            h4: 0x57ada298,
+        },
+        logic(buf) {
+            buf[7] &= 247;
+            buf[6] |= 16;
+            buf[3] &= 127;
+        },
+    },
+    Android: {
+        hashState: {
+            h0: 0xa9c9f023,
+            h1: 0x14f071e7,
+            h2: 0xc2d99914,
+            h3: 0x8e8dda42,
+            h4: 0xb8acc665,
+        },
+        logic(buf) {
+            buf[7] &= 247;
+            buf[6] &= 239;
+            buf[3] |= 128;
+        },
+    },
 };
