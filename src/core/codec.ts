@@ -529,7 +529,7 @@ export class Codec {
                 this.entityList.set(uid, {
                     uid: uid,
                     type: entityMapId,
-                    tick: structuredClone(entityMap.defaultTick),
+                    currentTick: structuredClone(entityMap.defaultTick),
                 });
                 entityUpdate.createdEntities.push(uid);
             }
@@ -581,7 +581,7 @@ export class Codec {
                     updatedEntityFlags.push(flag);
                 }
 
-                let entityTick = this.entityList.get(uid)!.tick!;
+                let entityTick = this.entityList.get(uid)!.currentTick!;
                 for (let j = 0; j < entityMap.attributes!.length; ++j) {
                     const attribute = entityMap.attributes![j];
                     if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
@@ -597,6 +597,7 @@ export class Codec {
                         ] = value;
                     }
                 }
+                this.entityList.get(uid)!.previousTick = structuredClone(entityTick);
             }
         }
 
@@ -654,35 +655,38 @@ export class Codec {
                 writer.writeUint8(byte);
             }
 
-            for (let i = 0; i < filteredUids.length; ++i) {
-                const uid = filteredUids[i];
-                if (!this.entityList.has(uid)) continue;
+            for (const uid of filteredUids) {
+                const entity = this.entityList.get(uid);
+                if (!entity || !entity.currentTick) continue;
 
-                const tick = this.entityList.get(uid)!.tick!;
-                const flags: number[] = [];
-                const values: any[] = [];
+                const current = entity.currentTick;
+                const previous = entity.previousTick ?? {};
 
-                for (
-                    let j = 0;
-                    j < Math.ceil(entityMap.attributes!.length / 8);
-                    ++j
-                ) {
-                    flags.push(0);
-                }
+                const flags: number[] = Array(
+                    Math.ceil(entityMap.attributes!.length / 8)
+                ).fill(0);
+                const values: { type: number; value: any }[] = [];
 
                 for (let j = 0; j < entityMap.attributes!.length; ++j) {
                     const attr = entityMap.attributes![j];
                     const key =
                         tickFieldMap.get(attr.nameHash!) ??
                         `A_0x${attr.nameHash!.toString(16)}`;
-                    if (tick.hasOwnProperty(key)) {
+
+                    const currVal = current[key];
+                    const prevVal = previous[key];
+
+                    if (currVal !== undefined && currVal !== prevVal) {
                         flags[Math.floor(j / 8)] |= 1 << j % 8;
-                        values.push({ type: attr.type!, value: tick[key] });
+                        values.push({ type: attr.type!, value: currVal });
                     }
                 }
 
-                for (const f of flags) {
-                    writer.writeUint8(f);
+                const hasChanges = flags.some((f) => f !== 0);
+                if (!hasChanges) continue;
+
+                for (const flag of flags) {
+                    writer.writeUint8(flag);
                 }
 
                 for (const { type, value } of values) {
@@ -800,7 +804,7 @@ export class Codec {
                         value = swap16(value & mask);
                     if (match.Type === ParameterType.Int16)
                         value = swap16(value & mask);
-                    
+
                     if (match.Key !== null) value = (value ^ match.Key) & mask;
 
                     switch (match.Type) {

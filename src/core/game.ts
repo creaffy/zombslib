@@ -262,7 +262,7 @@ export class Game extends EventEmitter {
 
     public getPlayerByName(name: string) {
         for (const [uid, entity] of this.getEntityList()) {
-            if (entity.tick?.Name === name) return entity;
+            if (entity.currentTick?.Name === name) return entity;
         }
         return undefined;
     }
