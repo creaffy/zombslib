@@ -129,7 +129,7 @@ interface GameEvents {
 
 export class Game extends EventEmitter {
     private socket: WebSocket;
-    private codec = new Codec("./rpcs.json");
+    public codec = new Codec("./rpcs.json");
 
     override on<K extends keyof GameEvents>(
         event: K,
@@ -262,7 +262,7 @@ export class Game extends EventEmitter {
 
     public getPlayerByName(name: string) {
         for (const [uid, entity] of this.getEntityList()) {
-            if (entity.currentTick?.Name === name) return entity;
+            if (entity.tick?.Name === name) return entity;
         }
         return undefined;
     }

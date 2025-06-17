@@ -85,7 +85,7 @@ class Game extends node_events_1.EventEmitter {
     }
     getPlayerByName(name) {
         for (const [uid, entity] of this.getEntityList()) {
-            if (entity.currentTick?.Name === name)
+            if (entity.tick?.Name === name)
                 return entity;
         }
         return undefined;

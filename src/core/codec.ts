@@ -495,16 +495,19 @@ export class Codec {
     public decodeEntityUpdate(data: Uint8Array) {
         const reader = new BinaryReader(data, 1);
 
-        let entityUpdate: EntityUpdate = {};
+        const entityUpdate: EntityUpdate = {};
         entityUpdate.createdEntities = [];
+        entityUpdate.deletedEntities = [];
+        entityUpdate.updatedEntities = new Map();
         entityUpdate.tick = reader.readUint32();
 
         const deletedEntitiesCount = reader.readInt8();
         if (deletedEntitiesCount === undefined) return entityUpdate;
-        entityUpdate.deletedEntities = [];
+
         for (let i = 0; i < deletedEntitiesCount; ++i) {
             const uid = reader.readUint32();
             if (uid === undefined) return entityUpdate;
+
             entityUpdate.deletedEntities.push(uid);
             this.entityList.delete(uid);
         }
@@ -514,22 +517,22 @@ export class Codec {
         for (let i = 0; i < entityMapsCount; ++i) {
             const brandNewEntitiesCount = reader.readInt8();
             if (brandNewEntitiesCount === undefined) return entityUpdate;
+
             const entityMapId = reader.readUint32();
-            let entityMap = this.entityMaps.find((e) => e.id === entityMapId);
-            if (entityMap === undefined) {
-                entityMap = {
-                    sortedUids: [],
-                    defaultTick: {},
-                };
-            }
+            if (entityMapId === undefined) return entityUpdate;
+
+            const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
+            if (entityMap === undefined) return entityUpdate;
+
             for (let j = 0; j < brandNewEntitiesCount; ++j) {
                 const uid = reader.readUint32();
                 if (uid === undefined) return entityUpdate;
+
                 entityMap.sortedUids!.push(uid);
                 this.entityList.set(uid, {
                     uid: uid,
                     type: entityMapId,
-                    currentTick: structuredClone(entityMap.defaultTick),
+                    tick: structuredClone(entityMap.defaultTick),
                 });
                 entityUpdate.createdEntities.push(uid);
             }
@@ -544,24 +547,25 @@ export class Codec {
 
         while (reader.canRead()) {
             const entityMapId = reader.readUint32();
+            if (entityMapId === undefined) return entityUpdate;
+
             const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
+            if (entityMap === undefined) return entityUpdate;
 
-            if (entityMap === undefined || entityMap.sortedUids === undefined)
-                return entityUpdate;
-
-            let absentEntitiesFlags: number[] = [];
+            const absentEntitiesFlags: number[] = [];
             for (
                 let i = 0;
-                i < Math.floor((entityMap.sortedUids.length + 7) / 8);
+                i < Math.floor((entityMap.sortedUids!.length + 7) / 8);
                 ++i
             ) {
                 const flag = reader.readUint8();
                 if (flag === undefined) return entityUpdate;
+
                 absentEntitiesFlags.push(flag);
             }
 
-            for (let i = 0; i < entityMap.sortedUids.length; ++i) {
-                const uid = entityMap.sortedUids[i];
+            for (let i = 0; i < entityMap.sortedUids!.length; ++i) {
+                const uid = entityMap.sortedUids![i];
 
                 if (
                     (absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !==
@@ -570,7 +574,7 @@ export class Codec {
                     continue;
                 }
 
-                let updatedEntityFlags: number[] = [];
+                const updatedEntityFlags: number[] = [];
                 for (
                     let j = 0;
                     j < Math.ceil(entityMap.attributes!.length / 8);
@@ -578,10 +582,12 @@ export class Codec {
                 ) {
                     const flag = reader.readUint8();
                     if (flag === undefined) return entityUpdate;
+
                     updatedEntityFlags.push(flag);
                 }
 
-                let entityTick = this.entityList.get(uid)!.currentTick!;
+                const updatedAttributes: number[] = [];
+                const tick = this.entityList.get(uid)!.tick!;
                 for (let j = 0; j < entityMap.attributes!.length; ++j) {
                     const attribute = entityMap.attributes![j];
                     if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
@@ -589,15 +595,17 @@ export class Codec {
                             reader,
                             attribute.type!
                         );
-
                         if (value === undefined) return entityUpdate;
-                        entityTick[
+
+                        tick[
                             tickFieldMap.get(attribute.nameHash!) ??
                                 `A_0x${attribute.nameHash!.toString(16)}`
                         ] = value;
+
+                        updatedAttributes.push(attribute.nameHash!);
                     }
                 }
-                this.entityList.get(uid)!.previousTick = structuredClone(entityTick);
+                entityUpdate.updatedEntities.set(uid, updatedAttributes);
             }
         }
 
@@ -611,31 +619,28 @@ export class Codec {
         writer.writeUint32(entityUpdate.tick!);
 
         writer.writeInt8(entityUpdate.deletedEntities!.length);
-        for (const uid of entityUpdate.deletedEntities!) {
+        for (const uid of entityUpdate.deletedEntities!)
             writer.writeUint32(uid);
-        }
 
-        const entityMaps = this.entityMaps.filter((e) =>
-            entityUpdate.createdEntities!.some(
-                (uid) => this.entityList.get(uid)?.type === e.id
+        const entityMaps = this.entityMaps.filter((map) =>
+            entityUpdate.createdEntities?.some((uid) =>
+                map.sortedUids?.includes(uid)
             )
         );
+
         writer.writeInt8(entityMaps.length);
 
         for (const entityMap of entityMaps) {
             const brandNewEntities = entityUpdate.createdEntities!.filter(
-                (uid) => this.entityList.get(uid)?.type === entityMap.id
+                (uid) => entityMap.sortedUids?.includes(uid)
             );
             writer.writeInt8(brandNewEntities.length);
             writer.writeUint32(entityMap.id!);
-            for (const uid of brandNewEntities) {
-                writer.writeUint32(uid);
-            }
+            for (const uid of brandNewEntities) writer.writeUint32(uid);
         }
 
         for (const entityMap of this.entityMaps) {
-            const uids = entityMap.sortedUids || [];
-            const filteredUids = uids.filter(
+            const filteredUids = entityMap.sortedUids!.filter(
                 (uid) => !entityUpdate.deletedEntities!.includes(uid)
             );
             if (filteredUids.length === 0) continue;
@@ -644,54 +649,51 @@ export class Codec {
 
             for (let i = 0; i < Math.ceil(filteredUids.length / 8); ++i) {
                 let byte = 0;
-                for (let j = 0; j < 8; ++j) {
+                for (let j = 0; j < 8; j++) {
                     const index = i * 8 + j;
                     if (index >= filteredUids.length) break;
                     const uid = filteredUids[index];
-                    if (!this.entityList.has(uid)) {
-                        byte |= 1 << j;
-                    }
+                    if (!entityUpdate.updatedEntities?.has(uid)) byte |= 1 << j;
                 }
                 writer.writeUint8(byte);
             }
 
             for (const uid of filteredUids) {
                 const entity = this.entityList.get(uid);
-                if (!entity || !entity.currentTick) continue;
+                if (entity === undefined) continue;
 
-                const current = entity.currentTick;
-                const previous = entity.previousTick ?? {};
+                const updatedAttributes =
+                    entityUpdate.updatedEntities!.get(uid);
+                if (updatedAttributes === undefined) continue;
 
-                const flags: number[] = Array(
+                const updatedFlags: number[] = Array(
                     Math.ceil(entityMap.attributes!.length / 8)
                 ).fill(0);
-                const values: { type: number; value: any }[] = [];
 
-                for (let j = 0; j < entityMap.attributes!.length; ++j) {
-                    const attr = entityMap.attributes![j];
-                    const key =
-                        tickFieldMap.get(attr.nameHash!) ??
-                        `A_0x${attr.nameHash!.toString(16)}`;
+                const updatedValues: { type: number; value: any }[] = [];
 
-                    const currVal = current[key];
-                    const prevVal = previous[key];
+                for (let i = 0; i < entityMap.attributes!.length; ++i) {
+                    const attribute = entityMap.attributes![i];
 
-                    if (currVal !== undefined && currVal !== prevVal) {
-                        flags[Math.floor(j / 8)] |= 1 << j % 8;
-                        values.push({ type: attr.type!, value: currVal });
+                    if (updatedAttributes.includes(attribute.nameHash!)) {
+                        updatedFlags[Math.floor(i / 8)] |= 1 << i % 8;
+
+                        updatedValues.push({
+                            type: attribute.type!,
+                            value: entity.tick![
+                                tickFieldMap.get(attribute.nameHash!) ??
+                                    `A_0x${attribute.nameHash!.toString(16)}`
+                            ],
+                        });
                     }
                 }
 
-                const hasChanges = flags.some((f) => f !== 0);
-                if (!hasChanges) continue;
+                if (!updatedFlags.some((f) => f !== 0)) continue;
 
-                for (const flag of flags) {
-                    writer.writeUint8(flag);
-                }
+                for (const flag of updatedFlags) writer.writeUint8(flag);
 
-                for (const { type, value } of values) {
+                for (const { type, value } of updatedValues)
                     this.encodeEntityMapAttribute(writer, type, value);
-                }
             }
         }
 

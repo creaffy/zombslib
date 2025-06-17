@@ -15,8 +15,7 @@ export interface RpcParameter {
 }
 export interface NetworkEntity {
     uid?: number;
-    previousTick?: Tick;
-    currentTick?: Tick;
+    tick?: Tick;
     type?: EntityType;
 }
 export declare enum EntityType {
@@ -141,6 +140,7 @@ export interface EntityUpdate {
     tick?: number;
     deletedEntities?: number[];
     createdEntities?: number[];
+    updatedEntities?: Map<number, number[]>;
 }
 export interface Vector2 {
     x: number;
