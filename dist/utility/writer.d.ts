@@ -17,6 +17,8 @@ export declare class BinaryWriter {
     writeVector2(value: Vector2): void;
     writeArrayVector2(data: Vector2[]): void;
     writeArrayUint32(data: Uint32Array): void;
+    writeUint16LE(value: number): void;
+    writeInt16LE(value: number): void;
     writeUint16(value: number): void;
     writeInt16(value: number): void;
     writeInt8(value: number): void;

@@ -116,15 +116,27 @@ export class BinaryWriter {
         }
     }
 
-    writeUint16(value: number) {
+    writeUint16LE(value: number) {
         this.checkBufferSize(2);
         this.view.setUint16(this.offset, value, true);
         this.offset += 2;
     }
 
-    writeInt16(value: number) {
+    writeInt16LE(value: number) {
         this.checkBufferSize(2);
         this.view.setInt16(this.offset, value, true);
+        this.offset += 2;
+    }
+
+    writeUint16(value: number) {
+        this.checkBufferSize(2);
+        this.view.setUint16(this.offset, value);
+        this.offset += 2;
+    }
+
+    writeInt16(value: number) {
+        this.checkBufferSize(2);
+        this.view.setInt16(this.offset, value);
         this.offset += 2;
     }
 

@@ -454,11 +454,11 @@ export class Codec {
                         break;
                     }
                     case ParameterType.Uint16: {
-                        writer.writeUint16(paramData);
+                        writer.writeUint16LE(paramData);
                         break;
                     }
                     case ParameterType.Int16: {
-                        writer.writeInt16(paramData);
+                        writer.writeInt16LE(paramData);
                         break;
                     }
                     case ParameterType.Uint8: {
@@ -984,7 +984,7 @@ export class Codec {
 
         if (rpc.IsArray) {
             const dataArray = data as object[];
-            writer.writeUint16(dataArray.length);
+            writer.writeUint16LE(dataArray.length);
             for (const obj of dataArray) {
                 this.encodeRpcParams(rpc, def, writer, obj);
             }
