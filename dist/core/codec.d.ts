@@ -16,6 +16,7 @@ export declare class Codec {
     cryptRpc(data: Uint8Array): Uint8Array;
     private decodeEntityMapAttribute;
     private encodeEntityMapAttribute;
+    getAttributeName(nameHash: number): string;
     private encodeRpcParams;
     decodeEnterWorldResponse(data: Uint8Array): EnterWorldResponse;
     encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array;

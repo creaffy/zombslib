@@ -152,7 +152,7 @@ export interface EntityUpdate {
     tick?: number;
     deletedEntities?: number[];
     createdEntities?: number[];
-    updatedEntities?: Map<number, number[]>;
+    updatedEntities?: Map<number, string[]>;
 }
 
 export interface Vector2 {

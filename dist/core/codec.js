@@ -198,6 +198,138 @@ class Codec {
                 writer.writeUint32(0);
         }
     }
+    getAttributeName(nameHash) {
+        const tickFieldMap = new Map([
+            [3965757274, "Name"],
+            [2045070744, "Position"],
+            [2112680891, "Scale"],
+            [1899079302, "EntityClass"],
+            [3370100680, "ModelHash"],
+            [338163296, "Yaw"],
+            [2038511229, "InterpolatedYaw"],
+            [396231043, "AimingYaw"],
+            [2232061803, "Health"],
+            [3411739057, "MaxHealth"],
+            [1658281879, "Energy"],
+            [2837959133, "MaxEnergy"],
+            [664883256, "ReconnectSecret"],
+            [2228735555, "Score"],
+            [1998601136, "Armor"],
+            [537809156, "SpeedAttribute"],
+            [1166125470, "Damage"],
+            [463881754, "AvailableSkillPoints"],
+            [1419758453, "CollisionRadius"],
+            [2789835959, "Width"],
+            [4139697398, "Height"],
+            [164904981, "Level"],
+            [2065533638, "Kills"],
+            [487111411, "Dead"],
+            [1776350289, "TimeAlive"],
+            [1168516394, "EntityMap"],
+            [1134913306, "NextPooledTick"],
+            [3940594818, "deathTick"],
+            [2460616447, "firingTick"],
+            [1325424963, "firingSequence"],
+            [2883383757, "lastDamagedTick"],
+            [129999719, "equippedCategoryId"],
+            [1506661530, "equippedDataIndex"],
+            [3284448976, "equippedTier"],
+            [2076321484, "equippedInventorySlot"],
+            [1364116198, "equippedSkinId"],
+            [3044274584, "shield"],
+            [4223951838, "maxShield"],
+            [9937773, "healthDamageTaken"],
+            [3707014400, "shieldDamageTaken"],
+            [1804627392, "effect"],
+            [2650249996, "knockDowns"],
+            [1205522264, "currentAmmo"],
+            [1767079171, "maxAmmo"],
+            [1312790758, "smallAmmo"],
+            [4117515090, "mediumAmmo"],
+            [3527174458, "largeAmmo"],
+            [752369509, "shotgunAmmo"],
+            [2516899740, "wood"],
+            [4272078913, "startChargingTick"],
+            [3740327455, "startChargeUpTick"],
+            [1657309942, "reloadStartedTick"],
+            [4095913789, "reloadEndsTick"],
+            [2391951737, "actionStartedTick"],
+            [3013078650, "actionEndsTick"],
+            [1854863057, "cockingMsRemaining"],
+            [4081874656, "canParachute"],
+            [1987892684, "parachuteStartedTick"],
+            [2426740830, "parachuteMsRemaining"],
+            [34162050, "isFreefalling"],
+            [1918353449, "emoteIndex"],
+            [3821095497, "emoteIndex2"],
+            [3239833222, "emoteTick"],
+            [570200045, "parachuteId"],
+            [957099820, "bodyId"],
+            [2724486410, "backpackId"],
+            [4127365483, "fistSkinId"],
+            [2948797259, "spectatingUid"],
+            [1918570631, "spectateCount"],
+            [2666157490, "partyId"],
+            [1803613228, "partyColor"],
+            [2950326362, "reviveStartedTick"],
+            [1859733209, "reviveEndsTick"],
+            [1553612668, "isKnockedDown"],
+            [918024898, "knockedDownHealth"],
+            [3724070810, "knockedDownMaxHealth"],
+            [910088174, "isOnFire"],
+            [3980301664, "isPoisoned"],
+            [2173100889, "isSlowed"],
+            [1069949249, "isHealing"],
+            [1004238105, "isInWater"],
+            [728513717, "isInBuildingMode"],
+            [4223896640, "zombieKills"],
+            [1349887677, "movementSpeedAffinityRocks"],
+            [139502709, "defenseAffinityRocks"],
+            [733149254, "bulletDamageAffinityRocks"],
+            [1445646640, "bulletSpeedAffinityRocks"],
+            [2256189882, "portalEnterTick"],
+            [1779994739, "isGrappling"],
+            [3115359844, "isVip"],
+            [444524105, "isBoosted"],
+            [4209796065, "lastBulletDataIndex"],
+            [3076225077, "lastBulletLifetimePercent"],
+            [2653271241, "grapplingHookPosition"],
+            [1775539923, "vehicleUid"],
+            [1184607771, "vehicleSlot"],
+            [2034799789, "equippedModifierIndex"],
+            [3257708849, "obtainableUids"],
+            [2096278210, "interactableUids"],
+            [485783130, "visibleBuildingUids"],
+            [471584441, "dataIndex"],
+            [441901997, "collisionUid"],
+            [2729366668, "ownerUid"],
+            [3886314514, "trailId"],
+            [3423242791, "trailColorId"],
+            [2549878347, "creationTick"],
+            [2089316765, "stuckAtTick"],
+            [2636873287, "effectiveLifetimeMs"],
+            [3540988168, "categoryId"],
+            [124913137, "tier"],
+            [3866926138, "quantity"],
+            [2240057735, "skinId"],
+            [3707506636, "modifierIndex"],
+            [2900975594, "weaponKills"],
+            [145240268, "currentCircleRadius"],
+            [1245424964, "nextCircleRadius"],
+            [2941477767, "lastCircleRadius"],
+            [3318715651, "currentCirclePosition"],
+            [3095156091, "nextCirclePosition"],
+            [3256293950, "lastCirclePosition"],
+            [291542999, "currentCircleTick"],
+            [1489880305, "openDoorIds"],
+            [956693851, "openDoorDirections"],
+            [2730579844, "brokenWindowIds"],
+            [1574999092, "sprayIndex"],
+            [2201028498, "airDropLandTick"],
+            [791445081, "vehicleOccupants"],
+        ]);
+        return tickFieldMap.get(nameHash) ?? `A_0x${nameHash.toString(16)}`;
+    }
     encodeRpcParams(rpc, def, writer, data) {
         for (const param of def.parameters) {
             const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
@@ -313,8 +445,7 @@ class Codec {
                 let entityMapAttribute = {};
                 entityMapAttribute.nameHash = reader.readUint32();
                 entityMapAttribute.type = reader.readUint32();
-                entityMap.defaultTick[tickFieldMap.get(entityMapAttribute.nameHash) ??
-                    `A_0x${entityMapAttribute.nameHash.toString(16)}`] = this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
+                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)] = this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
                 entityMap.attributes.push(entityMapAttribute);
             }
             enterWorldResponse.entities.push(entityMap);
@@ -369,12 +500,10 @@ class Codec {
         for (const entity of response.entities) {
             writer.writeUint32(entity.id);
             writer.writeUint32(entity.attributes.length);
-            for (const attr of entity.attributes) {
-                writer.writeUint32(attr.nameHash);
-                writer.writeUint32(attr.type);
-                const key = tickFieldMap.get(attr.nameHash) ??
-                    `A_0x${attr.nameHash.toString(16)}`;
-                this.encodeEntityMapAttribute(writer, attr.type, entity.defaultTick[key]);
+            for (const attribute of entity.attributes) {
+                writer.writeUint32(attribute.nameHash);
+                writer.writeUint32(attribute.type);
+                this.encodeEntityMapAttribute(writer, attribute.type, entity.defaultTick[this.getAttributeName(attribute.nameHash)]);
             }
         }
         writer.writeUint32(response.rpcs.length);
@@ -479,9 +608,9 @@ class Codec {
                         const value = this.decodeEntityMapAttribute(reader, attribute.type);
                         if (value === undefined)
                             return entityUpdate;
-                        tick[tickFieldMap.get(attribute.nameHash) ??
-                            `A_0x${attribute.nameHash.toString(16)}`] = value;
-                        updatedAttributes.push(attribute.nameHash);
+                        const attributeName = this.getAttributeName(attribute.nameHash);
+                        tick[attributeName] = value;
+                        updatedAttributes.push(attributeName);
                     }
                 }
                 entityUpdate.updatedEntities.set(uid, updatedAttributes);
@@ -533,12 +662,12 @@ class Codec {
                 const updatedValues = [];
                 for (let i = 0; i < entityMap.attributes.length; ++i) {
                     const attribute = entityMap.attributes[i];
-                    if (updatedAttributes.includes(attribute.nameHash)) {
+                    const attributeName = this.getAttributeName(attribute.nameHash);
+                    if (updatedAttributes.includes(attributeName)) {
                         updatedFlags[Math.floor(i / 8)] |= 1 << i % 8;
                         updatedValues.push({
                             type: attribute.type,
-                            value: entity.tick[tickFieldMap.get(attribute.nameHash) ??
-                                `A_0x${attribute.nameHash.toString(16)}`],
+                            value: entity.tick[attributeName],
                         });
                     }
                 }
@@ -698,135 +827,6 @@ class Codec {
     }
 }
 exports.Codec = Codec;
-const tickFieldMap = new Map([
-    [3965757274, "Name"],
-    [2045070744, "Position"],
-    [2112680891, "Scale"],
-    [1899079302, "EntityClass"],
-    [3370100680, "ModelHash"],
-    [338163296, "Yaw"],
-    [2038511229, "InterpolatedYaw"],
-    [396231043, "AimingYaw"],
-    [2232061803, "Health"],
-    [3411739057, "MaxHealth"],
-    [1658281879, "Energy"],
-    [2837959133, "MaxEnergy"],
-    [664883256, "ReconnectSecret"],
-    [2228735555, "Score"],
-    [1998601136, "Armor"],
-    [537809156, "SpeedAttribute"],
-    [1166125470, "Damage"],
-    [463881754, "AvailableSkillPoints"],
-    [1419758453, "CollisionRadius"],
-    [2789835959, "Width"],
-    [4139697398, "Height"],
-    [164904981, "Level"],
-    [2065533638, "Kills"],
-    [487111411, "Dead"],
-    [1776350289, "TimeAlive"],
-    [1168516394, "EntityMap"],
-    [1134913306, "NextPooledTick"],
-    [3940594818, "deathTick"],
-    [2460616447, "firingTick"],
-    [1325424963, "firingSequence"],
-    [2883383757, "lastDamagedTick"],
-    [129999719, "equippedCategoryId"],
-    [1506661530, "equippedDataIndex"],
-    [3284448976, "equippedTier"],
-    [2076321484, "equippedInventorySlot"],
-    [1364116198, "equippedSkinId"],
-    [3044274584, "shield"],
-    [4223951838, "maxShield"],
-    [9937773, "healthDamageTaken"],
-    [3707014400, "shieldDamageTaken"],
-    [1804627392, "effect"],
-    [2650249996, "knockDowns"],
-    [1205522264, "currentAmmo"],
-    [1767079171, "maxAmmo"],
-    [1312790758, "smallAmmo"],
-    [4117515090, "mediumAmmo"],
-    [3527174458, "largeAmmo"],
-    [752369509, "shotgunAmmo"],
-    [2516899740, "wood"],
-    [4272078913, "startChargingTick"],
-    [3740327455, "startChargeUpTick"],
-    [1657309942, "reloadStartedTick"],
-    [4095913789, "reloadEndsTick"],
-    [2391951737, "actionStartedTick"],
-    [3013078650, "actionEndsTick"],
-    [1854863057, "cockingMsRemaining"],
-    [4081874656, "canParachute"],
-    [1987892684, "parachuteStartedTick"],
-    [2426740830, "parachuteMsRemaining"],
-    [34162050, "isFreefalling"],
-    [1918353449, "emoteIndex"],
-    [3821095497, "emoteIndex2"],
-    [3239833222, "emoteTick"],
-    [570200045, "parachuteId"],
-    [957099820, "bodyId"],
-    [2724486410, "backpackId"],
-    [4127365483, "fistSkinId"],
-    [2948797259, "spectatingUid"],
-    [1918570631, "spectateCount"],
-    [2666157490, "partyId"],
-    [1803613228, "partyColor"],
-    [2950326362, "reviveStartedTick"],
-    [1859733209, "reviveEndsTick"],
-    [1553612668, "isKnockedDown"],
-    [918024898, "knockedDownHealth"],
-    [3724070810, "knockedDownMaxHealth"],
-    [910088174, "isOnFire"],
-    [3980301664, "isPoisoned"],
-    [2173100889, "isSlowed"],
-    [1069949249, "isHealing"],
-    [1004238105, "isInWater"],
-    [728513717, "isInBuildingMode"],
-    [4223896640, "zombieKills"],
-    [1349887677, "movementSpeedAffinityRocks"],
-    [139502709, "defenseAffinityRocks"],
-    [733149254, "bulletDamageAffinityRocks"],
-    [1445646640, "bulletSpeedAffinityRocks"],
-    [2256189882, "portalEnterTick"],
-    [1779994739, "isGrappling"],
-    [3115359844, "isVip"],
-    [444524105, "isBoosted"],
-    [4209796065, "lastBulletDataIndex"],
-    [3076225077, "lastBulletLifetimePercent"],
-    [2653271241, "grapplingHookPosition"],
-    [1775539923, "vehicleUid"],
-    [1184607771, "vehicleSlot"],
-    [2034799789, "equippedModifierIndex"],
-    [3257708849, "obtainableUids"],
-    [2096278210, "interactableUids"],
-    [485783130, "visibleBuildingUids"],
-    [471584441, "dataIndex"],
-    [441901997, "collisionUid"],
-    [2729366668, "ownerUid"],
-    [3886314514, "trailId"],
-    [3423242791, "trailColorId"],
-    [2549878347, "creationTick"],
-    [2089316765, "stuckAtTick"],
-    [2636873287, "effectiveLifetimeMs"],
-    [3540988168, "categoryId"],
-    [124913137, "tier"],
-    [3866926138, "quantity"],
-    [2240057735, "skinId"],
-    [3707506636, "modifierIndex"],
-    [2900975594, "weaponKills"],
-    [145240268, "currentCircleRadius"],
-    [1245424964, "nextCircleRadius"],
-    [2941477767, "lastCircleRadius"],
-    [3318715651, "currentCirclePosition"],
-    [3095156091, "nextCirclePosition"],
-    [3256293950, "lastCirclePosition"],
-    [291542999, "currentCircleTick"],
-    [1489880305, "openDoorIds"],
-    [956693851, "openDoorDirections"],
-    [2730579844, "brokenWindowIds"],
-    [1574999092, "sprayIndex"],
-    [2201028498, "airDropLandTick"],
-    [791445081, "vehicleOccupants"],
-]);
 function swap16(value) {
     return ((value & 0xff) << 8) | ((value >> 8) & 0xff);
 }
