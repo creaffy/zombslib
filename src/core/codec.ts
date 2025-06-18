@@ -829,11 +829,11 @@ export class Codec {
                         break;
                     }
                     case ParameterType.Uint16: {
-                        value = reader.readUint16();
+                        value = reader.readUint16LE();
                         break;
                     }
                     case ParameterType.Int16: {
-                        value = reader.readInt16();
+                        value = reader.readInt16LE();
                         break;
                     }
                     case ParameterType.Uint8: {
@@ -858,9 +858,6 @@ export class Codec {
 
                 if (match !== undefined) {
                     const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                    if (match.Type === ParameterType.Uint16) value = swap16(value & mask);
-                    if (match.Type === ParameterType.Int16) value = swap16(value & mask);
-
                     if (match.Key !== null) value = (value ^ match.Key) & mask;
 
                     switch (match.Type) {
@@ -937,10 +934,6 @@ interface DumpedData {
     Codec: number;
     Platform: string;
     Rpcs: DumpedRpc[];
-}
-
-function swap16(value: number) {
-    return ((value & 0xff) << 8) | ((value >> 8) & 0xff);
 }
 
 const paramTypeSizeMap = {

@@ -136,6 +136,20 @@ class BinaryReader {
         }
         return result;
     }
+    readUint16LE() {
+        if (!this.canRead(2))
+            return undefined;
+        const value = this.view.getUint16(this.offset, true);
+        this.offset += 2;
+        return value;
+    }
+    readInt16LE() {
+        if (!this.canRead(2))
+            return undefined;
+        const value = this.view.getInt16(this.offset, true);
+        this.offset += 2;
+        return value;
+    }
     readUint16() {
         if (!this.canRead(2))
             return undefined;

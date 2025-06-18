@@ -742,11 +742,11 @@ class Codec {
                         break;
                     }
                     case network_1.ParameterType.Uint16: {
-                        value = reader.readUint16();
+                        value = reader.readUint16LE();
                         break;
                     }
                     case network_1.ParameterType.Int16: {
-                        value = reader.readInt16();
+                        value = reader.readInt16LE();
                         break;
                     }
                     case network_1.ParameterType.Uint8: {
@@ -770,10 +770,6 @@ class Codec {
                     return undefined;
                 if (match !== undefined) {
                     const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                    if (match.Type === network_1.ParameterType.Uint16)
-                        value = swap16(value & mask);
-                    if (match.Type === network_1.ParameterType.Int16)
-                        value = swap16(value & mask);
                     if (match.Key !== null)
                         value = (value ^ match.Key) & mask;
                     switch (match.Type) {
@@ -824,9 +820,6 @@ class Codec {
     }
 }
 exports.Codec = Codec;
-function swap16(value) {
-    return ((value & 0xff) << 8) | ((value >> 8) & 0xff);
-}
 const paramTypeSizeMap = {
     [network_1.ParameterType.Uint32]: 32,
     [network_1.ParameterType.Int32]: 32,
