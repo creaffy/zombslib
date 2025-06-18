@@ -32,19 +32,10 @@ export class Codec {
         );
     }
 
-    public computeRpcKey(
-        codecVersion: number,
-        targetUrl: Uint8Array,
-        proofOfWork: Uint8Array
-    ) {
-        for (let i = 0; i < proofOfWork.length; ++i)
-            this.rpcKey[i % this.rpcKey.length] ^= proofOfWork[i];
-
-        for (let i = 0; i < this.rpcKey.length; ++i)
-            this.rpcKey[i] ^= codecVersion;
-
-        for (let i = 0; i < targetUrl.length; ++i)
-            this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
+    public computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array) {
+        for (let i = 0; i < proofOfWork.length; ++i) this.rpcKey[i % this.rpcKey.length] ^= proofOfWork[i];
+        for (let i = 0; i < this.rpcKey.length; ++i) this.rpcKey[i] ^= codecVersion;
+        for (let i = 0; i < targetUrl.length; ++i) this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
     }
 
     private applyCommonMask(buf: Buffer): void {
@@ -66,9 +57,7 @@ export class Codec {
         const powBuffer = Buffer.alloc(size + pathBytes.length);
         powBuffer.set(pathBytes, size);
 
-        let state =
-            Math.random() * 0xffffffff ||
-            Math.floor(Math.random() * Math.pow(2, 32));
+        let state = Math.random() * 0xffffffff || Math.floor(Math.random() * Math.pow(2, 32));
 
         while (true) {
             for (let i = 0; i < size; ++i) {
@@ -104,9 +93,7 @@ export class Codec {
         const powBuffer = Buffer.from(proofOfWork);
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
 
-        for (const [platformName, { hashState, logic }] of Object.entries(
-            platformConfigs
-        )) {
+        for (const [platformName, { hashState, logic }] of Object.entries(platformConfigs)) {
             const fullBuffer = Buffer.alloc(size + pathBytes.length);
             powBuffer.copy(fullBuffer, 0, 0, size);
             pathBytes.copy(fullBuffer, size);
@@ -123,8 +110,7 @@ export class Codec {
             let d = 0;
             while (true) {
                 if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) break;
-                if (++d === difficulty)
-                    return { valid: true, platform: platformName };
+                if (++d === difficulty) return { valid: true, platform: platformName };
             }
         }
 
@@ -134,16 +120,12 @@ export class Codec {
     public cryptRpc(data: Uint8Array): Uint8Array {
         let rpc = new Uint8Array(data);
 
-        for (let i = 1; i < rpc.length; ++i)
-            rpc[i] ^= this.rpcKey[i % this.rpcKey.length];
+        for (let i = 1; i < rpc.length; ++i) rpc[i] ^= this.rpcKey[i % this.rpcKey.length];
 
         return rpc;
     }
 
-    private decodeEntityMapAttribute(
-        reader: BinaryReader,
-        type: AttributeType
-    ) {
+    private decodeEntityMapAttribute(reader: BinaryReader, type: AttributeType) {
         switch (type) {
             case AttributeType.Uint32:
                 return reader.readUint32();
@@ -188,11 +170,7 @@ export class Codec {
         return undefined;
     }
 
-    private encodeEntityMapAttribute(
-        writer: BinaryWriter,
-        type: AttributeType | undefined,
-        value: any
-    ) {
+    private encodeEntityMapAttribute(writer: BinaryWriter, type: AttributeType | undefined, value: any) {
         switch (type) {
             case AttributeType.Uint32:
                 writer.writeUint32(value || 0);
@@ -386,24 +364,14 @@ export class Codec {
         return tickFieldMap.get(nameHash) ?? `A_0x${nameHash.toString(16)}`;
     }
 
-    private encodeRpcParams(
-        rpc: DumpedRpc,
-        def: Rpc,
-        writer: BinaryWriter,
-        data: object
-    ) {
+    private encodeRpcParams(rpc: DumpedRpc, def: Rpc, writer: BinaryWriter, data: object) {
         for (const param of def.parameters!) {
-            const match = rpc.Parameters.find(
-                (p) => param.nameHash === p.NameHash
-            );
+            const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
 
             if (!match) {
                 writer.writeUint8(0);
             } else {
-                const fieldName =
-                    match.FieldName !== null
-                        ? match.FieldName
-                        : `P_0x${match.NameHash.toString(16)}`;
+                const fieldName = match.FieldName !== null ? match.FieldName : `P_0x${match.NameHash.toString(16)}`;
 
                 const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
                 let paramData = data[fieldName];
@@ -425,8 +393,7 @@ export class Codec {
                     }
                 }
 
-                if (match.Key !== null)
-                    paramData = (paramData ^ match.Key) & mask;
+                if (match.Key !== null) paramData = (paramData ^ match.Key) & mask;
 
                 switch (match.Type) {
                     case ParameterType.Uint32: {
@@ -516,12 +483,8 @@ export class Codec {
                 entityMapAttribute.nameHash = reader.readUint32()!;
                 entityMapAttribute.type = reader.readUint32()!;
 
-                entityMap.defaultTick[
-                    this.getAttributeName(entityMapAttribute.nameHash)
-                ] = this.decodeEntityMapAttribute(
-                    reader,
-                    entityMapAttribute.type
-                );
+                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)] =
+                    this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
 
                 entityMap.attributes.push(entityMapAttribute);
             }
@@ -554,8 +517,7 @@ export class Codec {
 
         if (reader.canRead()) enterWorldResponse.map = reader.readString();
 
-        if (reader.canRead())
-            enterWorldResponse.udpCookie = reader.readUint32();
+        if (reader.canRead()) enterWorldResponse.udpCookie = reader.readUint32();
 
         if (reader.canRead()) enterWorldResponse.udpPort = reader.readUint32();
 
@@ -595,9 +557,7 @@ export class Codec {
                 this.encodeEntityMapAttribute(
                     writer,
                     attribute.type!,
-                    entity.defaultTick![
-                        this.getAttributeName(attribute.nameHash!)
-                    ]
+                    entity.defaultTick![this.getAttributeName(attribute.nameHash!)]
                 );
             }
         }
@@ -615,10 +575,8 @@ export class Codec {
 
         if (response.mode !== undefined) writer.writeString(response.mode);
         if (response.map !== undefined) writer.writeString(response.map);
-        if (response.udpCookie !== undefined)
-            writer.writeUint32(response.udpCookie);
-        if (response.udpPort !== undefined)
-            writer.writeUint32(response.udpPort);
+        if (response.udpCookie !== undefined) writer.writeUint32(response.udpCookie);
+        if (response.udpPort !== undefined) writer.writeUint32(response.udpPort);
 
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
@@ -671,9 +629,7 @@ export class Codec {
         }
 
         for (const entityMap of this.entityMaps) {
-            entityMap.sortedUids = entityMap.sortedUids!.filter(
-                (uid) => !entityUpdate.deletedEntities!.includes(uid)
-            );
+            entityMap.sortedUids = entityMap.sortedUids!.filter((uid) => !entityUpdate.deletedEntities!.includes(uid));
         }
 
         while (reader.canRead()) {
@@ -684,11 +640,7 @@ export class Codec {
             if (entityMap === undefined) return entityUpdate;
 
             const absentEntitiesFlags: number[] = [];
-            for (
-                let i = 0;
-                i < Math.floor((entityMap.sortedUids!.length + 7) / 8);
-                ++i
-            ) {
+            for (let i = 0; i < Math.floor((entityMap.sortedUids!.length + 7) / 8); ++i) {
                 const flag = reader.readUint8();
                 if (flag === undefined) return entityUpdate;
 
@@ -698,19 +650,12 @@ export class Codec {
             for (let i = 0; i < entityMap.sortedUids!.length; ++i) {
                 const uid = entityMap.sortedUids![i];
 
-                if (
-                    (absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !==
-                    0
-                ) {
+                if ((absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !== 0) {
                     continue;
                 }
 
                 const updatedEntityFlags: number[] = [];
-                for (
-                    let j = 0;
-                    j < Math.ceil(entityMap.attributes!.length / 8);
-                    ++j
-                ) {
+                for (let j = 0; j < Math.ceil(entityMap.attributes!.length / 8); ++j) {
                     const flag = reader.readUint8();
                     if (flag === undefined) return entityUpdate;
 
@@ -722,15 +667,10 @@ export class Codec {
                 for (let j = 0; j < entityMap.attributes!.length; ++j) {
                     const attribute = entityMap.attributes![j];
                     if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
-                        const value = this.decodeEntityMapAttribute(
-                            reader,
-                            attribute.type!
-                        );
+                        const value = this.decodeEntityMapAttribute(reader, attribute.type!);
                         if (value === undefined) return entityUpdate;
 
-                        const attributeName = this.getAttributeName(
-                            attribute.nameHash!
-                        );
+                        const attributeName = this.getAttributeName(attribute.nameHash!);
                         tick[attributeName] = value;
                         updatedAttributes.push(attributeName);
                     }
@@ -749,30 +689,23 @@ export class Codec {
         writer.writeUint32(entityUpdate.tick!);
 
         writer.writeInt8(entityUpdate.deletedEntities!.length);
-        for (const uid of entityUpdate.deletedEntities!)
-            writer.writeUint32(uid);
+        for (const uid of entityUpdate.deletedEntities!) writer.writeUint32(uid);
 
         const entityMaps = this.entityMaps.filter((map) =>
-            entityUpdate.createdEntities?.some((uid) =>
-                map.sortedUids?.includes(uid)
-            )
+            entityUpdate.createdEntities?.some((uid) => map.sortedUids?.includes(uid))
         );
 
         writer.writeInt8(entityMaps.length);
 
         for (const entityMap of entityMaps) {
-            const brandNewEntities = entityUpdate.createdEntities!.filter(
-                (uid) => entityMap.sortedUids?.includes(uid)
-            );
+            const brandNewEntities = entityUpdate.createdEntities!.filter((uid) => entityMap.sortedUids?.includes(uid));
             writer.writeInt8(brandNewEntities.length);
             writer.writeUint32(entityMap.id!);
             for (const uid of brandNewEntities) writer.writeUint32(uid);
         }
 
         for (const entityMap of this.entityMaps) {
-            const filteredUids = entityMap.sortedUids!.filter(
-                (uid) => !entityUpdate.deletedEntities!.includes(uid)
-            );
+            const filteredUids = entityMap.sortedUids!.filter((uid) => !entityUpdate.deletedEntities!.includes(uid));
             if (filteredUids.length === 0) continue;
 
             writer.writeUint32(entityMap.id!);
@@ -792,21 +725,16 @@ export class Codec {
                 const entity = this.entityList.get(uid);
                 if (entity === undefined) continue;
 
-                const updatedAttributes =
-                    entityUpdate.updatedEntities!.get(uid);
+                const updatedAttributes = entityUpdate.updatedEntities!.get(uid);
                 if (updatedAttributes === undefined) continue;
 
-                const updatedFlags: number[] = Array(
-                    Math.ceil(entityMap.attributes!.length / 8)
-                ).fill(0);
+                const updatedFlags: number[] = Array(Math.ceil(entityMap.attributes!.length / 8)).fill(0);
 
                 const updatedValues: { type: number; value: any }[] = [];
 
                 for (let i = 0; i < entityMap.attributes!.length; ++i) {
                     const attribute = entityMap.attributes![i];
-                    const attributeName = this.getAttributeName(
-                        attribute.nameHash!
-                    );
+                    const attributeName = this.getAttributeName(attribute.nameHash!);
 
                     if (updatedAttributes.includes(attributeName)) {
                         updatedFlags[Math.floor(i / 8)] |= 1 << i % 8;
@@ -822,17 +750,14 @@ export class Codec {
 
                 for (const flag of updatedFlags) writer.writeUint8(flag);
 
-                for (const { type, value } of updatedValues)
-                    this.encodeEntityMapAttribute(writer, type, value);
+                for (const { type, value } of updatedValues) this.encodeEntityMapAttribute(writer, type, value);
             }
         }
 
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
-    public decodeEnterWorldRequest(
-        data: Uint8Array
-    ): EnterWorldRequest | undefined {
+    public decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest | undefined {
         const reader = new BinaryReader(data, 1);
 
         const displayName = reader.readString();
@@ -862,18 +787,14 @@ export class Codec {
         const reader = new BinaryReader(data, 5);
         let obj = {};
 
-        const rpc = this.rpcMapping.Rpcs.find(
-            (r) => r.NameHash === def.nameHash
-        );
+        const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
         if (rpc === undefined) return undefined;
 
         if (rpc.IsArray) {
             return undefined;
         } else {
             for (const param of def.parameters!) {
-                const match = rpc.Parameters.find(
-                    (p) => p.NameHash === param.nameHash
-                );
+                const match = rpc.Parameters.find((p) => p.NameHash === param.nameHash);
 
                 const fieldName =
                     match !== undefined && match.FieldName !== null
@@ -937,10 +858,8 @@ export class Codec {
 
                 if (match !== undefined) {
                     const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                    if (match.Type === ParameterType.Uint16)
-                        value = swap16(value & mask);
-                    if (match.Type === ParameterType.Int16)
-                        value = swap16(value & mask);
+                    if (match.Type === ParameterType.Uint16) value = swap16(value & mask);
+                    if (match.Type === ParameterType.Int16) value = swap16(value & mask);
 
                     if (match.Key !== null) value = (value ^ match.Key) & mask;
 
@@ -974,9 +893,7 @@ export class Codec {
         const rpc = this.rpcMapping.Rpcs.find((r) => r.ClassName === name);
         if (rpc === undefined) return undefined;
 
-        const def = this.enterWorldResponse.rpcs!.find(
-            (r) => r.nameHash === rpc.NameHash
-        );
+        const def = this.enterWorldResponse.rpcs!.find((r) => r.nameHash === rpc.NameHash);
         if (def === undefined) return undefined;
 
         writer.writeUint8(9);

@@ -31,8 +31,7 @@ class Game extends node_events_1.EventEmitter {
             this.emit("RawData", data2);
             switch (view.getUint8(0)) {
                 case network_1.PacketId.EnterWorld: {
-                    this.codec.enterWorldResponse =
-                        this.codec.decodeEnterWorldResponse(new Uint8Array(data));
+                    this.codec.enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
                     this.emit("EnterWorldResponse", this.codec.enterWorldResponse);
                     break;
                 }

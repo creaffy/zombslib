@@ -37,8 +37,7 @@ class Codec {
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
         const powBuffer = Buffer.alloc(size + pathBytes.length);
         powBuffer.set(pathBytes, size);
-        let state = Math.random() * 0xffffffff ||
-            Math.floor(Math.random() * Math.pow(2, 32));
+        let state = Math.random() * 0xffffffff || Math.floor(Math.random() * Math.pow(2, 32));
         while (true) {
             for (let i = 0; i < size; ++i) {
                 state ^= state << 13;
@@ -337,9 +336,7 @@ class Codec {
                 writer.writeUint8(0);
             }
             else {
-                const fieldName = match.FieldName !== null
-                    ? match.FieldName
-                    : `P_0x${match.NameHash.toString(16)}`;
+                const fieldName = match.FieldName !== null ? match.FieldName : `P_0x${match.NameHash.toString(16)}`;
                 const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
                 let paramData = data[fieldName];
                 switch (match.Type) {
@@ -445,7 +442,8 @@ class Codec {
                 let entityMapAttribute = {};
                 entityMapAttribute.nameHash = reader.readUint32();
                 entityMapAttribute.type = reader.readUint32();
-                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)] = this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
+                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)] =
+                    this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
                 entityMap.attributes.push(entityMapAttribute);
             }
             enterWorldResponse.entities.push(entityMap);
@@ -589,8 +587,7 @@ class Codec {
             }
             for (let i = 0; i < entityMap.sortedUids.length; ++i) {
                 const uid = entityMap.sortedUids[i];
-                if ((absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !==
-                    0) {
+                if ((absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !== 0) {
                     continue;
                 }
                 const updatedEntityFlags = [];

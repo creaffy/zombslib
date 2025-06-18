@@ -131,10 +131,7 @@ export class Game extends EventEmitter {
     private socket: WebSocket;
     public codec = new Codec("./rpcs.json");
 
-    override on<K extends keyof GameEvents>(
-        event: K,
-        listener: GameEvents[K]
-    ): this;
+    override on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
 
     override on(event: string, listener: (...args: any[]) => void): this;
 
@@ -161,15 +158,9 @@ export class Game extends EventEmitter {
                 version: this.codec.rpcMapping.Codec,
                 proofOfWork: pow,
             };
-            this.socket.send(
-                this.codec.encodeEnterWorldRequest(enterWorldRequest)
-            );
+            this.socket.send(this.codec.encodeEnterWorldRequest(enterWorldRequest));
 
-            this.codec.computeRpcKey(
-                this.codec.rpcMapping.Codec,
-                new TextEncoder().encode("/" + server.endpoint),
-                pow
-            );
+            this.codec.computeRpcKey(this.codec.rpcMapping.Codec, new TextEncoder().encode("/" + server.endpoint), pow);
         });
 
         this.socket.on("message", (data: ArrayBuffer) => {
@@ -180,15 +171,9 @@ export class Game extends EventEmitter {
 
             switch (view.getUint8(0) as PacketId) {
                 case PacketId.EnterWorld: {
-                    this.codec.enterWorldResponse =
-                        this.codec.decodeEnterWorldResponse(
-                            new Uint8Array(data)
-                        );
+                    this.codec.enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
 
-                    this.emit(
-                        "EnterWorldResponse",
-                        this.codec.enterWorldResponse
-                    );
+                    this.emit("EnterWorldResponse", this.codec.enterWorldResponse);
 
                     break;
                 }
@@ -201,9 +186,7 @@ export class Game extends EventEmitter {
                 case PacketId.Rpc: {
                     const decrypedData = this.codec.cryptRpc(data2);
 
-                    const definition = this.codec.enterWorldResponse.rpcs!.find(
-                        (rpc) => rpc.index === decrypedData[1]
-                    );
+                    const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === decrypedData[1]);
 
                     const rpc = this.codec.decodeRpc(definition!, decrypedData);
 
@@ -245,11 +228,7 @@ export class Game extends EventEmitter {
     }
 
     public getEntitiesByType(type: EntityType) {
-        return new Map(
-            Array.from(this.codec.entityList).filter(
-                ([k, v]) => v.type === type
-            )
-        );
+        return new Map(Array.from(this.codec.entityList).filter(([k, v]) => v.type === type));
     }
 
     public getMyUid() {
@@ -286,16 +265,10 @@ export class Game extends EventEmitter {
     }
 
     public setPlatformRpc(platform: "android" | "web" | "windows" | "ios") {
-        this.send(
-            this.codec.encodeRpc("SetPlatformRpc", { platform: platform })
-        );
+        this.send(this.codec.encodeRpc("SetPlatformRpc", { platform: platform }));
     }
 
-    public interactDoorRpc(
-        buildingUid: number,
-        doorIndex: number,
-        close: number
-    ) {
+    public interactDoorRpc(buildingUid: number, doorIndex: number, close: number) {
         this.send(
             this.codec.encodeRpc("InteractDoorRpc", {
                 buildingUid: buildingUid,
@@ -327,9 +300,7 @@ export class Game extends EventEmitter {
     }
 
     public joinTeamRpc(key: string, players: number) {
-        this.send(
-            this.codec.encodeRpc("JoinTeamRpc", { key: key, players: players })
-        );
+        this.send(this.codec.encodeRpc("JoinTeamRpc", { key: key, players: players }));
     }
 
     public placeBuildingRpc(dataIndex: number, x: number, y: number) {
@@ -380,9 +351,7 @@ export class Game extends EventEmitter {
     }
 
     public dropAmmoRpc(ammoIndex: number) {
-        this.send(
-            this.codec.encodeRpc("DropAmmoRpc", { ammoIndex: ammoIndex })
-        );
+        this.send(this.codec.encodeRpc("DropAmmoRpc", { ammoIndex: ammoIndex }));
     }
 
     public setEmoteRpc(emote2: number) {
@@ -394,9 +363,7 @@ export class Game extends EventEmitter {
     }
 
     public setMarkerRpc(x: number, y: number, valid: number) {
-        this.send(
-            this.codec.encodeRpc("SetMarkerRpc", { x: x, y: y, valid: valid })
-        );
+        this.send(this.codec.encodeRpc("SetMarkerRpc", { x: x, y: y, valid: valid }));
     }
 
     public pickupItemRpc(itemUid: number, inventorySlot: number) {

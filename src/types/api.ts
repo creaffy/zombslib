@@ -658,8 +658,7 @@ export interface ApiValidateDiscordResponse extends ApiValidateLoginResponse {}
 
 export interface ApiValidateFacebookResponse extends ApiValidateLoginResponse {}
 
-export interface ApiValidateGameCenterResponse
-    extends ApiValidateLoginResponse {}
+export interface ApiValidateGameCenterResponse extends ApiValidateLoginResponse {}
 
 export interface ApiValidateGoogleResponse extends ApiValidateLoginResponse {}
 

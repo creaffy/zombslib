@@ -42,10 +42,7 @@ interface MasonEvents {
 export class MasonService extends EventEmitter {
     private socket: WebSocket;
 
-    override on<K extends keyof MasonEvents>(
-        event: K,
-        listener: MasonEvents[K]
-    ): this;
+    override on<K extends keyof MasonEvents>(event: K, listener: MasonEvents[K]): this;
 
     override on(event: string, listener: (...args: any[]) => void): this;
 
@@ -53,9 +50,7 @@ export class MasonService extends EventEmitter {
         return super.on(event, listener);
     }
 
-    public constructor(
-        url: string = "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket"
-    ) {
+    public constructor(url: string = "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket") {
         super();
 
         this.socket = new WebSocket(url);
@@ -78,8 +73,7 @@ export class MasonService extends EventEmitter {
                 const event = parsed[0];
                 let parameter = parsed[1];
 
-                if (event === "partyMetadataUpdated")
-                    parameter = JSON.parse(parameter);
+                if (event === "partyMetadataUpdated") parameter = JSON.parse(parameter);
                 else if (event === "loggedIn") parameter = parameter.userData;
 
                 this.emit("any", event, parameter);
@@ -153,9 +147,7 @@ export class MasonService extends EventEmitter {
     }
 
     public sendPrivateMessage(friendId: string, message: string): void {
-        this.socket.send(
-            `42["sendPrivateMessage", "${friendId}", "${message}"]`
-        );
+        this.socket.send(`42["sendPrivateMessage", "${friendId}", "${message}"]`);
     }
 
     public setIsInRound(inRound: boolean): void {
@@ -185,12 +177,7 @@ export class MasonService extends EventEmitter {
     }
 
     public setPartyRegion(
-        region:
-            | "vultr-frankfurt"
-            | "vultr-miami"
-            | "vultr-la"
-            | "vultr-singapore"
-            | "i3d-oceania"
+        region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania"
     ): void {
         this.socket.send(`42["setPartyRegion", "${region}"]`);
     }
