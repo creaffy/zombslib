@@ -7,9 +7,11 @@ class MasonService extends node_events_1.EventEmitter {
     on(event, listener) {
         return super.on(event, listener);
     }
-    constructor(url = "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket") {
+    constructor(options) {
         super();
-        this.socket = new ws_1.WebSocket(url);
+        const url = options?.url ?? "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket";
+        const proxy = options?.proxy;
+        this.socket = new ws_1.WebSocket(url, { agent: proxy });
         this.socket.on("error", (err) => {
             this.emit("error", err);
         });

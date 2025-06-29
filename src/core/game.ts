@@ -65,6 +65,7 @@ import {
     SchemaWeapon,
     SchemaZombie,
 } from "../types/schema";
+import { Agent } from "node:http";
 
 interface GameEvents {
     // --- Misc ---
@@ -139,11 +140,14 @@ export class Game extends EventEmitter {
         return super.on(event, listener);
     }
 
-    public constructor(server: ApiServer, displayName: string) {
+    public constructor(server: ApiServer, options?: { displayName?: string; proxy?: Agent }) {
         super();
 
+        const displayName = options?.displayName ?? "Player";
+        const proxy = options?.proxy;
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
-        this.socket = new WebSocket(url);
+
+        this.socket = new WebSocket(url, { agent: proxy });
         this.socket.binaryType = "arraybuffer";
 
         this.socket.on("open", () => {
@@ -202,6 +206,10 @@ export class Game extends EventEmitter {
 
         this.socket.on("close", (code) => {
             this.emit("close", code);
+        });
+
+        this.socket.on("error", (error) => {
+            this.emit("error", error);
         });
 
         this.on("CompressedDataRpc", (rpc: CompressedDataRpc) => {

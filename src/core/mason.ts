@@ -11,6 +11,7 @@ import {
     ApiServer,
     ApiUser,
 } from "../types/api";
+import { Agent } from "node:http";
 
 interface MasonEvents {
     clansData: (clans: ApiClan[]) => void;
@@ -50,10 +51,13 @@ export class MasonService extends EventEmitter {
         return super.on(event, listener);
     }
 
-    public constructor(url: string = "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket") {
+    public constructor(options?: { url?: string; proxy?: Agent }) {
         super();
 
-        this.socket = new WebSocket(url);
+        const url = options?.url ?? "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket";
+        const proxy = options?.proxy;
+
+        this.socket = new WebSocket(url, { agent: proxy });
 
         this.socket.on("error", (err: Error) => {
             this.emit("error", err);

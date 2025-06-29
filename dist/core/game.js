@@ -9,11 +9,13 @@ class Game extends node_events_1.EventEmitter {
     on(event, listener) {
         return super.on(event, listener);
     }
-    constructor(server, displayName) {
+    constructor(server, options) {
         super();
         this.codec = new codec_1.Codec("./rpcs.json");
+        const displayName = options?.displayName ?? "Player";
+        const proxy = options?.proxy;
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
-        this.socket = new ws_1.WebSocket(url);
+        this.socket = new ws_1.WebSocket(url, { agent: proxy });
         this.socket.binaryType = "arraybuffer";
         this.socket.on("open", () => {
             const pow = this.codec.generateProofOfWork(server.endpoint, this.codec.rpcMapping.Platform, server.discreteFourierTransformBias);
@@ -54,6 +56,9 @@ class Game extends node_events_1.EventEmitter {
         });
         this.socket.on("close", (code) => {
             this.emit("close", code);
+        });
+        this.socket.on("error", (error) => {
+            this.emit("error", error);
         });
         this.on("CompressedDataRpc", (rpc) => {
             this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));

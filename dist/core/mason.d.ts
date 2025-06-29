@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { ApiClan, ApiFriend, ApiFriendRequest, ApiParty, ApiPartyInvite, ApiPartyMetadata, ApiPartyPlayer, ApiServer, ApiUser } from "../types/api";
+import { Agent } from "node:http";
 interface MasonEvents {
     clansData: (clans: ApiClan[]) => void;
     partyInviteReceived: (partyInvites: ApiPartyInvite) => void;
@@ -28,7 +29,10 @@ export declare class MasonService extends EventEmitter {
     private socket;
     on<K extends keyof MasonEvents>(event: K, listener: MasonEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
-    constructor(url?: string);
+    constructor(options?: {
+        url?: string;
+        proxy?: Agent;
+    });
     shutdown(): void;
     sendPing(): void;
     acceptFriendRequest(friendCode: string): void;

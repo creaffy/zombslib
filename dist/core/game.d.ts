@@ -3,6 +3,7 @@ import { Codec } from "./codec";
 import { ApiServer } from "../types/api";
 import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityType, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InputRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, MetricsRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, SetSkinRpc, ShutdownRpc, UpdateMarkerRpc, Vector2 } from "../types/network";
 import { SchemaAmmo, SchemaBuilding, SchemaEmote, SchemaGas, SchemaGeneral, SchemaGunGameGun, SchemaHealingItem, SchemaLoadout, SchemaMap, SchemaModifier, SchemaNpc, SchemaPlayer, SchemaPlayerBuilding, SchemaProjectile, SchemaProp, SchemaTier, SchemaVehicle, SchemaWeapon, SchemaZombie } from "../types/schema";
+import { Agent } from "node:http";
 interface GameEvents {
     RawData: (data: Uint8Array) => void;
     Rpc: (name: string, rpc: object) => void;
@@ -65,7 +66,10 @@ export declare class Game extends EventEmitter {
     codec: Codec;
     on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
-    constructor(server: ApiServer, displayName: string);
+    constructor(server: ApiServer, options?: {
+        displayName?: string;
+        proxy?: Agent;
+    });
     send(data: Uint8Array | undefined): void;
     shutdown(): void;
     getEnterWorldResponse(): EnterWorldResponse;
