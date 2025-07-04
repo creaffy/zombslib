@@ -6,7 +6,7 @@ export class BinaryReader {
 
     constructor(data: Uint8Array, offset: number = 0) {
         this.view = new DataView(data.buffer);
-        this.offset = offset || 0;
+        this.offset = offset;
     }
 
     canRead(n = 1) {
@@ -90,8 +90,8 @@ export class BinaryReader {
     }
 
     readCompressedString() {
-        if (!this.canRead(4)) return undefined;
-        const length = this.readUint32()!;
+        const length = this.readUint32();
+        if (length === undefined) return undefined;
         if (!this.canRead(length)) return undefined;
         const data = this.view.buffer.slice(this.offset, this.offset + length);
         this.offset += length;
@@ -99,34 +99,36 @@ export class BinaryReader {
     }
 
     readUint8Vector2() {
-        if (!this.canRead(2)) return undefined;
-        const x = this.readUint8()!;
-        const y = this.readUint8()!;
+        const x = this.readUint8();
+        if (x === undefined) return undefined;
+        const y = this.readUint8();
+        if (y === undefined) return undefined;
         return { x, y };
     }
 
     readVector2() {
-        if (!this.canRead(8)) return undefined;
-        const x = this.readFloat()!;
-        const y = this.readFloat()!;
+        const x = this.readFloat();
+        if (x === undefined) return undefined;
+        const y = this.readFloat();
+        if (y === undefined) return undefined;
         return { x, y };
     }
 
     readArrayVector2() {
-        if (!this.canRead(4)) return undefined;
-        const length = this.readInt32()!;
-        if (!this.canRead(length * 8)) return undefined;
-        let result: { x: number; y: number }[] = [];
+        const length = this.readInt32();
+        if (length === undefined) return undefined;
+        if (length < 0 || !this.canRead(length * 8)) return undefined;
+        const result = new Array(length);
         for (let i = 0; i < length; i++) {
-            result.push(this.readVector2()!);
+            result[i] = this.readVector2()!;
         }
         return result;
     }
 
     readArrayUint32() {
-        if (!this.canRead(4)) return undefined;
-        const length = this.readInt32()!;
-        if (!this.canRead(length * 4)) return undefined;
+        const length = this.readInt32();
+        if (length === undefined) return undefined;
+        if (length < 0 || !this.canRead(length * 4)) return undefined;
         const result = new Array(length);
         for (let i = 0; i < length; i++) {
             result[i] = this.readUint32()!;
@@ -134,28 +136,28 @@ export class BinaryReader {
         return result;
     }
 
-    readUint16LE() {
+    readUint16() {
         if (!this.canRead(2)) return undefined;
         const value = this.view.getUint16(this.offset, true);
         this.offset += 2;
         return value;
     }
 
-    readInt16LE() {
+    readInt16() {
         if (!this.canRead(2)) return undefined;
         const value = this.view.getInt16(this.offset, true);
         this.offset += 2;
         return value;
     }
 
-    readUint16() {
+    readUint16BE() {
         if (!this.canRead(2)) return undefined;
         const value = this.view.getUint16(this.offset);
         this.offset += 2;
         return value;
     }
 
-    readInt16() {
+    readInt16BE() {
         if (!this.canRead(2)) return undefined;
         const value = this.view.getInt16(this.offset);
         this.offset += 2;
@@ -165,14 +167,14 @@ export class BinaryReader {
     readInt8() {
         if (!this.canRead(1)) return undefined;
         const value = this.view.getInt8(this.offset);
-        this.offset += 1;
+        this.offset++;
         return value;
     }
 
     readArrayInt32() {
-        if (!this.canRead(4)) return undefined;
-        const length = this.readInt32()!;
-        if (!this.canRead(length * 4)) return undefined;
+        const length = this.readInt32();
+        if (length === undefined) return undefined;
+        if (length < 0 || !this.canRead(length * 4)) return undefined;
         const result = new Array(length);
         for (let i = 0; i < length; i++) {
             result[i] = this.readInt32()!;
@@ -181,9 +183,9 @@ export class BinaryReader {
     }
 
     readArrayUint8() {
-        if (!this.canRead(1)) return undefined;
-        const length = this.readUint8()!;
-        if (!this.canRead(length)) return undefined;
+        const length = this.readUint8();
+        if (length === undefined) return undefined;
+        if (length < 0 || !this.canRead(length)) return undefined;
         const result = new Array(length);
         for (let i = 0; i < length; i++) {
             result[i] = this.readUint8()!;

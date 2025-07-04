@@ -20,15 +20,12 @@ export declare class BinaryReader {
         x: number;
         y: number;
     } | undefined;
-    readArrayVector2(): {
-        x: number;
-        y: number;
-    }[] | undefined;
+    readArrayVector2(): any[] | undefined;
     readArrayUint32(): any[] | undefined;
-    readUint16LE(): number | undefined;
-    readInt16LE(): number | undefined;
     readUint16(): number | undefined;
     readInt16(): number | undefined;
+    readUint16BE(): number | undefined;
+    readInt16BE(): number | undefined;
     readInt8(): number | undefined;
     readArrayInt32(): any[] | undefined;
     readArrayUint8(): any[] | undefined;

@@ -25,14 +25,15 @@ interface MasonEvents {
     partyRegionUpdated: (region: string) => void;
     any: (event: string, data: any) => void;
 }
+export interface MasonServiceOptions {
+    url?: string;
+    proxy?: Agent;
+}
 export declare class MasonService extends EventEmitter {
     private socket;
     on<K extends keyof MasonEvents>(event: K, listener: MasonEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
-    constructor(options?: {
-        url?: string;
-        proxy?: Agent;
-    });
+    constructor(options?: MasonServiceOptions);
     shutdown(): void;
     sendPing(): void;
     acceptFriendRequest(friendCode: string): void;

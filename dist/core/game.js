@@ -14,6 +14,8 @@ class Game extends node_events_1.EventEmitter {
         this.codec = new codec_1.Codec("./rpcs.json");
         const displayName = options?.displayName ?? "Player";
         const proxy = options?.proxy;
+        const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
+        const decodeRpcs = options?.decodeRpcs ?? true;
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
         this.socket = new ws_1.WebSocket(url, { agent: proxy });
         this.socket.binaryType = "arraybuffer";
@@ -38,17 +40,21 @@ class Game extends node_events_1.EventEmitter {
                     break;
                 }
                 case network_1.PacketId.EntityUpdate: {
-                    const entityUpdate = this.codec.decodeEntityUpdate(data2);
-                    this.emit("EntityUpdate", entityUpdate);
+                    if (decodeEntityUpdates) {
+                        const entityUpdate = this.codec.decodeEntityUpdate(data2);
+                        this.emit("EntityUpdate", entityUpdate);
+                    }
                     break;
                 }
                 case network_1.PacketId.Rpc: {
-                    const decrypedData = this.codec.cryptRpc(data2);
-                    const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
-                    const rpc = this.codec.decodeRpc(definition, decrypedData);
-                    if (rpc !== undefined && rpc.name !== null) {
-                        this.emit("Rpc", rpc.name, rpc.data);
-                        this.emit(rpc.name, rpc.data);
+                    if (decodeRpcs) {
+                        const decrypedData = this.codec.cryptRpc(data2);
+                        const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
+                        const rpc = this.codec.decodeRpc(definition, decrypedData);
+                        if (rpc !== undefined && rpc.name !== null) {
+                            this.emit("Rpc", rpc.name, rpc.data);
+                            this.emit(rpc.name, rpc.data);
+                        }
                     }
                     break;
                 }

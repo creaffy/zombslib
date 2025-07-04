@@ -40,6 +40,11 @@ interface MasonEvents {
     any: (event: string, data: any) => void;
 }
 
+export interface MasonServiceOptions {
+    url?: string;
+    proxy?: Agent;
+}
+
 export class MasonService extends EventEmitter {
     private socket: WebSocket;
 
@@ -51,7 +56,7 @@ export class MasonService extends EventEmitter {
         return super.on(event, listener);
     }
 
-    public constructor(options?: { url?: string; proxy?: Agent }) {
+    public constructor(options?: MasonServiceOptions) {
         super();
 
         const url = options?.url ?? "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket";

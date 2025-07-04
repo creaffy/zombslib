@@ -38,12 +38,12 @@ export class Codec {
         for (let i = 0; i < targetUrl.length; ++i) this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
     }
 
-    private applyCommonMask(buf: Buffer): void {
-        buf[4] &= 253;
-        buf[2] &= 254;
-        buf[5] &= 223;
-        buf[8] |= 32;
-        buf[9] &= 251;
+    private applyCommonMask(buffer: Buffer): void {
+        buffer[4] &= 253;
+        buffer[2] &= 254;
+        buffer[5] &= 223;
+        buffer[8] |= 32;
+        buffer[9] &= 251;
     }
 
     public generateProofOfWork(
@@ -132,34 +132,34 @@ export class Codec {
             case AttributeType.Int32:
                 return reader.readInt32();
             case AttributeType.Float:
-                const v = reader.readFloat();
-                return v === undefined ? undefined : v / 100;
+                const value = reader.readFloat();
+                return value === undefined ? undefined : value / 100;
             case AttributeType.String:
                 return reader.readString();
             case AttributeType.Vector2: {
-                const v = reader.readVector2();
-                if (v === undefined) return undefined;
-                v.x /= 100;
-                v.y /= -100;
-                return v;
+                const vector = reader.readVector2();
+                if (vector === undefined) return undefined;
+                vector.x /= 100;
+                vector.y /= -100;
+                return vector;
             }
             case AttributeType.ArrayVector2: {
-                const v = reader.readArrayVector2();
-                if (v === undefined) return undefined;
-                for (let e of v) {
-                    e.x /= 100;
-                    e.y /= -100;
+                const array = reader.readArrayVector2();
+                if (array === undefined) return undefined;
+                for (let vector of array) {
+                    vector.x /= 100;
+                    vector.y /= -100;
                 }
-                return v;
+                return array;
             }
             case AttributeType.ArrayUint32:
                 return reader.readArrayUint32();
             case AttributeType.Uint16:
-                return reader.readUint16();
+                return reader.readUint16BE();
             case AttributeType.Uint8:
                 return reader.readUint8();
             case AttributeType.Int16:
-                return reader.readInt16();
+                return reader.readInt16BE();
             case AttributeType.Int8:
                 return reader.readInt8();
             case AttributeType.ArrayInt32:
@@ -209,13 +209,13 @@ export class Codec {
                 writer.writeArrayUint32(value || []);
                 break;
             case AttributeType.Uint16:
-                writer.writeUint16(value || 0);
+                writer.writeUint16BE(value || 0);
                 break;
             case AttributeType.Uint8:
                 writer.writeUint8(value || 0);
                 break;
             case AttributeType.Int16:
-                writer.writeInt16(value || 0);
+                writer.writeInt16BE(value || 0);
                 break;
             case AttributeType.Int8:
                 writer.writeInt8(value || 0);
@@ -373,7 +373,7 @@ export class Codec {
             } else {
                 const fieldName = match.FieldName !== null ? match.FieldName : `P_0x${match.NameHash.toString(16)}`;
 
-                const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
+                const bitmask = 2 ** paramTypeSizeMap[match.Type] - 1;
                 let paramData = data[fieldName];
 
                 switch (match.Type) {
@@ -393,7 +393,7 @@ export class Codec {
                     }
                 }
 
-                if (match.Key !== null) paramData = (paramData ^ match.Key) & mask;
+                if (match.Key !== null) paramData = (paramData ^ match.Key) & bitmask;
 
                 switch (match.Type) {
                     case ParameterType.Uint32: {
@@ -421,11 +421,11 @@ export class Codec {
                         break;
                     }
                     case ParameterType.Uint16: {
-                        writer.writeUint16LE(paramData);
+                        writer.writeUint16(paramData);
                         break;
                     }
                     case ParameterType.Int16: {
-                        writer.writeInt16LE(paramData);
+                        writer.writeInt16(paramData);
                         break;
                     }
                     case ParameterType.Uint8: {
@@ -829,11 +829,11 @@ export class Codec {
                         break;
                     }
                     case ParameterType.Uint16: {
-                        value = reader.readUint16LE();
+                        value = reader.readUint16();
                         break;
                     }
                     case ParameterType.Int16: {
-                        value = reader.readInt16LE();
+                        value = reader.readInt16();
                         break;
                     }
                     case ParameterType.Uint8: {
@@ -898,7 +898,7 @@ export class Codec {
 
         if (rpc.IsArray) {
             const dataArray = data as object[];
-            writer.writeUint16LE(dataArray.length);
+            writer.writeUint16(dataArray.length);
             for (const obj of dataArray) {
                 this.encodeRpcParams(rpc, def, writer, obj);
             }

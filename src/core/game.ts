@@ -128,6 +128,13 @@ interface GameEvents {
     SchemaZombies: (data: SchemaZombie[]) => void;
 }
 
+export interface GameOptions {
+    displayName?: string;
+    proxy?: Agent;
+    decodeEntityUpdates?: boolean;
+    decodeRpcs?: boolean;
+}
+
 export class Game extends EventEmitter {
     private socket: WebSocket;
     public codec = new Codec("./rpcs.json");
@@ -140,11 +147,14 @@ export class Game extends EventEmitter {
         return super.on(event, listener);
     }
 
-    public constructor(server: ApiServer, options?: { displayName?: string; proxy?: Agent }) {
+    public constructor(server: ApiServer, options?: GameOptions) {
         super();
 
         const displayName = options?.displayName ?? "Player";
         const proxy = options?.proxy;
+        const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
+        const decodeRpcs = options?.decodeRpcs ?? true;
+
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
 
         this.socket = new WebSocket(url, { agent: proxy });
@@ -176,27 +186,30 @@ export class Game extends EventEmitter {
             switch (view.getUint8(0) as PacketId) {
                 case PacketId.EnterWorld: {
                     this.codec.enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
-
                     this.emit("EnterWorldResponse", this.codec.enterWorldResponse);
 
                     break;
                 }
                 case PacketId.EntityUpdate: {
-                    const entityUpdate = this.codec.decodeEntityUpdate(data2);
-                    this.emit("EntityUpdate", entityUpdate);
+                    if (decodeEntityUpdates) {
+                        const entityUpdate = this.codec.decodeEntityUpdate(data2);
+                        this.emit("EntityUpdate", entityUpdate);
+                    }
 
                     break;
                 }
                 case PacketId.Rpc: {
-                    const decrypedData = this.codec.cryptRpc(data2);
+                    if (decodeRpcs) {
+                        const decrypedData = this.codec.cryptRpc(data2);
+                        const definition = this.codec.enterWorldResponse.rpcs!.find(
+                            (rpc) => rpc.index === decrypedData[1]
+                        );
 
-                    const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === decrypedData[1]);
-
-                    const rpc = this.codec.decodeRpc(definition!, decrypedData);
-
-                    if (rpc !== undefined && rpc.name !== null) {
-                        this.emit("Rpc", rpc.name, rpc.data);
-                        this.emit(rpc.name, rpc.data);
+                        const rpc = this.codec.decodeRpc(definition!, decrypedData);
+                        if (rpc !== undefined && rpc.name !== null) {
+                            this.emit("Rpc", rpc.name, rpc.data);
+                            this.emit(rpc.name, rpc.data);
+                        }
                     }
 
                     break;

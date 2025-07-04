@@ -61,15 +61,18 @@ interface GameEvents {
     SchemaWeapons: (data: SchemaWeapon[]) => void;
     SchemaZombies: (data: SchemaZombie[]) => void;
 }
+export interface GameOptions {
+    displayName?: string;
+    proxy?: Agent;
+    decodeEntityUpdates?: boolean;
+    decodeRpcs?: boolean;
+}
 export declare class Game extends EventEmitter {
     private socket;
     codec: Codec;
     on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
-    constructor(server: ApiServer, options?: {
-        displayName?: string;
-        proxy?: Agent;
-    });
+    constructor(server: ApiServer, options?: GameOptions);
     send(data: Uint8Array | undefined): void;
     shutdown(): void;
     getEnterWorldResponse(): EnterWorldResponse;
