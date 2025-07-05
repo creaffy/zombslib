@@ -29,7 +29,7 @@ Upon registering in the matchmaking system, Mason will send you information rega
 
 ```ts
 mason.on("partyJoinServer", (server: ApiServer) => {
-    const game = new Game(server, "Player");
+    const game = new Game(server, { displayName: "Player" });
 });
 ```
 
@@ -52,9 +52,7 @@ The server will begin sending you entity updates once you've delivered it SetPla
 ```ts
 // Iterating players
 game.on("EntityUpdate", (update: EntityUpdate) => {
-    for (const [uid, entity] of game.getEntitiesByType(
-        EntityType.PlayerEntity
-    )) {
+    for (const [uid, entity] of game.getEntitiesByType(EntityType.PlayerEntity)) {
         // ...
     }
 });
