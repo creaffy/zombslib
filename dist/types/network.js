@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AttributeType = exports.ParameterType = exports.PacketId = exports.ModelHash = exports.EntityType = void 0;
+exports.AttributeType = exports.ParameterType = exports.PacketId = exports.ItemSkinSlot = exports.ModelHash = exports.EntityType = void 0;
 var EntityType;
 (function (EntityType) {
     EntityType[EntityType["ZombieEntity"] = 249036071] = "ZombieEntity";
@@ -36,6 +36,15 @@ var ModelHash;
     ModelHash[ModelHash["SprayHash"] = 504903628] = "SprayHash";
     ModelHash[ModelHash["ZombieHash"] = 249036071] = "ZombieHash";
 })(ModelHash || (exports.ModelHash = ModelHash = {}));
+var ItemSkinSlot;
+(function (ItemSkinSlot) {
+    ItemSkinSlot[ItemSkinSlot["Weapon"] = 0] = "Weapon";
+    ItemSkinSlot[ItemSkinSlot["ProjectileTrail"] = 1] = "ProjectileTrail";
+    ItemSkinSlot[ItemSkinSlot["ProjectileColor"] = 2] = "ProjectileColor";
+    ItemSkinSlot[ItemSkinSlot["PlayerBody"] = 3] = "PlayerBody";
+    ItemSkinSlot[ItemSkinSlot["PlayerParachute"] = 4] = "PlayerParachute";
+    ItemSkinSlot[ItemSkinSlot["PlayerBackpack"] = 5] = "PlayerBackpack";
+})(ItemSkinSlot || (exports.ItemSkinSlot = ItemSkinSlot = {}));
 var PacketId;
 (function (PacketId) {
     PacketId[PacketId["EntityUpdate"] = 0] = "EntityUpdate";

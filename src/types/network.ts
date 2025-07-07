@@ -57,6 +57,15 @@ export enum ModelHash {
     ZombieHash = 0x0ed7fd27,
 }
 
+export enum ItemSkinSlot {
+    Weapon,
+    ProjectileTrail,
+    ProjectileColor,
+    PlayerBody,
+    PlayerParachute,
+    PlayerBackpack,
+}
+
 export interface Rpc {
     nameHash?: number;
     parameters?: RpcParameter[];

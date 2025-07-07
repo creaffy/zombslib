@@ -51,6 +51,14 @@ export declare enum ModelHash {
     SprayHash = 504903628,
     ZombieHash = 249036071
 }
+export declare enum ItemSkinSlot {
+    Weapon = 0,
+    ProjectileTrail = 1,
+    ProjectileColor = 2,
+    PlayerBody = 3,
+    PlayerParachute = 4,
+    PlayerBackpack = 5
+}
 export interface Rpc {
     nameHash?: number;
     parameters?: RpcParameter[];
