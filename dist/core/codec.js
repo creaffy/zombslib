@@ -2,20 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Codec = void 0;
 const js_sha1_1 = require("js-sha1");
-const node_fs_1 = require("node:fs");
-const node_path_1 = require("node:path");
 const reader_1 = require("../utility/reader");
 const writer_1 = require("../utility/writer");
 const network_1 = require("../types/network");
 class Codec {
-    constructor(path) {
+    constructor(rpcMapping) {
         this.rpcKey = new Uint8Array(8);
         this.entityMaps = [];
         this.enterWorldResponse = {};
         this.entityList = new Map();
-        this.rpcMapping = JSON.parse((0, node_fs_1.readFileSync)((0, node_path_1.join)(__dirname, "../../", path), {
-            encoding: "utf-8",
-        }));
+        this.rpcMapping = rpcMapping;
     }
     computeRpcKey(codecVersion, targetUrl, proofOfWork) {
         for (let i = 0; i < proofOfWork.length; ++i)
@@ -401,7 +397,7 @@ class Codec {
                         break;
                     }
                     case network_1.ParameterType.VectorUint8: {
-                        writer.writeUint8Vector2(paramData);
+                        writer.writeArrayUint8(paramData);
                         break;
                     }
                     case network_1.ParameterType.CompressedString: {
@@ -597,7 +593,7 @@ class Codec {
                         return entityUpdate;
                     updatedEntityFlags.push(flag);
                 }
-                const updatedAttributes = [];
+                const updatedAttributes = new Map();
                 const tick = this.entityList.get(uid).tick;
                 for (let j = 0; j < entityMap.attributes.length; ++j) {
                     const attribute = entityMap.attributes[j];
@@ -607,7 +603,7 @@ class Codec {
                             return entityUpdate;
                         const attributeName = this.getAttributeName(attribute.nameHash);
                         tick[attributeName] = value;
-                        updatedAttributes.push(attributeName);
+                        updatedAttributes[attributeName] = { type: attribute.type, value: value };
                     }
                 }
                 entityUpdate.updatedEntities.set(uid, updatedAttributes);
@@ -660,7 +656,7 @@ class Codec {
                 for (let i = 0; i < entityMap.attributes.length; ++i) {
                     const attribute = entityMap.attributes[i];
                     const attributeName = this.getAttributeName(attribute.nameHash);
-                    if (updatedAttributes.includes(attributeName)) {
+                    if (Array.from(updatedAttributes.keys()).includes(attributeName)) {
                         updatedFlags[Math.floor(i / 8)] |= 1 << i % 8;
                         updatedValues.push({
                             type: attribute.type,
@@ -758,7 +754,7 @@ class Codec {
                         break;
                     }
                     case network_1.ParameterType.VectorUint8: {
-                        value = reader.readUint8Vector2();
+                        value = reader.readArrayUint8();
                         break;
                     }
                     case network_1.ParameterType.CompressedString: {

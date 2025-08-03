@@ -1,6 +1,8 @@
 import { EventEmitter } from "node:events";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { WebSocket } from "ws";
-import { Codec } from "./codec";
+import { Codec, DumpedData } from "./codec";
 import { ApiServer } from "../types/api";
 import {
     AccountSessionRpc,
@@ -43,6 +45,8 @@ import {
     ShutdownRpc,
     UpdateMarkerRpc,
     Vector2,
+    ACInitRpc,
+    ObserverRpc,
 } from "../types/network";
 import {
     SchemaAmmo,
@@ -71,9 +75,12 @@ interface GameEvents {
     // --- Misc ---
     RawData: (data: Uint8Array) => void; // Any packet
     Rpc: (name: string, rpc: object) => void; // Any rpc
+    RpcRawData: (namehash: number, data: Uint8Array) => void; // Any rpc
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
     /// --- Rpcs ---
+    ObserverRpc: (rpc: ObserverRpc) => void;
+    ACInitRpc: (rpc: ACInitRpc) => void;
     ACToClientRpc: (rpc: ACToClientRpc) => void;
     DamageRpc: (rpc: DamageRpc) => void;
     DeadRpc: (rpc: DeadRpc) => void;
@@ -133,11 +140,12 @@ export interface GameOptions {
     proxy?: Agent;
     decodeEntityUpdates?: boolean;
     decodeRpcs?: boolean;
+    rpcMapping?: DumpedData;
 }
 
 export class Game extends EventEmitter {
     private socket: WebSocket;
-    public codec = new Codec("./rpcs.json");
+    public codec: Codec; // = new Codec();
 
     override on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
 
@@ -154,6 +162,15 @@ export class Game extends EventEmitter {
         const proxy = options?.proxy;
         const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
         const decodeRpcs = options?.decodeRpcs ?? true;
+        const rpcMapping =
+            options?.rpcMapping ??
+            JSON.parse(
+                readFileSync(join(__dirname, "../../", "./rpcs.json"), {
+                    encoding: "utf-8",
+                })
+            );
+
+        this.codec = new Codec(rpcMapping);
 
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
 
@@ -204,6 +221,7 @@ export class Game extends EventEmitter {
                         const definition = this.codec.enterWorldResponse.rpcs!.find(
                             (rpc) => rpc.index === decrypedData[1]
                         );
+                        this.emit("RpcRawData", definition!.nameHash!, decrypedData);
 
                         const rpc = this.codec.decodeRpc(definition!, decrypedData);
                         if (rpc !== undefined && rpc.name !== null) {

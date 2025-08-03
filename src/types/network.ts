@@ -161,7 +161,7 @@ export interface EntityUpdate {
     tick?: number;
     deletedEntities?: number[];
     createdEntities?: number[];
-    updatedEntities?: Map<number, string[]>;
+    updatedEntities?: Map<number, Map<string, { type: AttributeType; value: any }>>;
 }
 
 export interface Vector2 {
@@ -305,6 +305,15 @@ export interface Tick {
 export interface DataRpc {
     dataName: string;
     json: string;
+}
+
+export interface ObserverRpc {
+    isObserver: number;
+}
+
+export interface ACInitRpc {
+    unknown1: number;
+    unknown2: number;
 }
 
 export interface ACToClientRpc {

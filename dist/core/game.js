@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Game = void 0;
 const node_events_1 = require("node:events");
+const node_fs_1 = require("node:fs");
+const node_path_1 = require("node:path");
 const ws_1 = require("ws");
 const codec_1 = require("./codec");
 const network_1 = require("../types/network");
@@ -11,11 +13,15 @@ class Game extends node_events_1.EventEmitter {
     }
     constructor(server, options) {
         super();
-        this.codec = new codec_1.Codec("./rpcs.json");
         const displayName = options?.displayName ?? "Player";
         const proxy = options?.proxy;
         const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
         const decodeRpcs = options?.decodeRpcs ?? true;
+        const rpcMapping = options?.rpcMapping ??
+            JSON.parse((0, node_fs_1.readFileSync)((0, node_path_1.join)(__dirname, "../../", "./rpcs.json"), {
+                encoding: "utf-8",
+            }));
+        this.codec = new codec_1.Codec(rpcMapping);
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
         this.socket = new ws_1.WebSocket(url, { agent: proxy });
         this.socket.binaryType = "arraybuffer";
@@ -50,6 +56,7 @@ class Game extends node_events_1.EventEmitter {
                     if (decodeRpcs) {
                         const decrypedData = this.codec.cryptRpc(data2);
                         const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
+                        this.emit("RpcRawData", definition.nameHash, decrypedData);
                         const rpc = this.codec.decodeRpc(definition, decrypedData);
                         if (rpc !== undefined && rpc.name !== null) {
                             this.emit("Rpc", rpc.name, rpc.data);

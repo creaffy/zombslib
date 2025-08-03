@@ -1,6 +1,4 @@
 import { sha1 } from "js-sha1";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { BinaryReader } from "../utility/reader";
 import { BinaryWriter } from "../utility/writer";
 import {
@@ -24,12 +22,8 @@ export class Codec {
     public readonly rpcMapping: DumpedData;
     public readonly entityList = new Map<number, NetworkEntity>();
 
-    public constructor(path: string) {
-        this.rpcMapping = JSON.parse(
-            readFileSync(join(__dirname, "../../", path), {
-                encoding: "utf-8",
-            })
-        );
+    public constructor(rpcMapping: DumpedData) {
+        this.rpcMapping = rpcMapping;
     }
 
     public computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array) {
@@ -437,7 +431,7 @@ export class Codec {
                         break;
                     }
                     case ParameterType.VectorUint8: {
-                        writer.writeUint8Vector2(paramData);
+                        writer.writeArrayUint8(paramData);
                         break;
                     }
                     case ParameterType.CompressedString: {
@@ -662,7 +656,7 @@ export class Codec {
                     updatedEntityFlags.push(flag);
                 }
 
-                const updatedAttributes: string[] = [];
+                const updatedAttributes = new Map<string, any>();
                 const tick = this.entityList.get(uid)!.tick!;
                 for (let j = 0; j < entityMap.attributes!.length; ++j) {
                     const attribute = entityMap.attributes![j];
@@ -672,7 +666,7 @@ export class Codec {
 
                         const attributeName = this.getAttributeName(attribute.nameHash!);
                         tick[attributeName] = value;
-                        updatedAttributes.push(attributeName);
+                        updatedAttributes[attributeName] = { type: attribute.type, value: value };
                     }
                 }
                 entityUpdate.updatedEntities.set(uid, updatedAttributes);
@@ -736,7 +730,7 @@ export class Codec {
                     const attribute = entityMap.attributes![i];
                     const attributeName = this.getAttributeName(attribute.nameHash!);
 
-                    if (updatedAttributes.includes(attributeName)) {
+                    if (Array.from(updatedAttributes.keys()).includes(attributeName)) {
                         updatedFlags[Math.floor(i / 8)] |= 1 << i % 8;
 
                         updatedValues.push({
@@ -845,7 +839,7 @@ export class Codec {
                         break;
                     }
                     case ParameterType.VectorUint8: {
-                        value = reader.readUint8Vector2();
+                        value = reader.readArrayUint8();
                         break;
                     }
                     case ParameterType.CompressedString: {
@@ -910,7 +904,7 @@ export class Codec {
     }
 }
 
-interface DumpedRpcParam {
+export interface DumpedRpcParam {
     InternalIndex: number;
     Key: number | null;
     NameHash: number;
@@ -920,7 +914,7 @@ interface DumpedRpcParam {
     FieldName: string | null;
 }
 
-interface DumpedRpc {
+export interface DumpedRpc {
     IsArray: boolean;
     NameHash: number;
     Parameters: DumpedRpcParam[];
@@ -930,7 +924,7 @@ interface DumpedRpc {
     ParentName: string;
 }
 
-interface DumpedData {
+export interface DumpedData {
     Codec: number;
     Platform: string;
     Rpcs: DumpedRpc[];

@@ -5,7 +5,7 @@ export declare class Codec {
     enterWorldResponse: EnterWorldResponse;
     readonly rpcMapping: DumpedData;
     readonly entityList: Map<number, NetworkEntity>;
-    constructor(path: string);
+    constructor(rpcMapping: DumpedData);
     computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array): void;
     private applyCommonMask;
     generateProofOfWork(endpoint: string, platform?: string, difficulty?: number, size?: number): Buffer<ArrayBuffer>;
@@ -30,7 +30,7 @@ export declare class Codec {
     } | undefined;
     encodeRpc(name: string, data: object | object[]): Uint8Array<ArrayBufferLike> | undefined;
 }
-interface DumpedRpcParam {
+export interface DumpedRpcParam {
     InternalIndex: number;
     Key: number | null;
     NameHash: number;
@@ -39,7 +39,7 @@ interface DumpedRpcParam {
     XFieldName: string | null;
     FieldName: string | null;
 }
-interface DumpedRpc {
+export interface DumpedRpc {
     IsArray: boolean;
     NameHash: number;
     Parameters: DumpedRpcParam[];
@@ -48,9 +48,8 @@ interface DumpedRpc {
     ClassName: string | null;
     ParentName: string;
 }
-interface DumpedData {
+export interface DumpedData {
     Codec: number;
     Platform: string;
     Rpcs: DumpedRpc[];
 }
-export {};
