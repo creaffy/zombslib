@@ -64,6 +64,7 @@ interface GameEvents {
     SchemaWeapons: (data: SchemaWeapon[]) => void;
     SchemaZombies: (data: SchemaZombie[]) => void;
 }
+export declare function rpcMappingFromFile(path: string): DumpedData;
 export interface GameOptions {
     displayName?: string;
     proxy?: Agent;

@@ -135,6 +135,14 @@ interface GameEvents {
     SchemaZombies: (data: SchemaZombie[]) => void;
 }
 
+export function rpcMappingFromFile(path: string): DumpedData {
+    return JSON.parse(
+        readFileSync(path, {
+            encoding: "utf-8",
+        })
+    );
+}
+
 export interface GameOptions {
     displayName?: string;
     proxy?: Agent;
