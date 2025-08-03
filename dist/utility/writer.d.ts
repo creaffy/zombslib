@@ -23,7 +23,8 @@ export declare class BinaryWriter {
     writeInt16BE(value: number): void;
     writeInt8(value: number): void;
     writeArrayInt32(data: Int32Array): void;
-    writeArrayUint8(data: Uint8Array): void;
+    writeArrayUint8Len8(data: Uint8Array): void;
+    writeArrayUint8Len32(data: Uint8Array): void;
     writeUint8Array(data: Uint8Array): void;
     toArray(): Uint8Array<ArrayBufferLike>;
 }

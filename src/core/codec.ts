@@ -159,7 +159,7 @@ export class Codec {
             case AttributeType.ArrayInt32:
                 return reader.readArrayInt32();
             case AttributeType.ArrayUint8:
-                return reader.readArrayUint8();
+                return reader.readArrayUint8Len8();
         }
         return undefined;
     }
@@ -218,7 +218,7 @@ export class Codec {
                 writer.writeArrayInt32(value || []);
                 break;
             case AttributeType.ArrayUint8:
-                writer.writeArrayUint8(value || []);
+                writer.writeArrayUint8Len8(value || []);
                 break;
             default:
                 writer.writeUint32(0);
@@ -431,7 +431,8 @@ export class Codec {
                         break;
                     }
                     case ParameterType.VectorUint8: {
-                        writer.writeArrayUint8(paramData);
+                        if (paramData.length <= 4) writer.writeArrayUint8Len8(paramData);
+                        else writer.writeArrayUint8Len32(paramData);
                         break;
                     }
                     case ParameterType.CompressedString: {
@@ -760,7 +761,7 @@ export class Codec {
         const version = reader.readUint32();
         if (version === undefined) return undefined;
 
-        const pow = reader.readArrayUint8();
+        const pow = reader.readArrayUint8Len8();
         if (pow === undefined) return undefined;
 
         const proofOfWork = new Uint8Array(pow);
@@ -773,7 +774,7 @@ export class Codec {
         writer.writeUint8(PacketId.EnterWorld);
         writer.writeString(request.displayName);
         writer.writeUint32(request.version);
-        writer.writeArrayUint8(request.proofOfWork);
+        writer.writeArrayUint8Len8(request.proofOfWork);
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
@@ -839,7 +840,8 @@ export class Codec {
                         break;
                     }
                     case ParameterType.VectorUint8: {
-                        value = reader.readArrayUint8();
+                        if (!reader.canRead(5)) value = reader.readArrayUint8Len8();
+                        else value = reader.readArrayUint8Len32();
                         break;
                     }
                     case ParameterType.CompressedString: {

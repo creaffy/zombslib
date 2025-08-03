@@ -28,5 +28,6 @@ export declare class BinaryReader {
     readInt16BE(): number | undefined;
     readInt8(): number | undefined;
     readArrayInt32(): any[] | undefined;
-    readArrayUint8(): any[] | undefined;
+    readArrayUint8Len8(): any[] | undefined;
+    readArrayUint8Len32(): any[] | undefined;
 }

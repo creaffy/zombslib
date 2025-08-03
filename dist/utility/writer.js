@@ -131,8 +131,14 @@ class BinaryWriter {
             this.writeInt32(value);
         }
     }
-    writeArrayUint8(data) {
+    writeArrayUint8Len8(data) {
         this.writeUint8(data.length);
+        for (const value of data) {
+            this.writeUint8(value);
+        }
+    }
+    writeArrayUint8Len32(data) {
+        this.writeUint32(data.length);
         for (const value of data) {
             this.writeUint8(value);
         }

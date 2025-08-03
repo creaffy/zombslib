@@ -153,8 +153,15 @@ export class BinaryWriter {
         }
     }
 
-    writeArrayUint8(data: Uint8Array) {
+    writeArrayUint8Len8(data: Uint8Array) {
         this.writeUint8(data.length);
+        for (const value of data) {
+            this.writeUint8(value);
+        }
+    }
+
+    writeArrayUint8Len32(data: Uint8Array) {
+        this.writeUint32(data.length);
         for (const value of data) {
             this.writeUint8(value);
         }

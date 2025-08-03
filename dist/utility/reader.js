@@ -187,8 +187,20 @@ class BinaryReader {
         }
         return result;
     }
-    readArrayUint8() {
+    readArrayUint8Len8() {
         const length = this.readUint8();
+        if (length === undefined)
+            return undefined;
+        if (length < 0 || !this.canRead(length))
+            return undefined;
+        const result = new Array(length);
+        for (let i = 0; i < length; i++) {
+            result[i] = this.readUint8();
+        }
+        return result;
+    }
+    readArrayUint8Len32() {
+        const length = this.readUint32();
         if (length === undefined)
             return undefined;
         if (length < 0 || !this.canRead(length))

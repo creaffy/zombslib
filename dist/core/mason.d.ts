@@ -1,15 +1,5 @@
 import { EventEmitter } from "node:events";
-import {
-    ApiClan,
-    ApiFriend,
-    ApiFriendRequest,
-    ApiParty,
-    ApiPartyInvite,
-    ApiPartyMetadata,
-    ApiPartyPlayer,
-    ApiServer,
-    ApiUser,
-} from "../types/api";
+import { ApiClan, ApiFriend, ApiFriendRequest, ApiParty, ApiPartyInvite, ApiPartyMetadata, ApiPartyPlayer, ApiServer, ApiUser } from "../types/api";
 import { Agent } from "node:http";
 interface MasonEvents {
     clansData: (clans: ApiClan[]) => void;
@@ -64,17 +54,7 @@ export declare class MasonService extends EventEmitter {
     setIsInRound(inRound: boolean): void;
     setName(name: string): void;
     setPartyAutofill(autofill: boolean): void;
-    setPartyGameMode(
-        gameMode:
-            | "Solo"
-            | "Duo"
-            | "Squad"
-            | "Limited"
-            | "CrystalClash"
-            | "Hangout"
-            | "PrivateZombieDuo"
-            | "PrivateZombieSquad"
-    ): void;
+    setPartyGameMode(gameMode: "Solo" | "Duo" | "Squad" | "Limited" | "CrystalClash" | "Hangout" | "PrivateZombieDuo" | "PrivateZombieSquad"): void;
     setPartyRegion(region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania"): void;
     setPartyTournamentCode(code: string): void;
     setPartyVersion(version: string): void;
