@@ -153,7 +153,7 @@ export interface GameOptions {
 
 export class Game extends EventEmitter {
     private socket: WebSocket;
-    public codec: Codec; // = new Codec();
+    public codec: Codec;
 
     override on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
 
@@ -173,7 +173,7 @@ export class Game extends EventEmitter {
         const rpcMapping =
             options?.rpcMapping ??
             JSON.parse(
-                readFileSync(join(__dirname, "../../", "./rpcs.json"), {
+                readFileSync(join(__dirname, "../../rpcs.json"), {
                     encoding: "utf-8",
                 })
             );

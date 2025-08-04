@@ -24,7 +24,7 @@ class Game extends node_events_1.EventEmitter {
         const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
         const decodeRpcs = options?.decodeRpcs ?? true;
         const rpcMapping = options?.rpcMapping ??
-            JSON.parse((0, node_fs_1.readFileSync)((0, node_path_1.join)(__dirname, "../../", "./rpcs.json"), {
+            JSON.parse((0, node_fs_1.readFileSync)((0, node_path_1.join)(__dirname, "../../rpcs.json"), {
                 encoding: "utf-8",
             }));
         this.codec = new codec_1.Codec(rpcMapping);
