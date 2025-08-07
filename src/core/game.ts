@@ -17,7 +17,6 @@ import {
     DeadRpc,
     EndOfGameStatsRpc,
     EnterWorldResponse,
-    EnterWorldRequest,
     EntityType,
     EntityUpdate,
     GameStatusRpc,
@@ -148,6 +147,7 @@ export interface GameOptions {
     proxy?: Agent;
     decodeEntityUpdates?: boolean;
     decodeRpcs?: boolean;
+    parseSchemas?: boolean;
     rpcMapping?: DumpedData;
 }
 
@@ -170,6 +170,7 @@ export class Game extends EventEmitter {
         const proxy = options?.proxy;
         const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
         const decodeRpcs = options?.decodeRpcs ?? true;
+        const parseSchemas = options?.parseSchemas ?? true;
         const rpcMapping =
             options?.rpcMapping ??
             JSON.parse(
@@ -186,27 +187,32 @@ export class Game extends EventEmitter {
         this.socket.binaryType = "arraybuffer";
 
         this.socket.on("open", () => {
-            const pow = this.codec.generateProofOfWork(
+            const pow = this.codec.crypto.generateProofOfWork(
                 server.endpoint,
                 this.codec.rpcMapping.Platform,
                 server.discreteFourierTransformBias
             );
 
-            const enterWorldRequest: EnterWorldRequest | undefined = {
-                displayName: displayName,
-                version: this.codec.rpcMapping.Codec,
-                proofOfWork: pow,
-            };
-            this.socket.send(this.codec.encodeEnterWorldRequest(enterWorldRequest));
+            this.socket.send(
+                this.codec.encodeEnterWorldRequest({
+                    displayName: displayName,
+                    version: this.codec.rpcMapping.Codec,
+                    proofOfWork: pow,
+                })
+            );
 
-            this.codec.computeRpcKey(this.codec.rpcMapping.Codec, new TextEncoder().encode("/" + server.endpoint), pow);
+            this.codec.crypto.computeRpcKey(
+                this.codec.rpcMapping.Codec,
+                new TextEncoder().encode("/" + server.endpoint),
+                pow
+            );
         });
 
         this.socket.on("message", (data: ArrayBuffer) => {
             const view = new DataView(data);
-            const data2 = new Uint8Array(data);
+            const dataArray = new Uint8Array(data);
 
-            this.emit("RawData", data2);
+            this.emit("RawData", dataArray);
 
             switch (view.getUint8(0) as PacketId) {
                 case PacketId.EnterWorld: {
@@ -217,7 +223,7 @@ export class Game extends EventEmitter {
                 }
                 case PacketId.EntityUpdate: {
                     if (decodeEntityUpdates) {
-                        const entityUpdate = this.codec.decodeEntityUpdate(data2);
+                        const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
                         this.emit("EntityUpdate", entityUpdate);
                     }
 
@@ -225,10 +231,11 @@ export class Game extends EventEmitter {
                 }
                 case PacketId.Rpc: {
                     if (decodeRpcs) {
-                        const decrypedData = this.codec.cryptRpc(data2);
+                        const decrypedData = this.codec.crypto.cryptRpc(dataArray);
                         const definition = this.codec.enterWorldResponse.rpcs!.find(
                             (rpc) => rpc.index === decrypedData[1]
                         );
+                        // TODO: Emit an error here if 'definition' is undefined
                         this.emit("RpcRawData", definition!.nameHash!, decrypedData);
 
                         const rpc = this.codec.decodeRpc(definition!, decrypedData);
@@ -236,6 +243,7 @@ export class Game extends EventEmitter {
                             this.emit("Rpc", rpc.name, rpc.data);
                             this.emit(rpc.name, rpc.data);
                         }
+                        // TODO: Emit an error here if the above condition is false
                     }
 
                     break;
@@ -251,9 +259,12 @@ export class Game extends EventEmitter {
             this.emit("error", error);
         });
 
-        this.on("CompressedDataRpc", (rpc: CompressedDataRpc) => {
-            this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
-        });
+        if (parseSchemas) {
+            this.on("CompressedDataRpc", (rpc: CompressedDataRpc) => {
+                // TODO: Validate 'rpc.json' here
+                this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
+            });
+        }
     }
 
     public send(data: Uint8Array | undefined) {

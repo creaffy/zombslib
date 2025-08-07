@@ -1,19 +1,12 @@
 import { EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
+import { ZRCrypto } from "./zrcrypto";
 export declare class Codec {
-    private rpcKey;
+    crypto: ZRCrypto;
     entityMaps: EntityMap[];
     enterWorldResponse: EnterWorldResponse;
     readonly rpcMapping: DumpedData;
     readonly entityList: Map<number, NetworkEntity>;
     constructor(rpcMapping: DumpedData);
-    computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array): void;
-    private applyCommonMask;
-    generateProofOfWork(endpoint: string, platform?: string, difficulty?: number, size?: number): Buffer<ArrayBuffer>;
-    validateProofOfWork(proofOfWork: Uint8Array, endpoint: string, difficulty?: number, size?: number): {
-        valid: boolean;
-        platform: string | null;
-    };
-    cryptRpc(data: Uint8Array): Uint8Array;
     private decodeEntityMapAttribute;
     private encodeEntityMapAttribute;
     getAttributeName(nameHash: number): string;

@@ -23,6 +23,7 @@ class Game extends node_events_1.EventEmitter {
         const proxy = options?.proxy;
         const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
         const decodeRpcs = options?.decodeRpcs ?? true;
+        const parseSchemas = options?.parseSchemas ?? true;
         const rpcMapping = options?.rpcMapping ??
             JSON.parse((0, node_fs_1.readFileSync)((0, node_path_1.join)(__dirname, "../../rpcs.json"), {
                 encoding: "utf-8",
@@ -32,19 +33,18 @@ class Game extends node_events_1.EventEmitter {
         this.socket = new ws_1.WebSocket(url, { agent: proxy });
         this.socket.binaryType = "arraybuffer";
         this.socket.on("open", () => {
-            const pow = this.codec.generateProofOfWork(server.endpoint, this.codec.rpcMapping.Platform, server.discreteFourierTransformBias);
-            const enterWorldRequest = {
+            const pow = this.codec.crypto.generateProofOfWork(server.endpoint, this.codec.rpcMapping.Platform, server.discreteFourierTransformBias);
+            this.socket.send(this.codec.encodeEnterWorldRequest({
                 displayName: displayName,
                 version: this.codec.rpcMapping.Codec,
                 proofOfWork: pow,
-            };
-            this.socket.send(this.codec.encodeEnterWorldRequest(enterWorldRequest));
-            this.codec.computeRpcKey(this.codec.rpcMapping.Codec, new TextEncoder().encode("/" + server.endpoint), pow);
+            }));
+            this.codec.crypto.computeRpcKey(this.codec.rpcMapping.Codec, new TextEncoder().encode("/" + server.endpoint), pow);
         });
         this.socket.on("message", (data) => {
             const view = new DataView(data);
-            const data2 = new Uint8Array(data);
-            this.emit("RawData", data2);
+            const dataArray = new Uint8Array(data);
+            this.emit("RawData", dataArray);
             switch (view.getUint8(0)) {
                 case network_1.PacketId.EnterWorld: {
                     this.codec.enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
@@ -53,21 +53,23 @@ class Game extends node_events_1.EventEmitter {
                 }
                 case network_1.PacketId.EntityUpdate: {
                     if (decodeEntityUpdates) {
-                        const entityUpdate = this.codec.decodeEntityUpdate(data2);
+                        const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
                         this.emit("EntityUpdate", entityUpdate);
                     }
                     break;
                 }
                 case network_1.PacketId.Rpc: {
                     if (decodeRpcs) {
-                        const decrypedData = this.codec.cryptRpc(data2);
+                        const decrypedData = this.codec.crypto.cryptRpc(dataArray);
                         const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
+                        // TODO: Emit an error here if 'definition' is undefined
                         this.emit("RpcRawData", definition.nameHash, decrypedData);
                         const rpc = this.codec.decodeRpc(definition, decrypedData);
                         if (rpc !== undefined && rpc.name !== null) {
                             this.emit("Rpc", rpc.name, rpc.data);
                             this.emit(rpc.name, rpc.data);
                         }
+                        // TODO: Emit an error here if the above condition is false
                     }
                     break;
                 }
@@ -79,9 +81,12 @@ class Game extends node_events_1.EventEmitter {
         this.socket.on("error", (error) => {
             this.emit("error", error);
         });
-        this.on("CompressedDataRpc", (rpc) => {
-            this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
-        });
+        if (parseSchemas) {
+            this.on("CompressedDataRpc", (rpc) => {
+                // TODO: Validate 'rpc.json' here
+                this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
+            });
+        }
     }
     send(data) {
         if (data)

@@ -70,6 +70,7 @@ export interface GameOptions {
     proxy?: Agent;
     decodeEntityUpdates?: boolean;
     decodeRpcs?: boolean;
+    parseSchemas?: boolean;
     rpcMapping?: DumpedData;
 }
 export declare class Game extends EventEmitter {
