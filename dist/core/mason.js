@@ -35,6 +35,9 @@ class MasonService extends node_events_1.EventEmitter {
             }
         });
     }
+    send(data) {
+        this.socket.send(data);
+    }
     shutdown() {
         this.socket.close();
     }

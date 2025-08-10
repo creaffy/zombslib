@@ -17,7 +17,7 @@ var EntityType;
     EntityType[EntityType["PropEntity"] = 3970592772] = "PropEntity";
     EntityType[EntityType["GasEntity"] = 4049394616] = "GasEntity";
     EntityType[EntityType["NpcEntity"] = 4108209120] = "NpcEntity";
-    EntityType[EntityType["GunGamePlayerEntity"] = 4124010558] = "GunGamePlayerEntity";
+    EntityType[EntityType["UnknownEntity"] = 4124010558] = "UnknownEntity";
     EntityType[EntityType["PlayerBuildingEntity"] = 4131010518] = "PlayerBuildingEntity";
 })(EntityType || (exports.EntityType = EntityType = {}));
 var ModelHash;

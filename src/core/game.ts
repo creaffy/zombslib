@@ -74,7 +74,7 @@ interface GameEvents {
     // --- Misc ---
     RawData: (data: Uint8Array) => void; // Any packet
     Rpc: (name: string, rpc: object) => void; // Any rpc
-    RpcRawData: (namehash: number, data: Uint8Array) => void; // Any rpc
+    RpcRawData: (namehash: number, decryptedData: Uint8Array) => void; // Any rpc
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
     /// --- Rpcs ---

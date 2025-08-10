@@ -15,7 +15,7 @@ import { Agent } from "node:http";
 
 interface MasonEvents {
     clansData: (clans: ApiClan[]) => void;
-    partyInviteReceived: (partyInvites: ApiPartyInvite) => void;
+    partyInviteReceived: (partyInvite: ApiPartyInvite) => void;
     partyData: (party: ApiParty) => void;
     friendsData: (friends: ApiFriend[]) => void;
     partyStateUpdated: (state: string) => void;
@@ -34,7 +34,7 @@ interface MasonEvents {
     partyPlayerLeft: (player: ApiPartyPlayer) => void;
     // clanMessageReceived: () => void;
     loggedIn: (userData: ApiUser) => void;
-    partyAutofillUpdated: (autofill: boolean) => void;
+    partyAutofillUpdated: (autoFill: boolean) => void;
     friendRequestReceived: (friendRequest: ApiFriendRequest) => void;
     partyRegionUpdated: (region: string) => void;
     any: (event: string, data: any) => void;
@@ -91,6 +91,10 @@ export class MasonService extends EventEmitter {
         });
     }
 
+    public send(data: string): void {
+        this.socket.send(data);
+    }
+
     public shutdown(): void {
         this.socket.close();
     }
@@ -103,7 +107,7 @@ export class MasonService extends EventEmitter {
         this.socket.send(`42["acceptFriendRequest", "${friendCode}"]`);
     }
 
-    public setStatus(status: "online" | "ingame"): void {
+    public setStatus(status: "online" | "ingame" | "offline"): void {
         this.socket.send(`42["setStatus", "${status}"]`);
     }
 

@@ -3,7 +3,7 @@ import { ApiClan, ApiFriend, ApiFriendRequest, ApiParty, ApiPartyInvite, ApiPart
 import { Agent } from "node:http";
 interface MasonEvents {
     clansData: (clans: ApiClan[]) => void;
-    partyInviteReceived: (partyInvites: ApiPartyInvite) => void;
+    partyInviteReceived: (partyInvite: ApiPartyInvite) => void;
     partyData: (party: ApiParty) => void;
     friendsData: (friends: ApiFriend[]) => void;
     partyStateUpdated: (state: string) => void;
@@ -20,7 +20,7 @@ interface MasonEvents {
     friendRequests: (friendRequests: ApiFriendRequest[]) => void;
     partyPlayerLeft: (player: ApiPartyPlayer) => void;
     loggedIn: (userData: ApiUser) => void;
-    partyAutofillUpdated: (autofill: boolean) => void;
+    partyAutofillUpdated: (autoFill: boolean) => void;
     friendRequestReceived: (friendRequest: ApiFriendRequest) => void;
     partyRegionUpdated: (region: string) => void;
     any: (event: string, data: any) => void;
@@ -34,10 +34,11 @@ export declare class MasonService extends EventEmitter {
     on<K extends keyof MasonEvents>(event: K, listener: MasonEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
     constructor(options?: MasonServiceOptions);
+    send(data: string): void;
     shutdown(): void;
     sendPing(): void;
     acceptFriendRequest(friendCode: string): void;
-    setStatus(status: "online" | "ingame"): void;
+    setStatus(status: "online" | "ingame" | "offline"): void;
     createParty(): void;
     deleteFriend(friendId: string): void;
     logout(): void;

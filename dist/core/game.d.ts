@@ -7,7 +7,7 @@ import { Agent } from "node:http";
 interface GameEvents {
     RawData: (data: Uint8Array) => void;
     Rpc: (name: string, rpc: object) => void;
-    RpcRawData: (namehash: number, data: Uint8Array) => void;
+    RpcRawData: (namehash: number, decryptedData: Uint8Array) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate) => void;
     ObserverRpc: (rpc: ObserverRpc) => void;
