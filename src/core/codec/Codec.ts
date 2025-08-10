@@ -1,5 +1,5 @@
-import { BinaryReader } from "../utility/reader";
-import { BinaryWriter } from "../utility/writer";
+import { BinaryReader } from "../../utility/Reader";
+import { BinaryWriter } from "../../utility/Writer";
 import {
     AttributeType,
     EnterWorldResponse,
@@ -12,8 +12,8 @@ import {
     EntityUpdate,
     ParameterType,
     PacketId,
-} from "../types/network";
-import { ZRCrypto } from "./zrcrypto";
+} from "../../types/Packets";
+import { ZRCrypto } from "./ZRCrypto";
 
 export class Codec {
     public crypto = new ZRCrypto();
@@ -809,7 +809,7 @@ export class Codec {
         if (def === undefined) return undefined;
         // TODO: Emit an error here if the above condition is false
 
-        writer.writeUint8(9);
+        writer.writeUint8(PacketId.Rpc);
         writer.writeUint32(def.index!);
 
         if (rpc.IsArray) {

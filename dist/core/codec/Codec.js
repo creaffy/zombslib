@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Codec = void 0;
-const reader_1 = require("../utility/reader");
-const writer_1 = require("../utility/writer");
-const network_1 = require("../types/network");
-const zrcrypto_1 = require("./zrcrypto");
+const Reader_1 = require("../../utility/Reader");
+const Writer_1 = require("../../utility/Writer");
+const Packets_1 = require("../../types/Packets");
+const ZRCrypto_1 = require("./ZRCrypto");
 class Codec {
     constructor(rpcMapping) {
-        this.crypto = new zrcrypto_1.ZRCrypto();
+        this.crypto = new ZRCrypto_1.ZRCrypto();
         this.entityMaps = [];
         this.enterWorldResponse = {};
         this.entityList = new Map();
@@ -15,16 +15,16 @@ class Codec {
     }
     decodeEntityMapAttribute(reader, type) {
         switch (type) {
-            case network_1.AttributeType.Uint32:
+            case Packets_1.AttributeType.Uint32:
                 return reader.readUint32();
-            case network_1.AttributeType.Int32:
+            case Packets_1.AttributeType.Int32:
                 return reader.readInt32();
-            case network_1.AttributeType.Float:
+            case Packets_1.AttributeType.Float:
                 const value = reader.readFloat();
                 return value === undefined ? undefined : value / 100;
-            case network_1.AttributeType.String:
+            case Packets_1.AttributeType.String:
                 return reader.readString();
-            case network_1.AttributeType.Vector2: {
+            case Packets_1.AttributeType.Vector2: {
                 const vector = reader.readVector2();
                 if (vector === undefined)
                     return undefined;
@@ -33,7 +33,7 @@ class Codec {
                 vector.y /= -100;
                 return vector;
             }
-            case network_1.AttributeType.ArrayVector2: {
+            case Packets_1.AttributeType.ArrayVector2: {
                 const array = reader.readArrayVector2();
                 if (array === undefined)
                     return undefined;
@@ -44,19 +44,19 @@ class Codec {
                 }
                 return array;
             }
-            case network_1.AttributeType.ArrayUint32:
+            case Packets_1.AttributeType.ArrayUint32:
                 return reader.readArrayUint32();
-            case network_1.AttributeType.Uint16:
+            case Packets_1.AttributeType.Uint16:
                 return reader.readUint16BE();
-            case network_1.AttributeType.Uint8:
+            case Packets_1.AttributeType.Uint8:
                 return reader.readUint8();
-            case network_1.AttributeType.Int16:
+            case Packets_1.AttributeType.Int16:
                 return reader.readInt16BE();
-            case network_1.AttributeType.Int8:
+            case Packets_1.AttributeType.Int8:
                 return reader.readInt8();
-            case network_1.AttributeType.ArrayInt32:
+            case Packets_1.AttributeType.ArrayInt32:
                 return reader.readArrayInt32();
-            case network_1.AttributeType.ArrayUint8:
+            case Packets_1.AttributeType.ArrayUint8:
                 return reader.readArrayUint8Len8();
         }
         return undefined;
@@ -64,19 +64,19 @@ class Codec {
     }
     encodeEntityMapAttribute(writer, type, value) {
         switch (type) {
-            case network_1.AttributeType.Uint32:
+            case Packets_1.AttributeType.Uint32:
                 writer.writeUint32(value || 0);
                 break;
-            case network_1.AttributeType.Int32:
+            case Packets_1.AttributeType.Int32:
                 writer.writeInt32(value || 0);
                 break;
-            case network_1.AttributeType.Float:
+            case Packets_1.AttributeType.Float:
                 writer.writeFloat(value !== null ? Math.round(value * 100) : 0);
                 break;
-            case network_1.AttributeType.String:
+            case Packets_1.AttributeType.String:
                 writer.writeString(value || "");
                 break;
-            case network_1.AttributeType.Vector2:
+            case Packets_1.AttributeType.Vector2:
                 if (value) {
                     writer.writeVector2({
                         x: Math.round(value.x * 100),
@@ -87,7 +87,7 @@ class Codec {
                     writer.writeVector2({ x: 0, y: 0 });
                 }
                 break;
-            case network_1.AttributeType.ArrayVector2:
+            case Packets_1.AttributeType.ArrayVector2:
                 if (Array.isArray(value)) {
                     const vectors = value.map((v) => ({
                         x: Math.round(v.x * 100),
@@ -99,25 +99,25 @@ class Codec {
                     writer.writeArrayVector2([]);
                 }
                 break;
-            case network_1.AttributeType.ArrayUint32:
+            case Packets_1.AttributeType.ArrayUint32:
                 writer.writeArrayUint32(value || []);
                 break;
-            case network_1.AttributeType.Uint16:
+            case Packets_1.AttributeType.Uint16:
                 writer.writeUint16BE(value || 0);
                 break;
-            case network_1.AttributeType.Uint8:
+            case Packets_1.AttributeType.Uint8:
                 writer.writeUint8(value || 0);
                 break;
-            case network_1.AttributeType.Int16:
+            case Packets_1.AttributeType.Int16:
                 writer.writeInt16BE(value || 0);
                 break;
-            case network_1.AttributeType.Int8:
+            case Packets_1.AttributeType.Int8:
                 writer.writeInt8(value || 0);
                 break;
-            case network_1.AttributeType.ArrayInt32:
+            case Packets_1.AttributeType.ArrayInt32:
                 writer.writeArrayInt32(value || []);
                 break;
-            case network_1.AttributeType.ArrayUint8:
+            case Packets_1.AttributeType.ArrayUint8:
                 writer.writeArrayUint8Len8(value || []);
                 break;
             default:
@@ -267,17 +267,17 @@ class Codec {
                 const bitmask = 2 ** paramTypeSizeMap[match.Type] - 1;
                 let paramData = data[fieldName];
                 switch (match.Type) {
-                    case network_1.ParameterType.Float: {
+                    case Packets_1.ParameterType.Float: {
                         paramData *= 100;
                         break;
                     }
-                    case network_1.ParameterType.Int16: {
+                    case Packets_1.ParameterType.Int16: {
                         paramData = paramData >>> 0;
                         if (paramData < 0x7fff)
                             paramData += 0x10000;
                         break;
                     }
-                    case network_1.ParameterType.Int8: {
+                    case Packets_1.ParameterType.Int8: {
                         paramData = paramData >>> 0;
                         if (paramData < 0x7f)
                             paramData += 0x100;
@@ -287,54 +287,54 @@ class Codec {
                 if (match.Key !== null)
                     paramData = (paramData ^ match.Key) & bitmask;
                 switch (match.Type) {
-                    case network_1.ParameterType.Uint32: {
+                    case Packets_1.ParameterType.Uint32: {
                         writer.writeUint32(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Int32: {
+                    case Packets_1.ParameterType.Int32: {
                         writer.writeInt32(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Float: {
+                    case Packets_1.ParameterType.Float: {
                         writer.writeFloat(paramData);
                         break;
                     }
-                    case network_1.ParameterType.String: {
+                    case Packets_1.ParameterType.String: {
                         writer.writeString(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Uint64: {
+                    case Packets_1.ParameterType.Uint64: {
                         writer.writeUint64(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Int64: {
+                    case Packets_1.ParameterType.Int64: {
                         writer.writeInt64(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Uint16: {
+                    case Packets_1.ParameterType.Uint16: {
                         writer.writeUint16(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Int16: {
+                    case Packets_1.ParameterType.Int16: {
                         writer.writeInt16(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Uint8: {
+                    case Packets_1.ParameterType.Uint8: {
                         writer.writeUint8(paramData);
                         break;
                     }
-                    case network_1.ParameterType.Int8: {
+                    case Packets_1.ParameterType.Int8: {
                         writer.writeInt8(paramData);
                         break;
                     }
-                    case network_1.ParameterType.VectorUint8: {
+                    case Packets_1.ParameterType.VectorUint8: {
                         if (paramData.length <= 4)
                             writer.writeArrayUint8Len8(paramData);
                         else
                             writer.writeArrayUint8Len32(paramData);
                         break;
                     }
-                    case network_1.ParameterType.CompressedString: {
+                    case Packets_1.ParameterType.CompressedString: {
                         writer.writeCompressedString(paramData);
                         break;
                     }
@@ -343,7 +343,7 @@ class Codec {
         }
     }
     decodeEnterWorldResponse(data) {
-        const reader = new reader_1.BinaryReader(data, 1);
+        const reader = new Reader_1.BinaryReader(data, 1);
         let enterWorldResponse = {};
         enterWorldResponse.version = reader.readUint32();
         enterWorldResponse.allowed = reader.readUint32();
@@ -408,8 +408,8 @@ class Codec {
         return enterWorldResponse;
     }
     encodeEnterWorldResponse(response) {
-        const writer = new writer_1.BinaryWriter(0);
-        writer.writeUint8(network_1.PacketId.EnterWorld);
+        const writer = new Writer_1.BinaryWriter(0);
+        writer.writeUint8(Packets_1.PacketId.EnterWorld);
         writer.writeUint32(response.version);
         writer.writeUint32(response.allowed);
         writer.writeUint32(response.uid);
@@ -457,7 +457,7 @@ class Codec {
     // This entire function is really weird and full of questionable early returns
     // TODO: Do something about it ^^^, I don't even know
     decodeEntityUpdate(data) {
-        const reader = new reader_1.BinaryReader(data, 1);
+        const reader = new Reader_1.BinaryReader(data, 1);
         const entityUpdate = {};
         entityUpdate.createdEntities = [];
         entityUpdate.deletedEntities = [];
@@ -548,8 +548,8 @@ class Codec {
         return entityUpdate;
     }
     encodeEntityUpdate(entityUpdate) {
-        const writer = new writer_1.BinaryWriter(0);
-        writer.writeUint8(network_1.PacketId.EntityUpdate);
+        const writer = new Writer_1.BinaryWriter(0);
+        writer.writeUint8(Packets_1.PacketId.EntityUpdate);
         writer.writeUint32(entityUpdate.tick);
         writer.writeInt8(entityUpdate.deletedEntities.length);
         for (const uid of entityUpdate.deletedEntities)
@@ -611,7 +611,7 @@ class Codec {
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
     decodeEnterWorldRequest(data) {
-        const reader = new reader_1.BinaryReader(data, 1);
+        const reader = new Reader_1.BinaryReader(data, 1);
         const displayName = reader.readString();
         if (displayName === undefined)
             return undefined;
@@ -628,15 +628,15 @@ class Codec {
         return { displayName, version, proofOfWork };
     }
     encodeEnterWorldRequest(request) {
-        const writer = new writer_1.BinaryWriter(0);
-        writer.writeUint8(network_1.PacketId.EnterWorld);
+        const writer = new Writer_1.BinaryWriter(0);
+        writer.writeUint8(Packets_1.PacketId.EnterWorld);
         writer.writeString(request.displayName);
         writer.writeUint32(request.version);
         writer.writeArrayUint8Len8(request.proofOfWork);
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
     decodeRpc(def, data) {
-        const reader = new reader_1.BinaryReader(data, 5);
+        const reader = new Reader_1.BinaryReader(data, 5);
         let obj = {};
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
         if (rpc === undefined)
@@ -654,54 +654,54 @@ class Codec {
                     : `P_0x${param.nameHash.toString(16)}`;
                 let value;
                 switch (param.type) {
-                    case network_1.ParameterType.Uint32: {
+                    case Packets_1.ParameterType.Uint32: {
                         value = reader.readUint32();
                         break;
                     }
-                    case network_1.ParameterType.Int32: {
+                    case Packets_1.ParameterType.Int32: {
                         value = reader.readInt32();
                         break;
                     }
-                    case network_1.ParameterType.Float: {
+                    case Packets_1.ParameterType.Float: {
                         value = reader.readFloat();
                         break;
                     }
-                    case network_1.ParameterType.String: {
+                    case Packets_1.ParameterType.String: {
                         value = reader.readString();
                         break;
                     }
-                    case network_1.ParameterType.Uint64: {
+                    case Packets_1.ParameterType.Uint64: {
                         value = reader.readUint64();
                         break;
                     }
-                    case network_1.ParameterType.Int64: {
+                    case Packets_1.ParameterType.Int64: {
                         value = reader.readInt64();
                         break;
                     }
-                    case network_1.ParameterType.Uint16: {
+                    case Packets_1.ParameterType.Uint16: {
                         value = reader.readUint16();
                         break;
                     }
-                    case network_1.ParameterType.Int16: {
+                    case Packets_1.ParameterType.Int16: {
                         value = reader.readInt16();
                         break;
                     }
-                    case network_1.ParameterType.Uint8: {
+                    case Packets_1.ParameterType.Uint8: {
                         value = reader.readUint8();
                         break;
                     }
-                    case network_1.ParameterType.Int8: {
+                    case Packets_1.ParameterType.Int8: {
                         value = reader.readInt8();
                         break;
                     }
-                    case network_1.ParameterType.VectorUint8: {
+                    case Packets_1.ParameterType.VectorUint8: {
                         if (!reader.canRead(5))
                             value = reader.readArrayUint8Len8();
                         else
                             value = reader.readArrayUint8Len32();
                         break;
                     }
-                    case network_1.ParameterType.CompressedString: {
+                    case Packets_1.ParameterType.CompressedString: {
                         value = reader.readCompressedString();
                         break;
                     }
@@ -714,17 +714,17 @@ class Codec {
                     if (match.Key !== null)
                         value = (value ^ match.Key) & mask;
                     switch (match.Type) {
-                        case network_1.ParameterType.Float: {
+                        case Packets_1.ParameterType.Float: {
                             value /= 100;
                             break;
                         }
-                        case network_1.ParameterType.Int16: {
+                        case Packets_1.ParameterType.Int16: {
                             value = value >>> 0;
                             if (value > 0x7fff)
                                 value -= 0x10000;
                             break;
                         }
-                        case network_1.ParameterType.Int8: {
+                        case Packets_1.ParameterType.Int8: {
                             value = value >>> 0;
                             if (value > 0x7f)
                                 value -= 0x100;
@@ -738,7 +738,7 @@ class Codec {
         }
     }
     encodeRpc(name, data) {
-        const writer = new writer_1.BinaryWriter(0);
+        const writer = new Writer_1.BinaryWriter(0);
         const rpc = this.rpcMapping.Rpcs.find((r) => r.ClassName === name);
         if (rpc === undefined)
             return undefined;
@@ -747,7 +747,7 @@ class Codec {
         if (def === undefined)
             return undefined;
         // TODO: Emit an error here if the above condition is false
-        writer.writeUint8(9);
+        writer.writeUint8(Packets_1.PacketId.Rpc);
         writer.writeUint32(def.index);
         if (rpc.IsArray) {
             const dataArray = data;
@@ -764,16 +764,16 @@ class Codec {
 }
 exports.Codec = Codec;
 const paramTypeSizeMap = {
-    [network_1.ParameterType.Uint32]: 32,
-    [network_1.ParameterType.Int32]: 32,
-    [network_1.ParameterType.Float]: 32,
-    [network_1.ParameterType.String]: -1,
-    [network_1.ParameterType.Uint64]: 64,
-    [network_1.ParameterType.Int64]: 64,
-    [network_1.ParameterType.Uint16]: 16,
-    [network_1.ParameterType.Int16]: 16,
-    [network_1.ParameterType.Uint8]: 8,
-    [network_1.ParameterType.Int8]: 8,
-    [network_1.ParameterType.VectorUint8]: -1,
-    [network_1.ParameterType.CompressedString]: -1,
+    [Packets_1.ParameterType.Uint32]: 32,
+    [Packets_1.ParameterType.Int32]: 32,
+    [Packets_1.ParameterType.Float]: 32,
+    [Packets_1.ParameterType.String]: -1,
+    [Packets_1.ParameterType.Uint64]: 64,
+    [Packets_1.ParameterType.Int64]: 64,
+    [Packets_1.ParameterType.Uint16]: 16,
+    [Packets_1.ParameterType.Int16]: 16,
+    [Packets_1.ParameterType.Uint8]: 8,
+    [Packets_1.ParameterType.Int8]: 8,
+    [Packets_1.ParameterType.VectorUint8]: -1,
+    [Packets_1.ParameterType.CompressedString]: -1,
 };

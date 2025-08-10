@@ -1,4 +1,4 @@
-import { Vector2 } from "../types/network";
+import { Vector2 } from "../types/Packets";
 export declare class BinaryWriter {
     view: DataView;
     offset: number;

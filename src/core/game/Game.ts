@@ -1,138 +1,20 @@
 import { EventEmitter } from "node:events";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { Agent } from "node:http";
 import { WebSocket } from "ws";
-import { Codec, DumpedData } from "./codec";
-import { ApiServer } from "../types/api";
+import { Codec, DumpedData } from "../codec/Codec";
+import { ApiServer } from "../../types/Api";
+import { GameEvents } from "./GameEvents";
 import {
-    AccountSessionRpc,
-    ACToClientRpc,
-    AirDropRpc,
-    CheatingDetectedRpc,
     CompressedDataRpc,
-    DamageRpc,
-    DataFinishedRpc,
-    DataRpc,
-    DayNightRpc,
-    DeadRpc,
-    EndOfGameStatsRpc,
-    EnterWorldResponse,
     EntityType,
-    EntityUpdate,
-    GameStatusRpc,
-    GameTimerRpc,
-    GunGameWeaponRpc,
     InputRpc,
-    InventoryUpdateEquipRpc,
-    InventoryUpdateRpc,
-    KillFeedRpc,
-    LeaderboardRpc,
-    LoadoutUserRpc,
-    LoginResponseRpc,
-    LootCategoryOverrideRpc,
     MetricsRpc,
     PacketId,
-    PartyLeftRpc,
-    PartyUpdateRpc,
-    PlaceBuildingFailedRpc,
-    PlanePathRpc,
-    PlayerCountRpc,
-    ReceiveChatMessageRpc,
-    ResetGameRpc,
-    SetClientLoadoutRpc,
     SetSkinRpc,
-    ShutdownRpc,
-    UpdateMarkerRpc,
     Vector2,
-    ACInitRpc,
-    ObserverRpc,
-} from "../types/network";
-import {
-    SchemaAmmo,
-    SchemaBuilding,
-    SchemaEmote,
-    SchemaGas,
-    SchemaGeneral,
-    SchemaGunGameGun,
-    SchemaHealingItem,
-    SchemaLoadout,
-    SchemaMap,
-    SchemaModifier,
-    SchemaNpc,
-    SchemaPlayer,
-    SchemaPlayerBuilding,
-    SchemaProjectile,
-    SchemaProp,
-    SchemaTier,
-    SchemaVehicle,
-    SchemaWeapon,
-    SchemaZombie,
-} from "../types/schema";
-import { Agent } from "node:http";
-
-interface GameEvents {
-    // --- Misc ---
-    RawData: (data: Uint8Array) => void; // Any packet
-    Rpc: (name: string, rpc: object) => void; // Any rpc
-    RpcRawData: (namehash: number, decryptedData: Uint8Array) => void; // Any rpc
-    EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
-    EntityUpdate: (entityUpdate: EntityUpdate) => void;
-    /// --- Rpcs ---
-    ObserverRpc: (rpc: ObserverRpc) => void;
-    ACInitRpc: (rpc: ACInitRpc) => void;
-    ACToClientRpc: (rpc: ACToClientRpc) => void;
-    DamageRpc: (rpc: DamageRpc) => void;
-    DeadRpc: (rpc: DeadRpc) => void;
-    InventoryUpdateEquipRpc: (rpc: InventoryUpdateEquipRpc) => void;
-    DayNightRpc: (rpc: DayNightRpc) => void;
-    ResetGameRpc: (rpc: ResetGameRpc) => void;
-    InventoryUpdateRpc: (rpc: InventoryUpdateRpc) => void;
-    AccountSessionRpc: (rpc: AccountSessionRpc) => void;
-    ShutdownRpc: (rpc: ShutdownRpc) => void;
-    GameTimerRpc: (rpc: GameTimerRpc) => void;
-    PartyLeftRpc: (rpc: PartyLeftRpc) => void;
-    AirDropRpc: (rpc: AirDropRpc) => void;
-    CheatingDetectedRpc: (rpc: CheatingDetectedRpc) => void;
-    LootCategoryOverrideRpc: (rpc: LootCategoryOverrideRpc) => void;
-    LeaderboardRpc: (rpc: LeaderboardRpc) => void;
-    PlanePathRpc: (rpc: PlanePathRpc) => void;
-    PartyUpdateRpc: (rpc: PartyUpdateRpc) => void;
-    PlayerCountRpc: (rpc: PlayerCountRpc) => void;
-    DataFinishedRpc: (rpc: DataFinishedRpc) => void;
-    GunGameWeaponRpc: (rpc: GunGameWeaponRpc) => void;
-    UpdateMarkerRpc: (rpc: UpdateMarkerRpc) => void;
-    KillFeedRpc: (rpc: KillFeedRpc) => void;
-    LoginResponseRpc: (rpc: LoginResponseRpc) => void;
-    LoadoutUserRpc: (rpc: LoadoutUserRpc) => void;
-    ReceiveChatMessageRpc: (rpc: ReceiveChatMessageRpc) => void;
-    CompressedDataRpc: (rpc: CompressedDataRpc) => void;
-    EndOfGameStatsRpc: (rpc: EndOfGameStatsRpc) => void;
-    GameStatusRpc: (rpc: GameStatusRpc) => void;
-    DataRpc: (rpc: DataRpc) => void;
-    PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
-    SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
-    // --- Schemas ---
-    SchemaAmmos: (data: SchemaAmmo[]) => void;
-    SchemaBuildings: (data: SchemaBuilding[]) => void;
-    SchemaEmotes: (data: SchemaEmote[]) => void;
-    SchemaGas: (data: SchemaGas[]) => void;
-    SchemaGeneral: (data: SchemaGeneral) => void;
-    SchemaGunGameGuns: (data: SchemaGunGameGun[]) => void;
-    SchemaHealingItems: (data: SchemaHealingItem[]) => void;
-    SchemaLoadouts: (data: SchemaLoadout[]) => void;
-    SchemaMaps: (data: SchemaMap[]) => void;
-    SchemaModifiers: (data: SchemaModifier[]) => void;
-    SchemaNpcs: (data: SchemaNpc[]) => void;
-    SchemaPlane: (data: object) => void;
-    SchemaPlayer: (data: SchemaPlayer[]) => void;
-    SchemaPlayerBuildings: (data: SchemaPlayerBuilding[]) => void;
-    SchemaProjectiles: (data: SchemaProjectile[]) => void;
-    SchemaProps: (data: SchemaProp[]) => void;
-    SchemaTiers: (data: SchemaTier[]) => void;
-    SchemaVehicles: (data: SchemaVehicle[]) => void;
-    SchemaWeapons: (data: SchemaWeapon[]) => void;
-    SchemaZombies: (data: SchemaZombie[]) => void;
-}
+} from "../../types/Packets";
 
 export function rpcMappingFromFile(path: string): DumpedData {
     return JSON.parse(
@@ -171,13 +53,7 @@ export class Game extends EventEmitter {
         const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
         const decodeRpcs = options?.decodeRpcs ?? true;
         const parseSchemas = options?.parseSchemas ?? true;
-        const rpcMapping =
-            options?.rpcMapping ??
-            JSON.parse(
-                readFileSync(join(__dirname, "../../rpcs.json"), {
-                    encoding: "utf-8",
-                })
-            );
+        const rpcMapping = options?.rpcMapping ?? rpcMappingFromFile(join(__dirname, "../../../rpcs.json"));
 
         this.codec = new Codec(rpcMapping);
 

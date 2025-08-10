@@ -1,0 +1,122 @@
+import {
+    AccountSessionRpc,
+    ACToClientRpc,
+    AirDropRpc,
+    CheatingDetectedRpc,
+    CompressedDataRpc,
+    DamageRpc,
+    DataFinishedRpc,
+    DataRpc,
+    DayNightRpc,
+    DeadRpc,
+    EndOfGameStatsRpc,
+    EnterWorldResponse,
+    EntityUpdate,
+    GameStatusRpc,
+    GameTimerRpc,
+    GunGameWeaponRpc,
+    InventoryUpdateEquipRpc,
+    InventoryUpdateRpc,
+    KillFeedRpc,
+    LeaderboardRpc,
+    LoadoutUserRpc,
+    LoginResponseRpc,
+    LootCategoryOverrideRpc,
+    PartyLeftRpc,
+    PartyUpdateRpc,
+    PlaceBuildingFailedRpc,
+    PlanePathRpc,
+    PlayerCountRpc,
+    ReceiveChatMessageRpc,
+    ResetGameRpc,
+    SetClientLoadoutRpc,
+    ShutdownRpc,
+    UpdateMarkerRpc,
+    ACInitRpc,
+    ObserverRpc,
+} from "../../types/Packets";
+import {
+    SchemaAmmo,
+    SchemaBuilding,
+    SchemaEmote,
+    SchemaGas,
+    SchemaGeneral,
+    SchemaGunGameGun,
+    SchemaHealingItem,
+    SchemaLoadout,
+    SchemaMap,
+    SchemaModifier,
+    SchemaNpc,
+    SchemaPlayer,
+    SchemaPlayerBuilding,
+    SchemaProjectile,
+    SchemaProp,
+    SchemaTier,
+    SchemaVehicle,
+    SchemaWeapon,
+    SchemaZombie,
+} from "../../types/Schemas";
+
+export interface GameEvents {
+    // --- Misc ---
+    RawData: (data: Uint8Array) => void; // Any packet
+    Rpc: (name: string, rpc: object) => void; // Any rpc
+    RpcRawData: (namehash: number, decryptedData: Uint8Array) => void; // Any rpc
+    EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
+    EntityUpdate: (entityUpdate: EntityUpdate) => void;
+    /// --- Rpcs ---
+    ObserverRpc: (rpc: ObserverRpc) => void;
+    ACInitRpc: (rpc: ACInitRpc) => void;
+    ACToClientRpc: (rpc: ACToClientRpc) => void;
+    DamageRpc: (rpc: DamageRpc) => void;
+    DeadRpc: (rpc: DeadRpc) => void;
+    InventoryUpdateEquipRpc: (rpc: InventoryUpdateEquipRpc) => void;
+    DayNightRpc: (rpc: DayNightRpc) => void;
+    ResetGameRpc: (rpc: ResetGameRpc) => void;
+    InventoryUpdateRpc: (rpc: InventoryUpdateRpc) => void;
+    AccountSessionRpc: (rpc: AccountSessionRpc) => void;
+    ShutdownRpc: (rpc: ShutdownRpc) => void;
+    GameTimerRpc: (rpc: GameTimerRpc) => void;
+    PartyLeftRpc: (rpc: PartyLeftRpc) => void;
+    AirDropRpc: (rpc: AirDropRpc) => void;
+    CheatingDetectedRpc: (rpc: CheatingDetectedRpc) => void;
+    LootCategoryOverrideRpc: (rpc: LootCategoryOverrideRpc) => void;
+    LeaderboardRpc: (rpc: LeaderboardRpc) => void;
+    PlanePathRpc: (rpc: PlanePathRpc) => void;
+    PartyUpdateRpc: (rpc: PartyUpdateRpc) => void;
+    PlayerCountRpc: (rpc: PlayerCountRpc) => void;
+    DataFinishedRpc: (rpc: DataFinishedRpc) => void;
+    GunGameWeaponRpc: (rpc: GunGameWeaponRpc) => void;
+    UpdateMarkerRpc: (rpc: UpdateMarkerRpc) => void;
+    KillFeedRpc: (rpc: KillFeedRpc) => void;
+    LoginResponseRpc: (rpc: LoginResponseRpc) => void;
+    LoadoutUserRpc: (rpc: LoadoutUserRpc) => void;
+    ReceiveChatMessageRpc: (rpc: ReceiveChatMessageRpc) => void;
+    CompressedDataRpc: (rpc: CompressedDataRpc) => void;
+    EndOfGameStatsRpc: (rpc: EndOfGameStatsRpc) => void;
+    GameStatusRpc: (rpc: GameStatusRpc) => void;
+    DataRpc: (rpc: DataRpc) => void;
+    PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc) => void;
+    SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc) => void;
+    // --- Schemas ---
+    SchemaAmmos: (data: SchemaAmmo[]) => void;
+    SchemaBuildings: (data: SchemaBuilding[]) => void;
+    SchemaEmotes: (data: SchemaEmote[]) => void;
+    SchemaGas: (data: SchemaGas[]) => void;
+    SchemaGeneral: (data: SchemaGeneral) => void;
+    SchemaGunGameGuns: (data: SchemaGunGameGun[]) => void;
+    SchemaHealingItems: (data: SchemaHealingItem[]) => void;
+    SchemaLoadouts: (data: SchemaLoadout[]) => void;
+    SchemaMaps: (data: SchemaMap[]) => void;
+    SchemaModifiers: (data: SchemaModifier[]) => void;
+    SchemaNpcs: (data: SchemaNpc[]) => void;
+    SchemaPlane: (data: object) => void;
+    SchemaPlayer: (data: SchemaPlayer[]) => void;
+    SchemaPlayerBuildings: (data: SchemaPlayerBuilding[]) => void;
+    SchemaProjectiles: (data: SchemaProjectile[]) => void;
+    SchemaProps: (data: SchemaProp[]) => void;
+    SchemaTiers: (data: SchemaTier[]) => void;
+    SchemaVehicles: (data: SchemaVehicle[]) => void;
+    SchemaWeapons: (data: SchemaWeapon[]) => void;
+    SchemaZombies: (data: SchemaZombie[]) => void;
+}

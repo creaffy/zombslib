@@ -1,4 +1,4 @@
-import { Vector2 } from "../types/network";
+import { Vector2 } from "../types/Packets";
 import { gzipSync } from "zlib";
 
 export class BinaryWriter {

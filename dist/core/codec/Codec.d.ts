@@ -1,5 +1,5 @@
-import { EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate } from "../types/network";
-import { ZRCrypto } from "./zrcrypto";
+import { EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate } from "../../types/Packets";
+import { ZRCrypto } from "./ZRCrypto";
 export declare class Codec {
     crypto: ZRCrypto;
     entityMaps: EntityMap[];

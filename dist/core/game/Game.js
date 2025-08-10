@@ -6,8 +6,8 @@ const node_events_1 = require("node:events");
 const node_fs_1 = require("node:fs");
 const node_path_1 = require("node:path");
 const ws_1 = require("ws");
-const codec_1 = require("./codec");
-const network_1 = require("../types/network");
+const Codec_1 = require("../codec/Codec");
+const Packets_1 = require("../../types/Packets");
 function rpcMappingFromFile(path) {
     return JSON.parse((0, node_fs_1.readFileSync)(path, {
         encoding: "utf-8",
@@ -24,11 +24,8 @@ class Game extends node_events_1.EventEmitter {
         const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
         const decodeRpcs = options?.decodeRpcs ?? true;
         const parseSchemas = options?.parseSchemas ?? true;
-        const rpcMapping = options?.rpcMapping ??
-            JSON.parse((0, node_fs_1.readFileSync)((0, node_path_1.join)(__dirname, "../../rpcs.json"), {
-                encoding: "utf-8",
-            }));
-        this.codec = new codec_1.Codec(rpcMapping);
+        const rpcMapping = options?.rpcMapping ?? rpcMappingFromFile((0, node_path_1.join)(__dirname, "../../../rpcs.json"));
+        this.codec = new Codec_1.Codec(rpcMapping);
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
         this.socket = new ws_1.WebSocket(url, { agent: proxy });
         this.socket.binaryType = "arraybuffer";
@@ -46,19 +43,19 @@ class Game extends node_events_1.EventEmitter {
             const dataArray = new Uint8Array(data);
             this.emit("RawData", dataArray);
             switch (view.getUint8(0)) {
-                case network_1.PacketId.EnterWorld: {
+                case Packets_1.PacketId.EnterWorld: {
                     this.codec.enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
                     this.emit("EnterWorldResponse", this.codec.enterWorldResponse);
                     break;
                 }
-                case network_1.PacketId.EntityUpdate: {
+                case Packets_1.PacketId.EntityUpdate: {
                     if (decodeEntityUpdates) {
                         const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
                         this.emit("EntityUpdate", entityUpdate);
                     }
                     break;
                 }
-                case network_1.PacketId.Rpc: {
+                case Packets_1.PacketId.Rpc: {
                     if (decodeRpcs) {
                         const decrypedData = this.codec.crypto.cryptRpc(dataArray);
                         const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
