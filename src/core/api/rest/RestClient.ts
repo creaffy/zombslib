@@ -232,7 +232,7 @@ export class RestClient {
         });
     }
 
-    public async createDeviceAccount(deviceId: string) {
+    public async validateDevice(deviceId: string) {
         return this.makeRequest<ApiValidateDeviceResponse>(`/api/validate/device/${deviceId}`, {
             method: "POST",
         });

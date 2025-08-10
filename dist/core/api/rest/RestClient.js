@@ -168,7 +168,7 @@ class RestClient {
             queryParams: { userKey: userKey },
         });
     }
-    async createDeviceAccount(deviceId) {
+    async validateDevice(deviceId) {
         return this.makeRequest(`/api/validate/device/${deviceId}`, {
             method: "POST",
         });

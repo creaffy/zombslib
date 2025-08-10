@@ -50,5 +50,5 @@ export declare class RestClient {
     buyTrack(trackId: number, userKey: string): Promise<ApiBuyRewardTrackResponse>;
     skipTrack(trackId: number, tiers: number, userKey: string): Promise<ApiSkipRewardTrackResponse>;
     getTracks(userKey?: string): Promise<ApiBuyRewardTrackResponse>;
-    createDeviceAccount(deviceId: string): Promise<ApiValidateDeviceResponse>;
+    validateDevice(deviceId: string): Promise<ApiValidateDeviceResponse>;
 }
