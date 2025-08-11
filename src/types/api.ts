@@ -672,3 +672,10 @@ export interface ApiVideoRewardClaimResponse extends ApiResponse {
     reward: ApiUserReward;
     next_at: ApiDate;
 }
+
+export interface SocketIOSessionData {
+    sid: string;
+    upgrades: unknown[];
+    pingInterval: number;
+    pingTimeout: number;
+}

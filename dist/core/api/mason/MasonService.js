@@ -22,8 +22,11 @@ class MasonService extends node_events_1.EventEmitter {
             this.emit("close", code, reason);
         });
         this.socket.on("message", (data, isBinary) => {
-            if (!isBinary && data.toString().startsWith("42")) {
-                const parsed = JSON.parse(data.toString().slice(2));
+            if (isBinary)
+                return;
+            const dataString = data.toString();
+            if (dataString.startsWith("42")) {
+                const parsed = JSON.parse(dataString.slice(2));
                 const event = parsed[0];
                 let parameter = parsed[1];
                 if (event === "partyMetadataUpdated")
@@ -32,6 +35,11 @@ class MasonService extends node_events_1.EventEmitter {
                     parameter = parameter.userData;
                 this.emit("any", event, parameter);
                 this.emit(event, parameter);
+            }
+            else if (dataString.startsWith("0")) {
+                const parsed = JSON.parse(dataString.slice(1));
+                this.emit("socketIoSessionData", parsed);
+                this.emit("any", "socketIoSessionData", parsed);
             }
         });
     }

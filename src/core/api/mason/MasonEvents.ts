@@ -8,6 +8,7 @@ import {
     ApiPartyPlayer,
     ApiServer,
     ApiUser,
+    SocketIOSessionData,
 } from "../../../types/Api";
 
 export interface MasonEvents {
@@ -17,22 +18,23 @@ export interface MasonEvents {
     friendsData: (friends: ApiFriend[]) => void;
     partyStateUpdated: (state: string) => void;
     partyLeft: () => void;
-    partyPlayerJoined: (player: ApiPartyPlayer) => void;
+    partyPlayerJoined: (partyPlayer: ApiPartyPlayer) => void;
     partyVersionUpdated: (version: string) => void;
     partyMetadataUpdated: (metadata: ApiPartyMetadata) => void;
     partyGameModeUpdated: (gameMode: string) => void;
     friendUpdated: (friend: ApiFriend) => void;
-    partyJoinServer: (party: ApiServer) => void;
+    partyJoinServer: (server: ApiServer) => void;
     friendRequestRejected: (friendRequest: ApiFriendRequest) => void;
-    partyPlayerUpdated: (player: ApiPartyPlayer) => void;
+    partyPlayerUpdated: (partyPlayer: ApiPartyPlayer) => void;
     friendDeleted: (friend: ApiFriend) => void;
     friendRequests: (friendRequests: ApiFriendRequest[]) => void;
-    partyPlayerLeft: (player: ApiPartyPlayer) => void;
+    partyPlayerLeft: (partyPlayer: ApiPartyPlayer) => void;
     loggedIn: (userData: ApiUser) => void;
     partyAutofillUpdated: (autoFill: boolean) => void;
     friendRequestReceived: (friendRequest: ApiFriendRequest) => void;
     partyRegionUpdated: (region: string) => void;
     // privateMessageReceived: () => void;
     // clanMessageReceived: () => void;
+    socketIoSessionData: (data: SocketIOSessionData) => void;
     any: (event: string, data: any) => void;
 }
