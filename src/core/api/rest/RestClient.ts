@@ -173,7 +173,7 @@ export class RestClient {
     public async getLeaderboard(options?: {
         userKey?: string;
         mode?: "solo" | "duo" | "squad" | "limited";
-        time?: "24h" | "7d" | "1m" | "1y" | "all";
+        time?: "24h" | "7d" | "1m" | "all";
         category?: "wins" | "kills" | "kills_per_round" | "winrate" | "time_alive" | "rounds" | "top10";
     }) {
         return this.makeRequest<ApiLeaderboardResponse>("/api/leaderboard/live", {

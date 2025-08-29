@@ -21,6 +21,7 @@ export interface MasonEvents {
     partyPlayerJoined: (partyPlayer: ApiPartyPlayer) => void;
     partyVersionUpdated: (version: string) => void;
     partyMetadataUpdated: (metadata: ApiPartyMetadata) => void;
+    partyPlatformUpdated: (platform: string) => void;
     partyGameModeUpdated: (gameMode: string) => void;
     friendUpdated: (friend: ApiFriend) => void;
     partyJoinServer: (server: ApiServer) => void;
