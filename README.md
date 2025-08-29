@@ -4,7 +4,7 @@ Create and manage artificial connections to [ZombsRoyale.io](https://zombsroyale
 
 ## Documentation
 
-Docs for this library are available [here](https://zombsroyale.wiki/zombslib/home/). In case ZR Wiki is down, contact us on Discord: **@creaffy** or **@tyr7z**.
+Docs for this library are available [here](https://zombsroyale.wiki/zombslib/home/). In case something is not clearly explained there, consider joining our [Discord server](https://discord.gg/E5QWPx6TrX)
 
 ## Status quo
 
