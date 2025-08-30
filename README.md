@@ -2,9 +2,22 @@
 
 Create and manage artificial connections to [ZombsRoyale.io](https://zombsroyale.io/) servers.
 
-## Documentation
+## Installation
 
-Docs for this library are available [here](https://zombsroyale.wiki/zombslib/home/). In case something is not clearly explained there, consider joining our [Discord server](https://discord.gg/E5QWPx6TrX)
+Zombslib is not in the npm registry, however you can still easily install it like so:
+
+```properties
+npm i https://github.com/creaffy/zombslib
+```
+
+Full guide/documentation for this library is available on [ZR Wiki](https://zombsroyale.wiki/zombslib/home/). In case something is not clearly explained there, consider joining our [Discord server](https://discord.gg/E5QWPx6TrX).
+
+## Examples
+
+You can find some simple usage examples in this repo:<br/>
+**[examples/echo.ts](examples/echo.ts)** - Repeat all chat messages coming from other players.<br/>
+**[examples/leaderboard.ts](examples/leaderboard.ts)** - Fetch and print the leaderboard.<br/>
+**[examples/leaderboard.ts](examples/cosmetics.ts)** - Query cosmetic id's in the shop and equip them in-game.
 
 ## Status quo
 
