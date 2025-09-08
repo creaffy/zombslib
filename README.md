@@ -6,7 +6,7 @@ Create and manage artificial connections to [ZombsRoyale.io](https://zombsroyale
 
 Zombslib is not in the npm registry, however you can still easily install it like so:
 
-```properties
+```
 npm i https://github.com/creaffy/zombslib
 ```
 
@@ -15,23 +15,23 @@ Full guide/documentation for this library is available on [ZR Wiki](https://zomb
 ## Examples
 
 You can find some simple usage examples in this repo:<br/>
-**[examples/echo.ts](examples/echo.ts)** - Repeat all chat messages coming from other players.<br/>
-**[examples/leaderboard.ts](examples/leaderboard.ts)** - Fetch and print the leaderboard.<br/>
-**[examples/leaderboard.ts](examples/cosmetics.ts)** - Query cosmetic id's in the shop and equip them in-game.
+**[echo.ts](examples/echo.ts)** - Repeat all chat messages coming from other players.<br/>
+**[leaderboard.ts](examples/leaderboard.ts)** - Fetch and print the leaderboard.<br/>
+**[cosmetics.ts](examples/cosmetics.ts)** - Query cosmetic id's in the shop and equip them in-game.
 
-## Status quo
+## Features
 
 As of right now, we support the following:
 
--   `API`: Wrapper for the ZR REST API.
--   `In-game`: Reimplementation of the in-game protocol with a powerful API.
--   `MasonService`: Wrapper for the ZR Social and Matchmaking platform.
+-   **API** - Wrapper for the ZR REST API.
+-   **In-Game** - Reimplementation of the in-game protocol with a powerful API.
+-   **Mason** - Wrapper for the ZR Social and Matchmaking platform.
 
 What we're missing:
 
--   `UDP support`: Zombslib has no support for communicating with the in-game server over UDP.
--   `Error checking`: This library is admittedly not the greatest code we've ever written. In most places, we're assuming that everything went smoothly without running almost any checks on what the server has sent.
+-   **UDP** - There is currently no support for UDP communication with the in-game server.
+-   **Good Code :(** - This library is admittedly not the greatest code we've ever written. In most places, no validity checks are ran on server-sent packets and we are too lazy to fix that.
 
 ## Future
 
-Will this be maintained in the future? We don't know, maybe, if we feel like it. No promises.
+Will this repo be maintained in the future? We don't know, maybe, if we feel like it. No promises.
