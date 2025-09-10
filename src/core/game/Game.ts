@@ -144,7 +144,9 @@ export class Game extends EventEmitter {
     }
 
     public send(data: Uint8Array | undefined) {
-        if (data) this.socket.send(data);
+        if (data) {
+            this.socket.send(data);
+        }
     }
 
     public shutdown() {
@@ -175,7 +177,9 @@ export class Game extends EventEmitter {
 
     public getPlayerByName(name: string) {
         for (const [uid, entity] of this.getEntityList()) {
-            if (entity.tick?.Name === name) return entity;
+            if (entity.tick?.Name === name) {
+                return entity;
+            }
         }
         return undefined;
     }

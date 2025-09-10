@@ -41,8 +41,12 @@ export class ZRCrypto {
 
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) break;
-                if (++d === difficulty) return powBuffer.subarray(0, size);
+                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
+                    break;
+                }
+                if (++d === difficulty) {
+                    return powBuffer.subarray(0, size);
+                }
             }
         }
     }
@@ -73,8 +77,12 @@ export class ZRCrypto {
 
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) break;
-                if (++d === difficulty) return { valid: true, platform: platformName };
+                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
+                    break;
+                }
+                if (++d === difficulty) {
+                    return { valid: true, platform: platformName };
+                }
             }
         }
 

@@ -96,7 +96,7 @@ class BinaryReader {
             return undefined;
         const data = this.view.buffer.slice(this.offset, this.offset + length);
         this.offset += length;
-        return (0, zlib_1.gunzipSync)(data).toString();
+        return (0, zlib_1.gunzipSync)(Buffer.from(data)).toString();
     }
     readUint8Vector2() {
         const x = this.readUint8();

@@ -40,15 +40,21 @@ export class MasonService extends EventEmitter {
         });
 
         this.socket.on("message", (data: RawData, isBinary: boolean) => {
-            if (isBinary) return;
+            if (isBinary) {
+                return;
+            }
+
             const dataString = data.toString();
             if (dataString.startsWith("42")) {
                 const parsed = JSON.parse(dataString.slice(2));
                 const event = parsed[0];
                 let parameter = parsed[1];
 
-                if (event === "partyMetadataUpdated") parameter = JSON.parse(parameter);
-                else if (event === "loggedIn") parameter = parameter.userData;
+                if (event === "partyMetadataUpdated") {
+                    parameter = JSON.parse(parameter);
+                } else if (event === "loggedIn") {
+                    parameter = parameter.userData;
+                }
 
                 this.emit("any", event, parameter);
                 this.emit(event, parameter);

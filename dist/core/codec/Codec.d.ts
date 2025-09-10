@@ -10,7 +10,8 @@ export declare class Codec {
     private decodeEntityMapAttribute;
     private encodeEntityMapAttribute;
     getAttributeName(nameHash: number): string;
-    private encodeRpcParams;
+    private decodeRpcObject;
+    private encodeRpcObject;
     decodeEnterWorldResponse(data: Uint8Array): EnterWorldResponse;
     encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array;
     decodeEntityUpdate(data: Uint8Array): EntityUpdate;
@@ -19,7 +20,7 @@ export declare class Codec {
     encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array;
     decodeRpc(def: Rpc, data: Uint8Array): {
         name: string | null;
-        data: {};
+        data: any;
     } | undefined;
     encodeRpc(name: string, data: object | object[]): Uint8Array<ArrayBufferLike> | undefined;
 }

@@ -35,10 +35,12 @@ class ZRCrypto {
             const digest = Buffer.from(hash.digest()).swap32();
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0)
+                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
                     break;
-                if (++d === difficulty)
+                }
+                if (++d === difficulty) {
                     return powBuffer.subarray(0, size);
+                }
             }
         }
     }
@@ -58,10 +60,12 @@ class ZRCrypto {
             const digest = Buffer.from(hash.digest()).swap32();
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0)
+                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
                     break;
-                if (++d === difficulty)
+                }
+                if (++d === difficulty) {
                     return { valid: true, platform: platformName };
+                }
             }
         }
         return { valid: false };

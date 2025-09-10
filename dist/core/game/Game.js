@@ -86,8 +86,9 @@ class Game extends node_events_1.EventEmitter {
         }
     }
     send(data) {
-        if (data)
+        if (data) {
             this.socket.send(data);
+        }
     }
     shutdown() {
         this.socket.close();
@@ -110,8 +111,9 @@ class Game extends node_events_1.EventEmitter {
     }
     getPlayerByName(name) {
         for (const [uid, entity] of this.getEntityList()) {
-            if (entity.tick?.Name === name)
+            if (entity.tick?.Name === name) {
                 return entity;
+            }
         }
         return undefined;
     }

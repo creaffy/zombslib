@@ -34,12 +34,17 @@ export class Codec {
                 return reader.readInt32();
             case AttributeType.Float:
                 const value = reader.readFloat();
-                return value === undefined ? undefined : value / 100;
+                if (value === undefined) {
+                    return undefined;
+                }
+                return value / 100;
             case AttributeType.String:
                 return reader.readString();
             case AttributeType.Vector2: {
                 const vector = reader.readVector2();
-                if (vector === undefined) return undefined;
+                if (vector === undefined) {
+                    return undefined;
+                }
                 // TODO: Emit an error here if the above condition is false
                 vector.x /= 100;
                 vector.y /= -100;
@@ -47,7 +52,9 @@ export class Codec {
             }
             case AttributeType.ArrayVector2: {
                 const array = reader.readArrayVector2();
-                if (array === undefined) return undefined;
+                if (array === undefined) {
+                    return undefined;
+                }
                 // TODO: Emit an error here if the above condition is false
                 for (let vector of array) {
                     vector.x /= 100;
@@ -268,7 +275,111 @@ export class Codec {
         return tickFieldMap.get(nameHash) ?? `A_0x${nameHash.toString(16)}`;
     }
 
-    private encodeRpcParams(rpc: DumpedRpc, def: Rpc, writer: BinaryWriter, data: object) {
+    private decodeRpcObject(rpc: DumpedRpc, def: Rpc, reader: BinaryReader) {
+        let obj = {};
+        for (const param of def.parameters!) {
+            const match = rpc.Parameters.find((p) => p.NameHash === param.nameHash);
+
+            const fieldName =
+                match !== undefined && match.FieldName !== null
+                    ? match.FieldName
+                    : `P_0x${param.nameHash!.toString(16)}`;
+
+            let value: any;
+
+            switch (param.type!) {
+                case ParameterType.Uint32: {
+                    value = reader.readUint32();
+                    break;
+                }
+                case ParameterType.Int32: {
+                    value = reader.readInt32();
+                    break;
+                }
+                case ParameterType.Float: {
+                    value = reader.readFloat();
+                    break;
+                }
+                case ParameterType.String: {
+                    value = reader.readString();
+                    break;
+                }
+                case ParameterType.Uint64: {
+                    value = reader.readUint64();
+                    break;
+                }
+                case ParameterType.Int64: {
+                    value = reader.readInt64();
+                    break;
+                }
+                case ParameterType.Uint16: {
+                    value = reader.readUint16();
+                    break;
+                }
+                case ParameterType.Int16: {
+                    value = reader.readInt16();
+                    break;
+                }
+                case ParameterType.Uint8: {
+                    value = reader.readUint8();
+                    break;
+                }
+                case ParameterType.Int8: {
+                    value = reader.readInt8();
+                    break;
+                }
+                case ParameterType.VectorUint8: {
+                    if (!reader.canRead(5)) {
+                        value = reader.readArrayUint8Len8();
+                    } else {
+                        value = reader.readArrayUint8Len32();
+                    }
+                    break;
+                }
+                case ParameterType.CompressedString: {
+                    value = reader.readCompressedString();
+                    break;
+                }
+            }
+
+            if (value === undefined) {
+                return undefined;
+            }
+            // TODO: Emit an error here if the above condition is false
+
+            if (match !== undefined) {
+                const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
+                if (match.Key !== null) {
+                    value = (value ^ match.Key) & mask;
+                }
+
+                switch (match.Type) {
+                    case ParameterType.Float: {
+                        value /= 100;
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        value = value >>> 0;
+                        if (value > 0x7fff) {
+                            value -= 0x10000;
+                        }
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        value = value >>> 0;
+                        if (value > 0x7f) {
+                            value -= 0x100;
+                        }
+                        break;
+                    }
+                }
+                obj[fieldName] = value;
+            }
+        }
+        return obj;
+    }
+
+    private encodeRpcObject(rpc: DumpedRpc, def: Rpc, writer: BinaryWriter, data: object) {
         for (const param of def.parameters!) {
             const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
 
@@ -287,17 +398,23 @@ export class Codec {
                     }
                     case ParameterType.Int16: {
                         paramData = paramData >>> 0;
-                        if (paramData < 0x7fff) paramData += 0x10000;
+                        if (paramData < 0x7fff) {
+                            paramData += 0x10000;
+                        }
                         break;
                     }
                     case ParameterType.Int8: {
                         paramData = paramData >>> 0;
-                        if (paramData < 0x7f) paramData += 0x100;
+                        if (paramData < 0x7f) {
+                            paramData += 0x100;
+                        }
                         break;
                     }
                 }
 
-                if (match.Key !== null) paramData = (paramData ^ match.Key) & bitmask;
+                if (match.Key !== null) {
+                    paramData = (paramData ^ match.Key) & bitmask;
+                }
 
                 switch (match.Type) {
                     case ParameterType.Uint32: {
@@ -341,8 +458,11 @@ export class Codec {
                         break;
                     }
                     case ParameterType.VectorUint8: {
-                        if (paramData.length <= 4) writer.writeArrayUint8Len8(paramData);
-                        else writer.writeArrayUint8Len32(paramData);
+                        if (paramData.length <= 4) {
+                            writer.writeArrayUint8Len8(paramData);
+                        } else {
+                            writer.writeArrayUint8Len32(paramData);
+                        }
                         break;
                     }
                     case ParameterType.CompressedString: {
@@ -418,13 +538,21 @@ export class Codec {
             enterWorldResponse.rpcs.push(rpc);
         }
 
-        if (reader.canRead()) enterWorldResponse.mode = reader.readString();
+        if (reader.canRead()) {
+            enterWorldResponse.mode = reader.readString();
+        }
 
-        if (reader.canRead()) enterWorldResponse.map = reader.readString();
+        if (reader.canRead()) {
+            enterWorldResponse.map = reader.readString();
+        }
 
-        if (reader.canRead()) enterWorldResponse.udpCookie = reader.readUint32();
+        if (reader.canRead()) {
+            enterWorldResponse.udpCookie = reader.readUint32();
+        }
 
-        if (reader.canRead()) enterWorldResponse.udpPort = reader.readUint32();
+        if (reader.canRead()) {
+            enterWorldResponse.udpPort = reader.readUint32();
+        }
 
         this.entityMaps = enterWorldResponse.entities;
 
@@ -478,10 +606,21 @@ export class Codec {
             }
         }
 
-        if (response.mode !== undefined) writer.writeString(response.mode);
-        if (response.map !== undefined) writer.writeString(response.map);
-        if (response.udpCookie !== undefined) writer.writeUint32(response.udpCookie);
-        if (response.udpPort !== undefined) writer.writeUint32(response.udpPort);
+        if (response.mode !== undefined) {
+            writer.writeString(response.mode);
+        }
+
+        if (response.map !== undefined) {
+            writer.writeString(response.map);
+        }
+
+        if (response.udpCookie !== undefined) {
+            writer.writeUint32(response.udpCookie);
+        }
+
+        if (response.udpPort !== undefined) {
+            writer.writeUint32(response.udpPort);
+        }
 
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
@@ -498,31 +637,46 @@ export class Codec {
         entityUpdate.tick = reader.readUint32();
 
         const deletedEntitiesCount = reader.readInt8();
-        if (deletedEntitiesCount === undefined) return entityUpdate;
+        if (deletedEntitiesCount === undefined) {
+            return entityUpdate;
+        }
 
         for (let i = 0; i < deletedEntitiesCount; ++i) {
             const uid = reader.readUint32();
-            if (uid === undefined) return entityUpdate;
+            if (uid === undefined) {
+                return entityUpdate;
+            }
 
             entityUpdate.deletedEntities.push(uid);
             this.entityList.delete(uid);
         }
 
         const entityMapsCount = reader.readInt8();
-        if (entityMapsCount === undefined) return entityUpdate;
+        if (entityMapsCount === undefined) {
+            return entityUpdate;
+        }
+
         for (let i = 0; i < entityMapsCount; ++i) {
             const brandNewEntitiesCount = reader.readInt8();
-            if (brandNewEntitiesCount === undefined) return entityUpdate;
+            if (brandNewEntitiesCount === undefined) {
+                return entityUpdate;
+            }
 
             const entityMapId = reader.readUint32();
-            if (entityMapId === undefined) return entityUpdate;
+            if (entityMapId === undefined) {
+                return entityUpdate;
+            }
 
             const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
-            if (entityMap === undefined) return entityUpdate;
+            if (entityMap === undefined) {
+                return entityUpdate;
+            }
 
             for (let j = 0; j < brandNewEntitiesCount; ++j) {
                 const uid = reader.readUint32();
-                if (uid === undefined) return entityUpdate;
+                if (uid === undefined) {
+                    return entityUpdate;
+                }
 
                 entityMap.sortedUids!.push(uid);
                 this.entityList.set(uid, {
@@ -541,15 +695,21 @@ export class Codec {
 
         while (reader.canRead()) {
             const entityMapId = reader.readUint32();
-            if (entityMapId === undefined) return entityUpdate;
+            if (entityMapId === undefined) {
+                return entityUpdate;
+            }
 
             const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
-            if (entityMap === undefined) return entityUpdate;
+            if (entityMap === undefined) {
+                return entityUpdate;
+            }
 
             const absentEntitiesFlags: number[] = [];
             for (let i = 0; i < Math.floor((entityMap.sortedUids!.length + 7) / 8); ++i) {
                 const flag = reader.readUint8();
-                if (flag === undefined) return entityUpdate;
+                if (flag === undefined) {
+                    return entityUpdate;
+                }
 
                 absentEntitiesFlags.push(flag);
             }
@@ -564,7 +724,9 @@ export class Codec {
                 const updatedEntityFlags: number[] = [];
                 for (let j = 0; j < Math.ceil(entityMap.attributes!.length / 8); ++j) {
                     const flag = reader.readUint8();
-                    if (flag === undefined) return entityUpdate;
+                    if (flag === undefined) {
+                        return entityUpdate;
+                    }
 
                     updatedEntityFlags.push(flag);
                 }
@@ -575,7 +737,9 @@ export class Codec {
                     const attribute = entityMap.attributes![j];
                     if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
                         const value = this.decodeEntityMapAttribute(reader, attribute.type!);
-                        if (value === undefined) return entityUpdate;
+                        if (value === undefined) {
+                            return entityUpdate;
+                        }
 
                         const attributeName = this.getAttributeName(attribute.nameHash!);
                         tick[attributeName] = value;
@@ -613,7 +777,9 @@ export class Codec {
 
         for (const entityMap of this.entityMaps) {
             const filteredUids = entityMap.sortedUids!.filter((uid) => !entityUpdate.deletedEntities!.includes(uid));
-            if (filteredUids.length === 0) continue;
+            if (filteredUids.length === 0) {
+                continue;
+            }
 
             writer.writeUint32(entityMap.id!);
 
@@ -621,19 +787,27 @@ export class Codec {
                 let byte = 0;
                 for (let j = 0; j < 8; j++) {
                     const index = i * 8 + j;
-                    if (index >= filteredUids.length) break;
+                    if (index >= filteredUids.length) {
+                        break;
+                    }
                     const uid = filteredUids[index];
-                    if (!entityUpdate.updatedEntities?.has(uid)) byte |= 1 << j;
+                    if (!entityUpdate.updatedEntities?.has(uid)) {
+                        byte |= 1 << j;
+                    }
                 }
                 writer.writeUint8(byte);
             }
 
             for (const uid of filteredUids) {
                 const entity = this.entityList.get(uid);
-                if (entity === undefined) continue;
+                if (entity === undefined) {
+                    continue;
+                }
 
                 const updatedAttributes = entityUpdate.updatedEntities!.get(uid);
-                if (updatedAttributes === undefined) continue;
+                if (updatedAttributes === undefined) {
+                    continue;
+                }
 
                 const updatedFlags: number[] = Array(Math.ceil(entityMap.attributes!.length / 8)).fill(0);
 
@@ -653,7 +827,9 @@ export class Codec {
                     }
                 }
 
-                if (!updatedFlags.some((f) => f !== 0)) continue;
+                if (!updatedFlags.some((f) => f !== 0)) {
+                    continue;
+                }
 
                 for (const flag of updatedFlags) writer.writeUint8(flag);
 
@@ -668,15 +844,21 @@ export class Codec {
         const reader = new BinaryReader(data, 1);
 
         const displayName = reader.readString();
-        if (displayName === undefined) return undefined;
+        if (displayName === undefined) {
+            return undefined;
+        }
         // TODO: Emit an error here if the above condition is false
 
         const version = reader.readUint32();
-        if (version === undefined) return undefined;
+        if (version === undefined) {
+            return undefined;
+        }
         // TODO: Emit an error here if the above condition is false
 
         const pow = reader.readArrayUint8Len8();
-        if (pow === undefined) return undefined;
+        if (pow === undefined) {
+            return undefined;
+        }
         // TODO: Emit an error here if the above condition is false
 
         const proofOfWork = new Uint8Array(pow);
@@ -695,118 +877,50 @@ export class Codec {
 
     public decodeRpc(def: Rpc, data: Uint8Array) {
         const reader = new BinaryReader(data, 5);
-        let obj = {};
+        let decoded: any = {};
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
-        if (rpc === undefined) return undefined;
+        if (rpc === undefined) {
+            return undefined;
+        }
         // TODO: Emit an error here if the above condition is false
 
         if (rpc.IsArray) {
-            return undefined;
-            // TODO: Emit an error here if the above condition is false
-        } else {
-            for (const param of def.parameters!) {
-                const match = rpc.Parameters.find((p) => p.NameHash === param.nameHash);
-
-                const fieldName =
-                    match !== undefined && match.FieldName !== null
-                        ? match.FieldName
-                        : `P_0x${param.nameHash!.toString(16)}`;
-
-                let value: any;
-
-                switch (param.type!) {
-                    case ParameterType.Uint32: {
-                        value = reader.readUint32();
-                        break;
-                    }
-                    case ParameterType.Int32: {
-                        value = reader.readInt32();
-                        break;
-                    }
-                    case ParameterType.Float: {
-                        value = reader.readFloat();
-                        break;
-                    }
-                    case ParameterType.String: {
-                        value = reader.readString();
-                        break;
-                    }
-                    case ParameterType.Uint64: {
-                        value = reader.readUint64();
-                        break;
-                    }
-                    case ParameterType.Int64: {
-                        value = reader.readInt64();
-                        break;
-                    }
-                    case ParameterType.Uint16: {
-                        value = reader.readUint16();
-                        break;
-                    }
-                    case ParameterType.Int16: {
-                        value = reader.readInt16();
-                        break;
-                    }
-                    case ParameterType.Uint8: {
-                        value = reader.readUint8();
-                        break;
-                    }
-                    case ParameterType.Int8: {
-                        value = reader.readInt8();
-                        break;
-                    }
-                    case ParameterType.VectorUint8: {
-                        if (!reader.canRead(5)) value = reader.readArrayUint8Len8();
-                        else value = reader.readArrayUint8Len32();
-                        break;
-                    }
-                    case ParameterType.CompressedString: {
-                        value = reader.readCompressedString();
-                        break;
-                    }
-                }
-
-                if (value === undefined) return undefined;
-                // TODO: Emit an error here if the above condition is false
-
-                if (match !== undefined) {
-                    const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                    if (match.Key !== null) value = (value ^ match.Key) & mask;
-
-                    switch (match.Type) {
-                        case ParameterType.Float: {
-                            value /= 100;
-                            break;
-                        }
-                        case ParameterType.Int16: {
-                            value = value >>> 0;
-                            if (value > 0x7fff) value -= 0x10000;
-                            break;
-                        }
-                        case ParameterType.Int8: {
-                            value = value >>> 0;
-                            if (value > 0x7f) value -= 0x100;
-                            break;
-                        }
-                    }
-                    obj[fieldName] = value;
-                }
+            const length = reader.readUint16();
+            if (length === undefined) {
+                return undefined;
             }
-
-            return { name: rpc.ClassName, data: obj };
+            decoded = new Array(length);
+            for (let i = 0; i < length; ++i) {
+                const obj = this.decodeRpcObject(rpc, def, reader);
+                if (obj === undefined) {
+                    return undefined;
+                }
+                decoded[i] = obj;
+            }
+        } else {
+            decoded = this.decodeRpcObject(rpc, def, reader);
+            if (decoded === undefined) {
+                return undefined;
+            }
         }
+
+        return { name: rpc.ClassName, data: decoded };
     }
 
     public encodeRpc(name: string, data: object | object[]) {
         const writer = new BinaryWriter(0);
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.ClassName === name);
-        if (rpc === undefined) return undefined;
+        if (rpc === undefined) {
+            return undefined;
+        }
         // TODO: Emit an error here if the above condition is false
 
         const def = this.enterWorldResponse.rpcs!.find((r) => r.nameHash === rpc.NameHash);
-        if (def === undefined) return undefined;
+        if (def === undefined) {
+            return undefined;
+        }
         // TODO: Emit an error here if the above condition is false
 
         writer.writeUint8(PacketId.Rpc);
@@ -816,10 +930,10 @@ export class Codec {
             const dataArray = data as object[];
             writer.writeUint16(dataArray.length);
             for (const obj of dataArray) {
-                this.encodeRpcParams(rpc, def, writer, obj);
+                this.encodeRpcObject(rpc, def, writer, obj);
             }
         } else {
-            this.encodeRpcParams(rpc, def, writer, data);
+            this.encodeRpcObject(rpc, def, writer, data);
         }
 
         return this.crypto.cryptRpc(new Uint8Array(writer.view.buffer));
