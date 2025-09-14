@@ -21,8 +21,9 @@ export declare class Codec {
     decodeRpc(def: Rpc, data: Uint8Array): {
         name: string | null;
         data: any;
+        tick: number | undefined;
     } | undefined;
-    encodeRpc(name: string, data: object | object[]): Uint8Array<ArrayBufferLike> | undefined;
+    encodeRpc(name: string, data: object | object[], tick?: number): Uint8Array<ArrayBufferLike> | undefined;
 }
 export interface DumpedRpcParam {
     InternalIndex: number;

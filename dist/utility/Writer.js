@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BinaryWriter = void 0;
+exports.BufferWriter = void 0;
 const zlib_1 = require("zlib");
-class BinaryWriter {
+class BufferWriter {
     constructor(length) {
         this.view = new DataView(new ArrayBuffer(length));
         this.offset = 0;
     }
-    checkBufferSize(size) {
+    resize(size) {
         const newLength = this.offset + size;
         if (newLength > this.view.byteLength) {
             const newBuffer = new ArrayBuffer(newLength);
@@ -16,140 +16,128 @@ class BinaryWriter {
             this.view = new DataView(newBuffer);
         }
     }
-    writeUint8(value) {
-        this.checkBufferSize(1);
-        this.view.setUint8(this.offset, value);
+    toArray() {
+        return new Uint8Array(this.view.buffer, 0, this.offset);
+    }
+    i8(v) {
+        this.resize(1);
+        this.view.setInt8(this.offset, v);
         this.offset += 1;
     }
-    writeInt32(value) {
-        this.checkBufferSize(4);
-        this.view.setInt32(this.offset, value, true);
+    u8(v) {
+        this.resize(1);
+        this.view.setUint8(this.offset, v);
+        this.offset += 1;
+    }
+    i16(v, le = true) {
+        this.resize(2);
+        this.view.setInt16(this.offset, v, le);
+        this.offset += 2;
+    }
+    u16(v, le = true) {
+        this.resize(2);
+        this.view.setUint16(this.offset, v, le);
+        this.offset += 2;
+    }
+    i32(v, le = true) {
+        this.resize(4);
+        this.view.setInt32(this.offset, v, le);
         this.offset += 4;
     }
-    writeInt64(value) {
-        this.checkBufferSize(8);
-        this.view.setBigInt64(this.offset, value, true);
+    u32(v, le = true) {
+        this.resize(4);
+        this.view.setUint32(this.offset, v, le);
+        this.offset += 4;
+    }
+    i64(v, le = true) {
+        this.resize(8);
+        this.view.setBigInt64(this.offset, v, le);
         this.offset += 8;
     }
-    writeUint32(value) {
-        this.checkBufferSize(4);
-        this.view.setUint32(this.offset, value, true);
-        this.offset += 4;
-    }
-    writeUint64(value) {
-        this.checkBufferSize(8);
-        this.view.setBigUint64(this.offset, value, true);
+    u64(v, le = true) {
+        this.resize(8);
+        this.view.setBigUint64(this.offset, v, le);
         this.offset += 8;
     }
-    writeFloat(value) {
-        this.checkBufferSize(4);
-        this.view.setInt32(this.offset, value, true);
-        this.offset += 4;
+    // Uint8 Vector2
+    u8vec2(v) {
+        this.u8(v.x);
+        this.u8(v.y);
     }
-    writeULEB128(value) {
+    // Int32 Vector2
+    i32vec2(v) {
+        this.i32(v.x);
+        this.i32(v.y);
+    }
+    // Int32 Vector2 Array (Length = Int32)
+    i32vec2arr32(arr) {
+        this.i32(arr.length);
+        for (const v of arr) {
+            this.i32vec2(v);
+        }
+    }
+    // Uint32 Array (Length = Int32)
+    u32arr32(arr) {
+        this.i32(arr.length);
+        for (const v of arr) {
+            this.u32(v);
+        }
+    }
+    // Int32 Array (Length = Int32)
+    i32arr32(arr) {
+        this.i32(arr.length);
+        for (const v of arr) {
+            this.u32(v);
+        }
+    }
+    // Uint8 Array (Length = Uint8)
+    u8arr8(arr) {
+        this.u8(arr.length);
+        for (const v of arr) {
+            this.u8(v);
+        }
+    }
+    // Uint8 Array (Length = Uint32)
+    u8arr32(arr) {
+        this.u32(arr.length);
+        for (const v of arr) {
+            this.u8(v);
+        }
+    }
+    // ULEB128
+    varint(v) {
         do {
-            let byte = value & 0x7f;
-            value >>>= 7;
-            if (value !== 0) {
+            let byte = v & 0x7f;
+            v >>>= 7;
+            if (v !== 0) {
                 byte |= 0x80;
             }
-            this.writeUint8(byte);
-        } while (value !== 0);
+            this.u8(byte);
+        } while (v !== 0);
     }
-    writeString(value) {
-        const length = value.length;
+    string(str) {
+        const length = str.length;
         if (length < 0x80) {
-            this.writeUint8(length); // Single-byte length
+            this.u8(length); // Single-byte length
         }
         else {
-            this.writeULEB128(length); // Multi-byte ULEB128 length
+            this.varint(length); // Multi-byte ULEB128 length
         }
-        this.checkBufferSize(length);
+        this.resize(length);
         for (let i = 0; i < length; i++) {
-            this.view.setUint8(this.offset + i, value.charCodeAt(i));
+            this.view.setUint8(this.offset + i, str.charCodeAt(i));
         }
         this.offset += length;
     }
-    writeCompressedString(value) {
-        const compressed = (0, zlib_1.gzipSync)(value);
+    compressedString(str) {
+        const compressed = (0, zlib_1.gzipSync)(str);
         const length = compressed.length;
-        this.writeUint32(length);
-        this.checkBufferSize(length);
+        this.u32(length);
+        this.resize(length);
         for (let i = 0; i < length; i++) {
             this.view.setUint8(this.offset + i, compressed[i]);
         }
         this.offset += length;
     }
-    writeUint8Vector2(value) {
-        this.writeUint8(value.x);
-        this.writeUint8(value.y);
-    }
-    writeVector2(value) {
-        this.writeInt32(value.x);
-        this.writeInt32(value.y);
-    }
-    writeArrayVector2(data) {
-        this.writeInt32(data.length);
-        for (const vector of data) {
-            this.writeVector2(vector);
-        }
-    }
-    writeArrayUint32(data) {
-        this.writeInt32(data.length);
-        for (const value of data) {
-            this.writeUint32(value);
-        }
-    }
-    writeUint16(value) {
-        this.checkBufferSize(2);
-        this.view.setUint16(this.offset, value, true);
-        this.offset += 2;
-    }
-    writeInt16(value) {
-        this.checkBufferSize(2);
-        this.view.setInt16(this.offset, value, true);
-        this.offset += 2;
-    }
-    writeUint16BE(value) {
-        this.checkBufferSize(2);
-        this.view.setUint16(this.offset, value);
-        this.offset += 2;
-    }
-    writeInt16BE(value) {
-        this.checkBufferSize(2);
-        this.view.setInt16(this.offset, value);
-        this.offset += 2;
-    }
-    writeInt8(value) {
-        this.checkBufferSize(1);
-        this.view.setInt8(this.offset, value);
-        this.offset += 1;
-    }
-    writeArrayInt32(data) {
-        this.writeInt32(data.length);
-        for (const value of data) {
-            this.writeInt32(value);
-        }
-    }
-    writeArrayUint8Len8(data) {
-        this.writeUint8(data.length);
-        for (const value of data) {
-            this.writeUint8(value);
-        }
-    }
-    writeArrayUint8Len32(data) {
-        this.writeUint32(data.length);
-        for (const value of data) {
-            this.writeUint8(value);
-        }
-    }
-    writeUint8Array(data) {
-        for (const value of data) {
-            this.writeUint8(value);
-        }
-    }
-    toArray() {
-        return new Uint8Array(this.view.buffer, 0, this.offset);
-    }
 }
-exports.BinaryWriter = BinaryWriter;
+exports.BufferWriter = BufferWriter;

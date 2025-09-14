@@ -1,6 +1,6 @@
 import { gunzipSync } from "zlib";
 
-export class BinaryReader {
+export class BufferReader {
     public view: DataView;
     public offset: number;
 
@@ -13,54 +13,189 @@ export class BinaryReader {
         return this.offset + n <= this.view.byteLength;
     }
 
-    readUint8() {
-        if (!this.canRead(1)) return undefined;
-        const value = this.view.getUint8(this.offset);
-        this.offset++;
-        return value;
+    i8() {
+        if (!this.canRead(1)) {
+            return undefined;
+        }
+        const v = this.view.getInt8(this.offset);
+        this.offset += 1;
+        return v;
     }
 
-    readInt32() {
-        if (!this.canRead(4)) return undefined;
-        const value = this.view.getInt32(this.offset, true);
+    u8() {
+        if (!this.canRead(1)) {
+            return undefined;
+        }
+        const v = this.view.getUint8(this.offset);
+        this.offset += 1;
+        return v;
+    }
+
+    i16(le: boolean = true) {
+        if (!this.canRead(2)) {
+            return undefined;
+        }
+        const v = this.view.getInt16(this.offset, le);
+        this.offset += 2;
+        return v;
+    }
+
+    u16(le: boolean = true) {
+        if (!this.canRead(2)) {
+            return undefined;
+        }
+        const v = this.view.getUint16(this.offset, le);
+        this.offset += 2;
+        return v;
+    }
+
+    i32(le: boolean = true) {
+        if (!this.canRead(4)) {
+            return undefined;
+        }
+        const v = this.view.getInt32(this.offset, le);
         this.offset += 4;
-        return value;
+        return v;
     }
 
-    readInt64() {
-        if (!this.canRead(8)) return undefined;
-        const value = this.view.getBigInt64(this.offset, true);
+    u32(le: boolean = true) {
+        if (!this.canRead(4)) {
+            return undefined;
+        }
+        const v = this.view.getUint32(this.offset, le);
+        this.offset += 4;
+        return v;
+    }
+
+    i64(le: boolean = true) {
+        if (!this.canRead(8)) {
+            return undefined;
+        }
+        const v = this.view.getBigInt64(this.offset, le);
         this.offset += 8;
-        return value;
+        return v;
     }
 
-    readFloat() {
-        if (!this.canRead(4)) return undefined;
-        const value = this.view.getInt32(this.offset, true);
-        this.offset += 4;
-        return value;
-    }
-
-    readUint32() {
-        if (!this.canRead(4)) return undefined;
-        const value = this.view.getUint32(this.offset, true);
-        this.offset += 4;
-        return value;
-    }
-
-    readUint64() {
-        if (!this.canRead(8)) return undefined;
-        const value = this.view.getBigUint64(this.offset, true);
+    u64(le: boolean = true) {
+        if (!this.canRead(8)) {
+            return undefined;
+        }
+        const v = this.view.getBigUint64(this.offset, le);
         this.offset += 8;
-        return value;
+        return v;
     }
 
-    readULEB128() {
+    // Uint8 Vector2
+    u8vec2() {
+        if (!this.canRead(2)) {
+            return undefined;
+        }
+        const x = this.view.getUint8(this.offset);
+        const y = this.view.getUint8(this.offset);
+        this.offset += 2;
+        return { x, y };
+    }
+
+    // Int32 Vector2
+    i32vec2() {
+        if (!this.canRead(8)) {
+            return undefined;
+        }
+        const x = this.view.getInt32(this.offset);
+        const y = this.view.getInt32(this.offset);
+        this.offset += 8;
+        return { x, y };
+    }
+
+    // Int32 Vector2 Array (Length = Int32)
+    i32vec2arr32() {
+        const length = this.i32();
+        if (length === undefined) {
+            return undefined;
+        }
+        if (!this.canRead(length * 8) || length < 0) {
+            return undefined;
+        }
+        const result = new Array(length);
+        for (let i = 0; i < length; i++) {
+            result[i] = this.i32vec2()!;
+        }
+        return result;
+    }
+
+    // Uint32 Array (Length = Int32)
+    u32arr32() {
+        const length = this.i32();
+        if (length === undefined) {
+            return undefined;
+        }
+        if (!this.canRead(length * 4) || length < 0) {
+            return undefined;
+        }
+        const result = new Array(length);
+        for (let i = 0; i < length; i++) {
+            result[i] = this.u32()!;
+        }
+        return result;
+    }
+
+    // Int32 Array (Length = Int32)
+    i32arr32() {
+        const length = this.i32();
+        if (length === undefined) {
+            return undefined;
+        }
+        if (!this.canRead(length * 4) || length < 0) {
+            return undefined;
+        }
+        const result = new Array(length);
+        for (let i = 0; i < length; i++) {
+            result[i] = this.i32()!;
+        }
+        return result;
+    }
+
+    // Uint8 Array (Length = Uint8)
+    u8arr8() {
+        const length = this.u8();
+        if (length === undefined) {
+            return undefined;
+        }
+        if (!this.canRead(length) || length < 0) {
+            return undefined;
+        }
+        const result = new Array(length);
+        for (let i = 0; i < length; i++) {
+            result[i] = this.u8()!;
+        }
+        return result;
+    }
+
+    // Uint8 Array (Length = Uint32)
+    u8arr32() {
+        const length = this.u32();
+        if (length === undefined) {
+            return undefined;
+        }
+        if (!this.canRead(length) || length < 0) {
+            return undefined;
+        }
+        const result = new Array(length);
+        for (let i = 0; i < length; i++) {
+            result[i] = this.u8()!;
+        }
+        return result;
+    }
+
+    // ULEB128
+    varint() {
         let result = 0;
         let shift = 0;
         let byte = 0;
         do {
-            if (!this.canRead(1)) return undefined;
+            if (!this.canRead(1)) {
+                return undefined;
+            }
             byte = this.view.getUint8(this.offset);
             this.offset++;
             result |= (byte & 0x7f) << shift;
@@ -69,17 +204,21 @@ export class BinaryReader {
         return result;
     }
 
-    readString() {
-        if (!this.canRead(1)) return undefined;
+    string() {
+        if (!this.canRead(1)) {
+            return undefined;
+        }
         const firstByte = this.view.getUint8(this.offset);
         let length: number | undefined = 0;
         if ((firstByte & 0x80) === 0) {
             length = firstByte; // MSB = 0, single-byte length (Uint8)
             this.offset += 1;
         } else {
-            length = this.readULEB128(); // MSB = 1, multi-byte unsigned LEB128 length
+            length = this.varint(); // MSB = 1, multi-byte unsigned LEB128 length
         }
-        if (length === undefined || !this.canRead(length)) return undefined;
+        if (length === undefined || !this.canRead(length)) {
+            return undefined;
+        }
         let value = "";
         for (let i = 0; i < length; i++) {
             const charCode = this.view.getUint8(this.offset + i);
@@ -89,118 +228,16 @@ export class BinaryReader {
         return value;
     }
 
-    readCompressedString() {
-        const length = this.readUint32();
-        if (length === undefined) return undefined;
-        if (!this.canRead(length)) return undefined;
+    compressedString() {
+        const length = this.u32();
+        if (length === undefined) {
+            return undefined;
+        }
+        if (!this.canRead(length)) {
+            return undefined;
+        }
         const data = this.view.buffer.slice(this.offset, this.offset + length);
         this.offset += length;
         return gunzipSync(Buffer.from(data)).toString();
-    }
-
-    readUint8Vector2() {
-        const x = this.readUint8();
-        if (x === undefined) return undefined;
-        const y = this.readUint8();
-        if (y === undefined) return undefined;
-        return { x, y };
-    }
-
-    readVector2() {
-        const x = this.readFloat();
-        if (x === undefined) return undefined;
-        const y = this.readFloat();
-        if (y === undefined) return undefined;
-        return { x, y };
-    }
-
-    readArrayVector2() {
-        const length = this.readInt32();
-        if (length === undefined) return undefined;
-        if (length < 0 || !this.canRead(length * 8)) return undefined;
-        const result = new Array(length);
-        for (let i = 0; i < length; i++) {
-            result[i] = this.readVector2()!;
-        }
-        return result;
-    }
-
-    readArrayUint32() {
-        const length = this.readInt32();
-        if (length === undefined) return undefined;
-        if (length < 0 || !this.canRead(length * 4)) return undefined;
-        const result = new Array(length);
-        for (let i = 0; i < length; i++) {
-            result[i] = this.readUint32()!;
-        }
-        return result;
-    }
-
-    readUint16() {
-        if (!this.canRead(2)) return undefined;
-        const value = this.view.getUint16(this.offset, true);
-        this.offset += 2;
-        return value;
-    }
-
-    readInt16() {
-        if (!this.canRead(2)) return undefined;
-        const value = this.view.getInt16(this.offset, true);
-        this.offset += 2;
-        return value;
-    }
-
-    readUint16BE() {
-        if (!this.canRead(2)) return undefined;
-        const value = this.view.getUint16(this.offset);
-        this.offset += 2;
-        return value;
-    }
-
-    readInt16BE() {
-        if (!this.canRead(2)) return undefined;
-        const value = this.view.getInt16(this.offset);
-        this.offset += 2;
-        return value;
-    }
-
-    readInt8() {
-        if (!this.canRead(1)) return undefined;
-        const value = this.view.getInt8(this.offset);
-        this.offset++;
-        return value;
-    }
-
-    readArrayInt32() {
-        const length = this.readInt32();
-        if (length === undefined) return undefined;
-        if (length < 0 || !this.canRead(length * 4)) return undefined;
-        const result = new Array(length);
-        for (let i = 0; i < length; i++) {
-            result[i] = this.readInt32()!;
-        }
-        return result;
-    }
-
-    readArrayUint8Len8() {
-        const length = this.readUint8();
-        if (length === undefined) return undefined;
-        if (length < 0 || !this.canRead(length)) return undefined;
-        const result = new Array(length);
-        for (let i = 0; i < length; i++) {
-            result[i] = this.readUint8()!;
-        }
-        return result;
-    }
-
-    readArrayUint8Len32() {
-        const length = this.readUint32();
-        if (length === undefined) return undefined;
-        if (length < 0 || !this.canRead(length)) return undefined;
-        const result = new Array(length);
-        for (let i = 0; i < length; i++) {
-            result[i] = this.readUint8()!;
-        }
-        return result;
     }
 }

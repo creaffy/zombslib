@@ -1,5 +1,5 @@
-import { BinaryReader } from "../../utility/Reader";
-import { BinaryWriter } from "../../utility/Writer";
+import { BufferReader } from "../../utility/Reader";
+import { BufferWriter } from "../../utility/Writer";
 import {
     AttributeType,
     EnterWorldResponse,
@@ -26,22 +26,22 @@ export class Codec {
         this.rpcMapping = rpcMapping;
     }
 
-    private decodeEntityMapAttribute(reader: BinaryReader, type: AttributeType) {
+    private decodeEntityMapAttribute(reader: BufferReader, type: AttributeType) {
         switch (type) {
             case AttributeType.Uint32:
-                return reader.readUint32();
+                return reader.u32();
             case AttributeType.Int32:
-                return reader.readInt32();
+                return reader.i32();
             case AttributeType.Float:
-                const value = reader.readFloat();
+                const value = reader.i32();
                 if (value === undefined) {
                     return undefined;
                 }
                 return value / 100;
             case AttributeType.String:
-                return reader.readString();
+                return reader.string();
             case AttributeType.Vector2: {
-                const vector = reader.readVector2();
+                const vector = reader.i32vec2();
                 if (vector === undefined) {
                     return undefined;
                 }
@@ -51,7 +51,7 @@ export class Codec {
                 return vector;
             }
             case AttributeType.ArrayVector2: {
-                const array = reader.readArrayVector2();
+                const array = reader.i32vec2arr32();
                 if (array === undefined) {
                     return undefined;
                 }
@@ -63,46 +63,46 @@ export class Codec {
                 return array;
             }
             case AttributeType.ArrayUint32:
-                return reader.readArrayUint32();
+                return reader.u32arr32();
             case AttributeType.Uint16:
-                return reader.readUint16BE();
+                return reader.u16(false);
             case AttributeType.Uint8:
-                return reader.readUint8();
+                return reader.u8();
             case AttributeType.Int16:
-                return reader.readInt16BE();
+                return reader.i16(false);
             case AttributeType.Int8:
-                return reader.readInt8();
+                return reader.i8();
             case AttributeType.ArrayInt32:
-                return reader.readArrayInt32();
+                return reader.i32arr32();
             case AttributeType.ArrayUint8:
-                return reader.readArrayUint8Len8();
+                return reader.u8arr8();
         }
         return undefined;
         // TODO: Emit an error here if the above condition is false
     }
 
-    private encodeEntityMapAttribute(writer: BinaryWriter, type: AttributeType | undefined, value: any) {
+    private encodeEntityMapAttribute(writer: BufferWriter, type: AttributeType | undefined, value: any) {
         switch (type) {
             case AttributeType.Uint32:
-                writer.writeUint32(value || 0);
+                writer.u32(value || 0);
                 break;
             case AttributeType.Int32:
-                writer.writeInt32(value || 0);
+                writer.i32(value || 0);
                 break;
             case AttributeType.Float:
-                writer.writeFloat(value !== null ? Math.round(value * 100) : 0);
+                writer.i32(value !== null ? Math.round(value * 100) : 0);
                 break;
             case AttributeType.String:
-                writer.writeString(value || "");
+                writer.string(value || "");
                 break;
             case AttributeType.Vector2:
                 if (value) {
-                    writer.writeVector2({
+                    writer.i32vec2({
                         x: Math.round(value.x * 100),
                         y: Math.round(value.y * -100),
                     });
                 } else {
-                    writer.writeVector2({ x: 0, y: 0 });
+                    writer.i32vec2({ x: 0, y: 0 });
                 }
                 break;
             case AttributeType.ArrayVector2:
@@ -111,34 +111,34 @@ export class Codec {
                         x: Math.round(v.x * 100),
                         y: Math.round(v.y * -100),
                     }));
-                    writer.writeArrayVector2(vectors);
+                    writer.i32vec2arr32(vectors);
                 } else {
-                    writer.writeArrayVector2([]);
+                    writer.i32vec2arr32([]);
                 }
                 break;
             case AttributeType.ArrayUint32:
-                writer.writeArrayUint32(value || []);
+                writer.u32arr32(value || []);
                 break;
             case AttributeType.Uint16:
-                writer.writeUint16BE(value || 0);
+                writer.u16(value || 0, false);
                 break;
             case AttributeType.Uint8:
-                writer.writeUint8(value || 0);
+                writer.u8(value || 0);
                 break;
             case AttributeType.Int16:
-                writer.writeInt16BE(value || 0);
+                writer.i16(value || 0, false);
                 break;
             case AttributeType.Int8:
-                writer.writeInt8(value || 0);
+                writer.i8(value || 0);
                 break;
             case AttributeType.ArrayInt32:
-                writer.writeArrayInt32(value || []);
+                writer.i32arr32(value || []);
                 break;
             case AttributeType.ArrayUint8:
-                writer.writeArrayUint8Len8(value || []);
+                writer.u8arr8(value || []);
                 break;
             default:
-                writer.writeUint32(0);
+                writer.u32(0);
         }
     }
 
@@ -275,7 +275,7 @@ export class Codec {
         return tickFieldMap.get(nameHash) ?? `A_0x${nameHash.toString(16)}`;
     }
 
-    private decodeRpcObject(rpc: DumpedRpc, def: Rpc, reader: BinaryReader) {
+    private decodeRpcObject(rpc: DumpedRpc, def: Rpc, reader: BufferReader) {
         let obj = {};
         for (const param of def.parameters!) {
             const match = rpc.Parameters.find((p) => p.NameHash === param.nameHash);
@@ -289,55 +289,52 @@ export class Codec {
 
             switch (param.type!) {
                 case ParameterType.Uint32: {
-                    value = reader.readUint32();
+                    value = reader.u32();
                     break;
                 }
+                case ParameterType.Float:
                 case ParameterType.Int32: {
-                    value = reader.readInt32();
-                    break;
-                }
-                case ParameterType.Float: {
-                    value = reader.readFloat();
+                    value = reader.i32();
                     break;
                 }
                 case ParameterType.String: {
-                    value = reader.readString();
+                    value = reader.string();
                     break;
                 }
                 case ParameterType.Uint64: {
-                    value = reader.readUint64();
+                    value = reader.u64();
                     break;
                 }
                 case ParameterType.Int64: {
-                    value = reader.readInt64();
+                    value = reader.i64();
                     break;
                 }
                 case ParameterType.Uint16: {
-                    value = reader.readUint16();
+                    value = reader.u16();
                     break;
                 }
                 case ParameterType.Int16: {
-                    value = reader.readInt16();
+                    value = reader.i16();
                     break;
                 }
                 case ParameterType.Uint8: {
-                    value = reader.readUint8();
+                    value = reader.u8();
                     break;
                 }
                 case ParameterType.Int8: {
-                    value = reader.readInt8();
+                    value = reader.i8();
                     break;
                 }
                 case ParameterType.VectorUint8: {
                     if (!reader.canRead(5)) {
-                        value = reader.readArrayUint8Len8();
+                        value = reader.u8arr8();
                     } else {
-                        value = reader.readArrayUint8Len32();
+                        value = reader.u8arr32();
                     }
                     break;
                 }
                 case ParameterType.CompressedString: {
-                    value = reader.readCompressedString();
+                    value = reader.compressedString();
                     break;
                 }
             }
@@ -379,12 +376,12 @@ export class Codec {
         return obj;
     }
 
-    private encodeRpcObject(rpc: DumpedRpc, def: Rpc, writer: BinaryWriter, data: object) {
+    private encodeRpcObject(rpc: DumpedRpc, def: Rpc, writer: BufferWriter, data: object) {
         for (const param of def.parameters!) {
             const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
 
             if (!match) {
-                writer.writeUint8(0);
+                writer.u8(0);
             } else {
                 const fieldName = match.FieldName !== null ? match.FieldName : `P_0x${match.NameHash.toString(16)}`;
 
@@ -418,55 +415,55 @@ export class Codec {
 
                 switch (match.Type) {
                     case ParameterType.Uint32: {
-                        writer.writeUint32(paramData);
+                        writer.u32(paramData);
                         break;
                     }
                     case ParameterType.Int32: {
-                        writer.writeInt32(paramData);
+                        writer.i32(paramData);
                         break;
                     }
                     case ParameterType.Float: {
-                        writer.writeFloat(paramData);
+                        writer.i32(paramData);
                         break;
                     }
                     case ParameterType.String: {
-                        writer.writeString(paramData);
+                        writer.string(paramData);
                         break;
                     }
                     case ParameterType.Uint64: {
-                        writer.writeUint64(paramData);
+                        writer.u64(paramData);
                         break;
                     }
                     case ParameterType.Int64: {
-                        writer.writeInt64(paramData);
+                        writer.i64(paramData);
                         break;
                     }
                     case ParameterType.Uint16: {
-                        writer.writeUint16(paramData);
+                        writer.u16(paramData);
                         break;
                     }
                     case ParameterType.Int16: {
-                        writer.writeInt16(paramData);
+                        writer.i16(paramData);
                         break;
                     }
                     case ParameterType.Uint8: {
-                        writer.writeUint8(paramData);
+                        writer.u8(paramData);
                         break;
                     }
                     case ParameterType.Int8: {
-                        writer.writeInt8(paramData);
+                        writer.i8(paramData);
                         break;
                     }
                     case ParameterType.VectorUint8: {
                         if (paramData.length <= 4) {
-                            writer.writeArrayUint8Len8(paramData);
+                            writer.u8arr8(paramData);
                         } else {
-                            writer.writeArrayUint8Len32(paramData);
+                            writer.u8arr32(paramData);
                         }
                         break;
                     }
                     case ParameterType.CompressedString: {
-                        writer.writeCompressedString(paramData);
+                        writer.compressedString(paramData);
                         break;
                     }
                 }
@@ -475,38 +472,38 @@ export class Codec {
     }
 
     public decodeEnterWorldResponse(data: Uint8Array) {
-        const reader = new BinaryReader(data, 1);
+        const reader = new BufferReader(data, 1);
 
         let enterWorldResponse: EnterWorldResponse = {};
-        enterWorldResponse.version = reader.readUint32();
-        enterWorldResponse.allowed = reader.readUint32();
-        enterWorldResponse.uid = reader.readUint32();
-        enterWorldResponse.startingTick = reader.readUint32();
-        enterWorldResponse.tickRate = reader.readUint32();
-        enterWorldResponse.effectiveTickRate = reader.readUint32();
-        enterWorldResponse.players = reader.readUint32();
-        enterWorldResponse.maxPlayers = reader.readUint32();
-        enterWorldResponse.chatChannel = reader.readUint32();
-        enterWorldResponse.effectiveDisplayName = reader.readString();
-        enterWorldResponse.x1 = reader.readInt32();
-        enterWorldResponse.y1 = reader.readInt32();
-        enterWorldResponse.x2 = reader.readInt32();
-        enterWorldResponse.y2 = reader.readInt32();
+        enterWorldResponse.version = reader.u32();
+        enterWorldResponse.allowed = reader.u32();
+        enterWorldResponse.uid = reader.u32();
+        enterWorldResponse.startingTick = reader.u32();
+        enterWorldResponse.tickRate = reader.u32();
+        enterWorldResponse.effectiveTickRate = reader.u32();
+        enterWorldResponse.players = reader.u32();
+        enterWorldResponse.maxPlayers = reader.u32();
+        enterWorldResponse.chatChannel = reader.u32();
+        enterWorldResponse.effectiveDisplayName = reader.string();
+        enterWorldResponse.x1 = reader.i32();
+        enterWorldResponse.y1 = reader.i32();
+        enterWorldResponse.x2 = reader.i32();
+        enterWorldResponse.y2 = reader.i32();
 
-        const entityMapCount = reader.readUint32()!;
+        const entityMapCount = reader.u32()!;
         enterWorldResponse.entities = [];
         for (let i = 0; i < entityMapCount; ++i) {
             let entityMap: EntityMap = {};
-            entityMap.id = reader.readUint32();
+            entityMap.id = reader.u32();
             entityMap.attributes = [];
             entityMap.sortedUids = [];
             entityMap.defaultTick = {};
 
-            const attributesCount = reader.readUint32()!;
+            const attributesCount = reader.u32()!;
             for (let j = 0; j < attributesCount; ++j) {
                 let entityMapAttribute: EntityMapAttribute = {};
-                entityMapAttribute.nameHash = reader.readUint32()!;
-                entityMapAttribute.type = reader.readUint32()!;
+                entityMapAttribute.nameHash = reader.u32()!;
+                entityMapAttribute.type = reader.u32()!;
 
                 entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)] =
                     this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
@@ -517,20 +514,20 @@ export class Codec {
             enterWorldResponse.entities.push(entityMap);
         }
 
-        const rpcCount = reader.readUint32()!;
+        const rpcCount = reader.u32()!;
         enterWorldResponse.rpcs = [];
         for (let i = 0; i < rpcCount; ++i) {
             let rpc: Rpc = {};
             rpc.index = i;
-            rpc.nameHash = reader.readUint32();
+            rpc.nameHash = reader.u32();
 
-            const parameterCount = reader.readUint8()!;
-            rpc.isArray = reader.readUint8() != 0;
+            const parameterCount = reader.u8()!;
+            rpc.isArray = reader.u8() != 0;
             rpc.parameters = [];
             for (let j = 0; j < parameterCount; ++j) {
                 let rpcParameter: RpcParameter = {};
-                rpcParameter.nameHash = reader.readUint32();
-                rpcParameter.type = reader.readUint8();
+                rpcParameter.nameHash = reader.u32();
+                rpcParameter.type = reader.u8();
                 rpcParameter.internalIndex = -1;
                 rpc.parameters.push(rpcParameter);
             }
@@ -539,19 +536,19 @@ export class Codec {
         }
 
         if (reader.canRead()) {
-            enterWorldResponse.mode = reader.readString();
+            enterWorldResponse.mode = reader.string();
         }
 
         if (reader.canRead()) {
-            enterWorldResponse.map = reader.readString();
+            enterWorldResponse.map = reader.string();
         }
 
         if (reader.canRead()) {
-            enterWorldResponse.udpCookie = reader.readUint32();
+            enterWorldResponse.udpCookie = reader.u32();
         }
 
         if (reader.canRead()) {
-            enterWorldResponse.udpPort = reader.readUint32();
+            enterWorldResponse.udpPort = reader.u32();
         }
 
         this.entityMaps = enterWorldResponse.entities;
@@ -560,32 +557,32 @@ export class Codec {
     }
 
     public encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array {
-        const writer = new BinaryWriter(0);
+        const writer = new BufferWriter(0);
 
-        writer.writeUint8(PacketId.EnterWorld);
-        writer.writeUint32(response.version!);
-        writer.writeUint32(response.allowed!);
-        writer.writeUint32(response.uid!);
-        writer.writeUint32(response.startingTick!);
-        writer.writeUint32(response.tickRate!);
-        writer.writeUint32(response.effectiveTickRate!);
-        writer.writeUint32(response.players!);
-        writer.writeUint32(response.maxPlayers!);
-        writer.writeUint32(response.chatChannel!);
-        writer.writeString(response.effectiveDisplayName!);
-        writer.writeInt32(response.x1!);
-        writer.writeInt32(response.y1!);
-        writer.writeInt32(response.x2!);
-        writer.writeInt32(response.y2!);
+        writer.u8(PacketId.EnterWorld);
+        writer.u32(response.version!);
+        writer.u32(response.allowed!);
+        writer.u32(response.uid!);
+        writer.u32(response.startingTick!);
+        writer.u32(response.tickRate!);
+        writer.u32(response.effectiveTickRate!);
+        writer.u32(response.players!);
+        writer.u32(response.maxPlayers!);
+        writer.u32(response.chatChannel!);
+        writer.string(response.effectiveDisplayName!);
+        writer.i32(response.x1!);
+        writer.i32(response.y1!);
+        writer.i32(response.x2!);
+        writer.i32(response.y2!);
 
-        writer.writeUint32(response.entities!.length);
+        writer.u32(response.entities!.length);
         for (const entity of response.entities!) {
-            writer.writeUint32(entity.id!);
+            writer.u32(entity.id!);
 
-            writer.writeUint32(entity.attributes!.length);
+            writer.u32(entity.attributes!.length);
             for (const attribute of entity.attributes!) {
-                writer.writeUint32(attribute.nameHash!);
-                writer.writeUint32(attribute.type!);
+                writer.u32(attribute.nameHash!);
+                writer.u32(attribute.type!);
 
                 this.encodeEntityMapAttribute(
                     writer,
@@ -595,31 +592,31 @@ export class Codec {
             }
         }
 
-        writer.writeUint32(response.rpcs!.length);
+        writer.u32(response.rpcs!.length);
         for (const rpc of response.rpcs!) {
-            writer.writeUint32(rpc.nameHash!);
-            writer.writeUint8(rpc.parameters!.length);
-            writer.writeUint8(rpc.isArray ? 1 : 0);
+            writer.u32(rpc.nameHash!);
+            writer.u8(rpc.parameters!.length);
+            writer.u8(rpc.isArray ? 1 : 0);
             for (const param of rpc.parameters!) {
-                writer.writeUint32(param.nameHash!);
-                writer.writeUint8(param.type!);
+                writer.u32(param.nameHash!);
+                writer.u8(param.type!);
             }
         }
 
         if (response.mode !== undefined) {
-            writer.writeString(response.mode);
+            writer.string(response.mode);
         }
 
         if (response.map !== undefined) {
-            writer.writeString(response.map);
+            writer.string(response.map);
         }
 
         if (response.udpCookie !== undefined) {
-            writer.writeUint32(response.udpCookie);
+            writer.u32(response.udpCookie);
         }
 
         if (response.udpPort !== undefined) {
-            writer.writeUint32(response.udpPort);
+            writer.u32(response.udpPort);
         }
 
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
@@ -628,21 +625,21 @@ export class Codec {
     // This entire function is really weird and full of questionable early returns
     // TODO: Do something about it ^^^, I don't even know
     public decodeEntityUpdate(data: Uint8Array): EntityUpdate {
-        const reader = new BinaryReader(data, 1);
+        const reader = new BufferReader(data, 1);
 
         const entityUpdate: EntityUpdate = {};
         entityUpdate.createdEntities = [];
         entityUpdate.deletedEntities = [];
         entityUpdate.updatedEntities = new Map();
-        entityUpdate.tick = reader.readUint32();
+        entityUpdate.tick = reader.u32();
 
-        const deletedEntitiesCount = reader.readInt8();
+        const deletedEntitiesCount = reader.i8();
         if (deletedEntitiesCount === undefined) {
             return entityUpdate;
         }
 
         for (let i = 0; i < deletedEntitiesCount; ++i) {
-            const uid = reader.readUint32();
+            const uid = reader.u32();
             if (uid === undefined) {
                 return entityUpdate;
             }
@@ -651,18 +648,18 @@ export class Codec {
             this.entityList.delete(uid);
         }
 
-        const entityMapsCount = reader.readInt8();
+        const entityMapsCount = reader.i8();
         if (entityMapsCount === undefined) {
             return entityUpdate;
         }
 
         for (let i = 0; i < entityMapsCount; ++i) {
-            const brandNewEntitiesCount = reader.readInt8();
+            const brandNewEntitiesCount = reader.i8();
             if (brandNewEntitiesCount === undefined) {
                 return entityUpdate;
             }
 
-            const entityMapId = reader.readUint32();
+            const entityMapId = reader.u32();
             if (entityMapId === undefined) {
                 return entityUpdate;
             }
@@ -673,7 +670,7 @@ export class Codec {
             }
 
             for (let j = 0; j < brandNewEntitiesCount; ++j) {
-                const uid = reader.readUint32();
+                const uid = reader.u32();
                 if (uid === undefined) {
                     return entityUpdate;
                 }
@@ -694,7 +691,7 @@ export class Codec {
         }
 
         while (reader.canRead()) {
-            const entityMapId = reader.readUint32();
+            const entityMapId = reader.u32();
             if (entityMapId === undefined) {
                 return entityUpdate;
             }
@@ -706,7 +703,7 @@ export class Codec {
 
             const absentEntitiesFlags: number[] = [];
             for (let i = 0; i < Math.floor((entityMap.sortedUids!.length + 7) / 8); ++i) {
-                const flag = reader.readUint8();
+                const flag = reader.u8();
                 if (flag === undefined) {
                     return entityUpdate;
                 }
@@ -723,7 +720,7 @@ export class Codec {
 
                 const updatedEntityFlags: number[] = [];
                 for (let j = 0; j < Math.ceil(entityMap.attributes!.length / 8); ++j) {
-                    const flag = reader.readUint8();
+                    const flag = reader.u8();
                     if (flag === undefined) {
                         return entityUpdate;
                     }
@@ -754,25 +751,25 @@ export class Codec {
     }
 
     public encodeEntityUpdate(entityUpdate: EntityUpdate): Uint8Array {
-        const writer = new BinaryWriter(0);
+        const writer = new BufferWriter(0);
 
-        writer.writeUint8(PacketId.EntityUpdate);
-        writer.writeUint32(entityUpdate.tick!);
+        writer.u8(PacketId.EntityUpdate);
+        writer.u32(entityUpdate.tick!);
 
-        writer.writeInt8(entityUpdate.deletedEntities!.length);
-        for (const uid of entityUpdate.deletedEntities!) writer.writeUint32(uid);
+        writer.i8(entityUpdate.deletedEntities!.length);
+        for (const uid of entityUpdate.deletedEntities!) writer.u32(uid);
 
         const entityMaps = this.entityMaps.filter((map) =>
             entityUpdate.createdEntities?.some((uid) => map.sortedUids?.includes(uid))
         );
 
-        writer.writeInt8(entityMaps.length);
+        writer.i8(entityMaps.length);
 
         for (const entityMap of entityMaps) {
             const brandNewEntities = entityUpdate.createdEntities!.filter((uid) => entityMap.sortedUids?.includes(uid));
-            writer.writeInt8(brandNewEntities.length);
-            writer.writeUint32(entityMap.id!);
-            for (const uid of brandNewEntities) writer.writeUint32(uid);
+            writer.i8(brandNewEntities.length);
+            writer.u32(entityMap.id!);
+            for (const uid of brandNewEntities) writer.u32(uid);
         }
 
         for (const entityMap of this.entityMaps) {
@@ -781,7 +778,7 @@ export class Codec {
                 continue;
             }
 
-            writer.writeUint32(entityMap.id!);
+            writer.u32(entityMap.id!);
 
             for (let i = 0; i < Math.ceil(filteredUids.length / 8); ++i) {
                 let byte = 0;
@@ -795,7 +792,7 @@ export class Codec {
                         byte |= 1 << j;
                     }
                 }
-                writer.writeUint8(byte);
+                writer.u8(byte);
             }
 
             for (const uid of filteredUids) {
@@ -831,7 +828,7 @@ export class Codec {
                     continue;
                 }
 
-                for (const flag of updatedFlags) writer.writeUint8(flag);
+                for (const flag of updatedFlags) writer.u8(flag);
 
                 for (const { type, value } of updatedValues) this.encodeEntityMapAttribute(writer, type, value);
             }
@@ -841,21 +838,21 @@ export class Codec {
     }
 
     public decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest | undefined {
-        const reader = new BinaryReader(data, 1);
+        const reader = new BufferReader(data, 1);
 
-        const displayName = reader.readString();
+        const displayName = reader.string();
         if (displayName === undefined) {
             return undefined;
         }
         // TODO: Emit an error here if the above condition is false
 
-        const version = reader.readUint32();
+        const version = reader.u32();
         if (version === undefined) {
             return undefined;
         }
         // TODO: Emit an error here if the above condition is false
 
-        const pow = reader.readArrayUint8Len8();
+        const pow = reader.u8arr8();
         if (pow === undefined) {
             return undefined;
         }
@@ -867,17 +864,18 @@ export class Codec {
     }
 
     public encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array {
-        const writer = new BinaryWriter(0);
-        writer.writeUint8(PacketId.EnterWorld);
-        writer.writeString(request.displayName);
-        writer.writeUint32(request.version);
-        writer.writeArrayUint8Len8(request.proofOfWork);
+        const writer = new BufferWriter(0);
+        writer.u8(PacketId.EnterWorld);
+        writer.string(request.displayName);
+        writer.u32(request.version);
+        writer.u8arr8(request.proofOfWork);
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
     public decodeRpc(def: Rpc, data: Uint8Array) {
-        const reader = new BinaryReader(data, 5);
+        const reader = new BufferReader(data, 5);
         let decoded: any = {};
+        let tick: number | undefined = undefined;
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
         if (rpc === undefined) {
@@ -886,7 +884,7 @@ export class Codec {
         // TODO: Emit an error here if the above condition is false
 
         if (rpc.IsArray) {
-            const length = reader.readUint16();
+            const length = reader.u16();
             if (length === undefined) {
                 return undefined;
             }
@@ -903,13 +901,14 @@ export class Codec {
             if (decoded === undefined) {
                 return undefined;
             }
+            tick = reader.u32();
         }
 
-        return { name: rpc.ClassName, data: decoded };
+        return { name: rpc.ClassName, data: decoded, tick: tick };
     }
 
-    public encodeRpc(name: string, data: object | object[]) {
-        const writer = new BinaryWriter(0);
+    public encodeRpc(name: string, data: object | object[], tick?: number) {
+        const writer = new BufferWriter(0);
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.ClassName === name);
         if (rpc === undefined) {
@@ -923,17 +922,20 @@ export class Codec {
         }
         // TODO: Emit an error here if the above condition is false
 
-        writer.writeUint8(PacketId.Rpc);
-        writer.writeUint32(def.index!);
+        writer.u8(PacketId.Rpc);
+        writer.u32(def.index!);
 
         if (rpc.IsArray) {
             const dataArray = data as object[];
-            writer.writeUint16(dataArray.length);
+            writer.u16(dataArray.length);
             for (const obj of dataArray) {
                 this.encodeRpcObject(rpc, def, writer, obj);
             }
         } else {
             this.encodeRpcObject(rpc, def, writer, data);
+            if (tick !== undefined) {
+                writer.u32(tick);
+            }
         }
 
         return this.crypto.cryptRpc(new Uint8Array(writer.view.buffer));

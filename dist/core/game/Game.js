@@ -63,8 +63,8 @@ class Game extends node_events_1.EventEmitter {
                         this.emit("RpcRawData", definition.nameHash, decrypedData);
                         const rpc = this.codec.decodeRpc(definition, decrypedData);
                         if (rpc !== undefined && rpc.name !== null) {
-                            this.emit("Rpc", rpc.name, rpc.data);
-                            this.emit(rpc.name, rpc.data);
+                            this.emit("Rpc", rpc.name, rpc.data, rpc.tick);
+                            this.emit(rpc.name, rpc.data, rpc.tick);
                         }
                         // TODO: Emit an error here if the above condition is false
                     }
