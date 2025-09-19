@@ -8,6 +8,7 @@ const node_path_1 = require("node:path");
 const ws_1 = require("ws");
 const Codec_1 = require("../codec/Codec");
 const Packets_1 = require("../../types/Packets");
+const node_dgram_1 = require("node:dgram");
 function rpcMappingFromFile(path) {
     return JSON.parse((0, node_fs_1.readFileSync)(path, {
         encoding: "utf-8",
@@ -19,79 +20,140 @@ class Game extends node_events_1.EventEmitter {
     }
     constructor(server, options) {
         super();
-        const displayName = options?.displayName ?? "Player";
-        const proxy = options?.proxy;
-        const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
-        const decodeRpcs = options?.decodeRpcs ?? true;
-        const parseSchemas = options?.parseSchemas ?? true;
-        const rpcMapping = options?.rpcMapping ?? rpcMappingFromFile((0, node_path_1.join)(__dirname, "../../../rpcs.json"));
-        this.codec = new Codec_1.Codec(rpcMapping);
+        this.options = {
+            displayName: options?.displayName ?? "Player",
+            proxy: options?.proxy,
+            schemas: options?.schemas ?? true,
+            rpcMapping: options?.rpcMapping ?? rpcMappingFromFile((0, node_path_1.join)(__dirname, "../../../rpcs.json")),
+            udp: options?.udp ?? false,
+            autoAckTick: options?.autoAckTick ?? true,
+        };
+        this.server = server;
+        this.codec = new Codec_1.Codec(this.options.rpcMapping);
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
-        this.socket = new ws_1.WebSocket(url, { agent: proxy });
-        this.socket.binaryType = "arraybuffer";
-        this.socket.on("open", () => {
+        if (this.options.udp) {
+            this.udpSocket = (0, node_dgram_1.createSocket)("udp4");
+        }
+        this.tcpSocket = new ws_1.WebSocket(url, { agent: this.options.proxy });
+        this.tcpSocket.binaryType = "arraybuffer";
+        this.tcpSocket.once("open", () => {
             const pow = this.codec.crypto.generateProofOfWork(server.endpoint, this.codec.rpcMapping.Platform, server.discreteFourierTransformBias);
-            this.socket.send(this.codec.encodeEnterWorldRequest({
-                displayName: displayName,
+            this.tcpSocket.send(this.codec.encodeEnterWorldRequest({
+                displayName: this.options.displayName,
                 version: this.codec.rpcMapping.Codec,
                 proofOfWork: pow,
             }));
             this.codec.crypto.computeRpcKey(this.codec.rpcMapping.Codec, new TextEncoder().encode("/" + server.endpoint), pow);
         });
-        this.socket.on("message", (data) => {
-            const view = new DataView(data);
-            const dataArray = new Uint8Array(data);
-            this.emit("RawData", dataArray);
-            switch (view.getUint8(0)) {
-                case Packets_1.PacketId.EnterWorld: {
-                    this.codec.enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
-                    this.emit("EnterWorldResponse", this.codec.enterWorldResponse);
-                    break;
-                }
-                case Packets_1.PacketId.EntityUpdate: {
-                    if (decodeEntityUpdates) {
-                        const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
-                        this.emit("EntityUpdate", entityUpdate);
-                    }
-                    break;
-                }
-                case Packets_1.PacketId.Rpc: {
-                    if (decodeRpcs) {
-                        const decrypedData = this.codec.crypto.cryptRpc(dataArray);
-                        const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
-                        // TODO: Emit an error here if 'definition' is undefined
-                        this.emit("RpcRawData", definition.nameHash, decrypedData);
-                        const rpc = this.codec.decodeRpc(definition, decrypedData);
-                        if (rpc !== undefined && rpc.name !== null) {
-                            this.emit("Rpc", rpc.name, rpc.data, rpc.tick);
-                            this.emit(rpc.name, rpc.data, rpc.tick);
-                        }
-                        // TODO: Emit an error here if the above condition is false
-                    }
-                    break;
-                }
-            }
-        });
-        this.socket.on("close", (code) => {
-            this.emit("close", code);
-        });
-        this.socket.on("error", (error) => {
-            this.emit("error", error);
-        });
-        if (parseSchemas) {
+        this.tcpSocket.on("message", (data) => this.handlePacket(data, false));
+        this.udpSocket?.on("message", (data) => this.handlePacket(data.buffer, true));
+        this.tcpSocket.on("close", (code) => this.emit("close", code));
+        this.udpSocket?.on("close", () => this.emit("close"));
+        this.tcpSocket.on("error", (error) => this.emit("error", error));
+        this.udpSocket?.on("error", (error) => this.emit("error", error));
+        if (this.options.schemas) {
             this.on("CompressedDataRpc", (rpc) => {
-                // TODO: Validate 'rpc.json' here
+                // TODO: Validate
                 this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
             });
         }
     }
-    send(data) {
+    handlePacket(data, udp) {
+        const view = new DataView(data);
+        const dataArray = new Uint8Array(data);
+        const packetId = view.getUint8(0);
+        this.emit("RawData", dataArray, udp ? "udp" : "tcp", packetId);
+        switch (packetId) {
+            case Packets_1.PacketId.EnterWorld: {
+                const enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
+                if (enterWorldResponse !== undefined) {
+                    this.codec.enterWorldResponse = enterWorldResponse;
+                    if (this.options.udp) {
+                        this.udpSocket.connect(enterWorldResponse.udpPort, this.server.ipv4, () => {
+                            this.send(this.codec.encodeUdpConnectRequest({
+                                cookie: enterWorldResponse.udpCookie,
+                            }), true);
+                        });
+                    }
+                    this.emit("EnterWorldResponse", enterWorldResponse, dataArray);
+                }
+                break;
+            }
+            case Packets_1.PacketId.Rpc: {
+                const decrypedData = this.codec.crypto.cryptRpc(dataArray);
+                const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === decrypedData[1]);
+                if (definition !== undefined) {
+                    const rpc = this.codec.decodeRpc(definition, decrypedData, false);
+                    if (rpc !== undefined) {
+                        this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
+                        this.emit(rpc.name, rpc.data, rpc.metadata);
+                    }
+                }
+                break;
+            }
+            case Packets_1.PacketId.UdpRpc: {
+                const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === dataArray[1]);
+                const rpc = this.codec.decodeRpc(definition, dataArray, true);
+                if (rpc !== undefined) {
+                    this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
+                    this.emit(rpc.name, rpc.data, rpc.metadata);
+                }
+                break;
+            }
+            case Packets_1.PacketId.EntityUpdate: {
+                const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
+                if (entityUpdate !== undefined) {
+                    this.emit("EntityUpdate", entityUpdate, packetId);
+                }
+                break;
+            }
+            case Packets_1.PacketId.UdpTick:
+            case Packets_1.PacketId.UdpTickWithCompressedUids: {
+                const udpTick = this.codec.decodeUdpTick(dataArray, packetId === Packets_1.PacketId.UdpTickWithCompressedUids);
+                if (udpTick !== undefined) {
+                    this.emit("EntityUpdate", udpTick, packetId);
+                    if (this.options.autoAckTick) {
+                        this.send(this.codec.encodeUdpAckTickRequest({
+                            cookie: udpTick.cookie,
+                            tick: udpTick.tick,
+                        }), true);
+                    }
+                }
+                break;
+            }
+            case Packets_1.PacketId.UdpConnect:
+            case Packets_1.PacketId.UdpConnect1300:
+            case Packets_1.PacketId.UdpConnect500: {
+                const udpConnectResponse = this.codec.decodeUdpConnectResponse(dataArray);
+                if (udpConnectResponse !== undefined) {
+                    this.emit("UdpConnectResponse", udpConnectResponse);
+                }
+                break;
+            }
+            case Packets_1.PacketId.UdpFragment: {
+                const fragment = this.codec.decodeUdpFragment(dataArray);
+                if (fragment?.buffer !== undefined) {
+                    this.handlePacket(fragment.buffer.buffer, true);
+                }
+                break;
+            }
+        }
+    }
+    send(data, udp = false) {
         if (data) {
-            this.socket.send(data);
+            if (udp && this.udpSocket) {
+                this.udpSocket.send(data);
+            }
+            else if (!udp) {
+                this.tcpSocket.send(data);
+            }
         }
     }
     shutdown() {
-        this.socket.close();
+        this.tcpSocket.close();
+        if (this.udpSocket) {
+            this.udpSocket.close();
+        }
     }
     // --- Utility ---
     getEnterWorldResponse() {

@@ -5,7 +5,7 @@ export class BufferWriter {
     public view: DataView;
     public offset: number;
 
-    constructor(length: number) {
+    constructor(length: number = 0) {
         this.view = new DataView(new ArrayBuffer(length));
         this.offset = 0;
     }
@@ -119,6 +119,13 @@ export class BufferWriter {
     // Uint8 Array (Length = Uint32)
     u8arr32(arr: Uint8Array) {
         this.u32(arr.length);
+        for (const v of arr) {
+            this.u8(v);
+        }
+    }
+
+    // Uint8 Array
+    u8arr(arr: Uint8Array) {
         for (const v of arr) {
             this.u8(v);
         }

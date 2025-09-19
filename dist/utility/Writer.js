@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BufferWriter = void 0;
 const zlib_1 = require("zlib");
 class BufferWriter {
-    constructor(length) {
+    constructor(length = 0) {
         this.view = new DataView(new ArrayBuffer(length));
         this.offset = 0;
     }
@@ -100,6 +100,12 @@ class BufferWriter {
     // Uint8 Array (Length = Uint32)
     u8arr32(arr) {
         this.u32(arr.length);
+        for (const v of arr) {
+            this.u8(v);
+        }
+    }
+    // Uint8 Array
+    u8arr(arr) {
         for (const v of arr) {
             this.u8(v);
         }

@@ -24,6 +24,7 @@ export declare class BufferReader {
     i32arr32(): any[] | undefined;
     u8arr8(): any[] | undefined;
     u8arr32(): any[] | undefined;
+    u8arr(length: number): Uint8Array<ArrayBuffer> | undefined;
     varint(): number | undefined;
     string(): string | undefined;
     compressedString(): string | undefined;

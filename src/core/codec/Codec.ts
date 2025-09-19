@@ -12,6 +12,12 @@ import {
     EntityUpdate,
     ParameterType,
     PacketId,
+    RpcMetadata,
+    UdpConnectRequest,
+    UdpConnectResponse,
+    UdpFragment,
+    UdpTick,
+    UdpAckTickRequest,
 } from "../../types/Packets";
 import { ZRCrypto } from "./ZRCrypto";
 
@@ -21,6 +27,8 @@ export class Codec {
     public enterWorldResponse: EnterWorldResponse = {};
     public readonly rpcMapping: DumpedData;
     public readonly entityList = new Map<number, NetworkEntity>();
+    private readonly fragments = new Map<number, UdpFragment[]>();
+    private highestTickSeen: number = 0;
 
     public constructor(rpcMapping: DumpedData) {
         this.rpcMapping = rpcMapping;
@@ -45,7 +53,6 @@ export class Codec {
                 if (vector === undefined) {
                     return undefined;
                 }
-                // TODO: Emit an error here if the above condition is false
                 vector.x /= 100;
                 vector.y /= -100;
                 return vector;
@@ -55,7 +62,6 @@ export class Codec {
                 if (array === undefined) {
                     return undefined;
                 }
-                // TODO: Emit an error here if the above condition is false
                 for (let vector of array) {
                     vector.x /= 100;
                     vector.y /= -100;
@@ -78,7 +84,6 @@ export class Codec {
                 return reader.u8arr8();
         }
         return undefined;
-        // TODO: Emit an error here if the above condition is false
     }
 
     private encodeEntityMapAttribute(writer: BufferWriter, type: AttributeType | undefined, value: any) {
@@ -139,6 +144,201 @@ export class Codec {
                 break;
             default:
                 writer.u32(0);
+        }
+    }
+
+    private decodeRpcObject(rpc: DumpedRpc | undefined, def: Rpc, reader: BufferReader) {
+        let obj = {};
+        for (const param of def.parameters!) {
+            const match = rpc?.Parameters.find((p) => p.NameHash === param.nameHash);
+
+            const fieldName =
+                match !== undefined && match.FieldName !== null
+                    ? match.FieldName
+                    : `P_0x${param.nameHash!.toString(16)}`;
+
+            let value: any;
+
+            switch (param.type!) {
+                case ParameterType.Uint32: {
+                    value = reader.u32();
+                    break;
+                }
+                case ParameterType.Float:
+                case ParameterType.Int32: {
+                    value = reader.i32();
+                    break;
+                }
+                case ParameterType.String: {
+                    value = reader.string();
+                    break;
+                }
+                case ParameterType.Uint64: {
+                    value = reader.u64();
+                    break;
+                }
+                case ParameterType.Int64: {
+                    value = reader.i64();
+                    break;
+                }
+                case ParameterType.Uint16: {
+                    value = reader.u16();
+                    break;
+                }
+                case ParameterType.Int16: {
+                    value = reader.i16();
+                    break;
+                }
+                case ParameterType.Uint8: {
+                    value = reader.u8();
+                    break;
+                }
+                case ParameterType.Int8: {
+                    value = reader.i8();
+                    break;
+                }
+                case ParameterType.VectorUint8: {
+                    if (!reader.canRead(5)) {
+                        value = reader.u8arr8();
+                    } else {
+                        value = reader.u8arr32();
+                    }
+                    break;
+                }
+                case ParameterType.CompressedString: {
+                    value = reader.compressedString();
+                    break;
+                }
+            }
+
+            if (value === undefined) {
+                return undefined;
+            }
+
+            if (match !== undefined) {
+                const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
+                if (match.Key !== null) {
+                    value = (value ^ match.Key) & mask;
+                }
+
+                switch (match.Type) {
+                    case ParameterType.Float: {
+                        value /= 100;
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        value = value >>> 0;
+                        if (value > 0x7fff) {
+                            value -= 0x10000;
+                        }
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        value = value >>> 0;
+                        if (value > 0x7f) {
+                            value -= 0x100;
+                        }
+                        break;
+                    }
+                }
+                obj[fieldName] = value;
+            }
+        }
+        return obj;
+    }
+
+    private encodeRpcObject(rpc: DumpedRpc, def: Rpc, writer: BufferWriter, data: object) {
+        for (const param of def.parameters!) {
+            const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
+
+            if (!match) {
+                writer.u8(0);
+            } else {
+                const fieldName = match.FieldName !== null ? match.FieldName : `P_0x${match.NameHash.toString(16)}`;
+
+                const bitmask = 2 ** paramTypeSizeMap[match.Type] - 1;
+                let paramData = data[fieldName];
+
+                switch (match.Type) {
+                    case ParameterType.Float: {
+                        paramData *= 100;
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 0x7fff) {
+                            paramData += 0x10000;
+                        }
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        paramData = paramData >>> 0;
+                        if (paramData < 0x7f) {
+                            paramData += 0x100;
+                        }
+                        break;
+                    }
+                }
+
+                if (match.Key !== null) {
+                    paramData = (paramData ^ match.Key) & bitmask;
+                }
+
+                switch (match.Type) {
+                    case ParameterType.Uint32: {
+                        writer.u32(paramData);
+                        break;
+                    }
+                    case ParameterType.Int32: {
+                        writer.i32(paramData);
+                        break;
+                    }
+                    case ParameterType.Float: {
+                        writer.i32(paramData);
+                        break;
+                    }
+                    case ParameterType.String: {
+                        writer.string(paramData);
+                        break;
+                    }
+                    case ParameterType.Uint64: {
+                        writer.u64(paramData);
+                        break;
+                    }
+                    case ParameterType.Int64: {
+                        writer.i64(paramData);
+                        break;
+                    }
+                    case ParameterType.Uint16: {
+                        writer.u16(paramData);
+                        break;
+                    }
+                    case ParameterType.Int16: {
+                        writer.i16(paramData);
+                        break;
+                    }
+                    case ParameterType.Uint8: {
+                        writer.u8(paramData);
+                        break;
+                    }
+                    case ParameterType.Int8: {
+                        writer.i8(paramData);
+                        break;
+                    }
+                    case ParameterType.VectorUint8: {
+                        if (paramData.length <= 4) {
+                            writer.u8arr8(paramData);
+                        } else {
+                            writer.u8arr32(paramData);
+                        }
+                        break;
+                    }
+                    case ParameterType.CompressedString: {
+                        writer.compressedString(paramData);
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -275,254 +475,153 @@ export class Codec {
         return tickFieldMap.get(nameHash) ?? `A_0x${nameHash.toString(16)}`;
     }
 
-    private decodeRpcObject(rpc: DumpedRpc, def: Rpc, reader: BufferReader) {
-        let obj = {};
-        for (const param of def.parameters!) {
-            const match = rpc.Parameters.find((p) => p.NameHash === param.nameHash);
-
-            const fieldName =
-                match !== undefined && match.FieldName !== null
-                    ? match.FieldName
-                    : `P_0x${param.nameHash!.toString(16)}`;
-
-            let value: any;
-
-            switch (param.type!) {
-                case ParameterType.Uint32: {
-                    value = reader.u32();
-                    break;
-                }
-                case ParameterType.Float:
-                case ParameterType.Int32: {
-                    value = reader.i32();
-                    break;
-                }
-                case ParameterType.String: {
-                    value = reader.string();
-                    break;
-                }
-                case ParameterType.Uint64: {
-                    value = reader.u64();
-                    break;
-                }
-                case ParameterType.Int64: {
-                    value = reader.i64();
-                    break;
-                }
-                case ParameterType.Uint16: {
-                    value = reader.u16();
-                    break;
-                }
-                case ParameterType.Int16: {
-                    value = reader.i16();
-                    break;
-                }
-                case ParameterType.Uint8: {
-                    value = reader.u8();
-                    break;
-                }
-                case ParameterType.Int8: {
-                    value = reader.i8();
-                    break;
-                }
-                case ParameterType.VectorUint8: {
-                    if (!reader.canRead(5)) {
-                        value = reader.u8arr8();
-                    } else {
-                        value = reader.u8arr32();
-                    }
-                    break;
-                }
-                case ParameterType.CompressedString: {
-                    value = reader.compressedString();
-                    break;
-                }
-            }
-
-            if (value === undefined) {
-                return undefined;
-            }
-            // TODO: Emit an error here if the above condition is false
-
-            if (match !== undefined) {
-                const mask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                if (match.Key !== null) {
-                    value = (value ^ match.Key) & mask;
-                }
-
-                switch (match.Type) {
-                    case ParameterType.Float: {
-                        value /= 100;
-                        break;
-                    }
-                    case ParameterType.Int16: {
-                        value = value >>> 0;
-                        if (value > 0x7fff) {
-                            value -= 0x10000;
-                        }
-                        break;
-                    }
-                    case ParameterType.Int8: {
-                        value = value >>> 0;
-                        if (value > 0x7f) {
-                            value -= 0x100;
-                        }
-                        break;
-                    }
-                }
-                obj[fieldName] = value;
-            }
-        }
-        return obj;
-    }
-
-    private encodeRpcObject(rpc: DumpedRpc, def: Rpc, writer: BufferWriter, data: object) {
-        for (const param of def.parameters!) {
-            const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
-
-            if (!match) {
-                writer.u8(0);
-            } else {
-                const fieldName = match.FieldName !== null ? match.FieldName : `P_0x${match.NameHash.toString(16)}`;
-
-                const bitmask = 2 ** paramTypeSizeMap[match.Type] - 1;
-                let paramData = data[fieldName];
-
-                switch (match.Type) {
-                    case ParameterType.Float: {
-                        paramData *= 100;
-                        break;
-                    }
-                    case ParameterType.Int16: {
-                        paramData = paramData >>> 0;
-                        if (paramData < 0x7fff) {
-                            paramData += 0x10000;
-                        }
-                        break;
-                    }
-                    case ParameterType.Int8: {
-                        paramData = paramData >>> 0;
-                        if (paramData < 0x7f) {
-                            paramData += 0x100;
-                        }
-                        break;
-                    }
-                }
-
-                if (match.Key !== null) {
-                    paramData = (paramData ^ match.Key) & bitmask;
-                }
-
-                switch (match.Type) {
-                    case ParameterType.Uint32: {
-                        writer.u32(paramData);
-                        break;
-                    }
-                    case ParameterType.Int32: {
-                        writer.i32(paramData);
-                        break;
-                    }
-                    case ParameterType.Float: {
-                        writer.i32(paramData);
-                        break;
-                    }
-                    case ParameterType.String: {
-                        writer.string(paramData);
-                        break;
-                    }
-                    case ParameterType.Uint64: {
-                        writer.u64(paramData);
-                        break;
-                    }
-                    case ParameterType.Int64: {
-                        writer.i64(paramData);
-                        break;
-                    }
-                    case ParameterType.Uint16: {
-                        writer.u16(paramData);
-                        break;
-                    }
-                    case ParameterType.Int16: {
-                        writer.i16(paramData);
-                        break;
-                    }
-                    case ParameterType.Uint8: {
-                        writer.u8(paramData);
-                        break;
-                    }
-                    case ParameterType.Int8: {
-                        writer.i8(paramData);
-                        break;
-                    }
-                    case ParameterType.VectorUint8: {
-                        if (paramData.length <= 4) {
-                            writer.u8arr8(paramData);
-                        } else {
-                            writer.u8arr32(paramData);
-                        }
-                        break;
-                    }
-                    case ParameterType.CompressedString: {
-                        writer.compressedString(paramData);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
     public decodeEnterWorldResponse(data: Uint8Array) {
         const reader = new BufferReader(data, 1);
 
-        let enterWorldResponse: EnterWorldResponse = {};
-        enterWorldResponse.version = reader.u32();
-        enterWorldResponse.allowed = reader.u32();
-        enterWorldResponse.uid = reader.u32();
-        enterWorldResponse.startingTick = reader.u32();
-        enterWorldResponse.tickRate = reader.u32();
-        enterWorldResponse.effectiveTickRate = reader.u32();
-        enterWorldResponse.players = reader.u32();
-        enterWorldResponse.maxPlayers = reader.u32();
-        enterWorldResponse.chatChannel = reader.u32();
-        enterWorldResponse.effectiveDisplayName = reader.string();
-        enterWorldResponse.x1 = reader.i32();
-        enterWorldResponse.y1 = reader.i32();
-        enterWorldResponse.x2 = reader.i32();
-        enterWorldResponse.y2 = reader.i32();
+        const response: EnterWorldResponse = {};
 
-        const entityMapCount = reader.u32()!;
-        enterWorldResponse.entities = [];
+        response.version = reader.u32();
+        if (response.version === undefined) {
+            return undefined;
+        }
+
+        response.allowed = reader.u32();
+        if (response.allowed === undefined) {
+            return undefined;
+        }
+
+        response.uid = reader.u32();
+        if (response.uid === undefined) {
+            return undefined;
+        }
+
+        response.startingTick = reader.u32();
+        if (response.startingTick === undefined) {
+            return undefined;
+        }
+
+        response.tickRate = reader.u32();
+        if (response.tickRate === undefined) {
+            return undefined;
+        }
+
+        response.effectiveTickRate = reader.u32();
+        if (response.effectiveTickRate === undefined) {
+            return undefined;
+        }
+
+        response.players = reader.u32();
+        if (response.players === undefined) {
+            return undefined;
+        }
+
+        response.maxPlayers = reader.u32();
+        if (response.maxPlayers === undefined) {
+            return undefined;
+        }
+
+        response.chatChannel = reader.u32();
+        if (response.chatChannel === undefined) {
+            return undefined;
+        }
+
+        response.effectiveDisplayName = reader.string();
+        if (response.effectiveDisplayName === undefined) {
+            return undefined;
+        }
+
+        response.x1 = reader.i32();
+        if (response.x1 === undefined) {
+            return undefined;
+        }
+
+        response.y1 = reader.i32();
+        if (response.y1 === undefined) {
+            return undefined;
+        }
+
+        response.x2 = reader.i32();
+        if (response.x2 === undefined) {
+            return undefined;
+        }
+
+        response.y2 = reader.i32();
+        if (response.y2 === undefined) {
+            return undefined;
+        }
+
+        const entityMapCount = reader.u32();
+        if (entityMapCount === undefined) {
+            return undefined;
+        }
+
+        response.entities = [];
         for (let i = 0; i < entityMapCount; ++i) {
             let entityMap: EntityMap = {};
+
             entityMap.id = reader.u32();
+            if (entityMap.id === undefined) {
+                return undefined;
+            }
+
             entityMap.attributes = [];
             entityMap.sortedUids = [];
             entityMap.defaultTick = {};
 
-            const attributesCount = reader.u32()!;
+            const attributesCount = reader.u32();
+            if (attributesCount === undefined) {
+                return undefined;
+            }
+
             for (let j = 0; j < attributesCount; ++j) {
                 let entityMapAttribute: EntityMapAttribute = {};
-                entityMapAttribute.nameHash = reader.u32()!;
+
+                entityMapAttribute.nameHash = reader.u32();
+                if (entityMapAttribute.nameHash === undefined) {
+                    return undefined;
+                }
+
                 entityMapAttribute.type = reader.u32()!;
+                if (entityMapAttribute.type === undefined) {
+                    return undefined;
+                }
 
-                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)] =
-                    this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
+                const value = this.decodeEntityMapAttribute(reader, entityMapAttribute.type);
+                if (value === undefined) {
+                    return undefined;
+                }
 
+                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)];
                 entityMap.attributes.push(entityMapAttribute);
             }
 
-            enterWorldResponse.entities.push(entityMap);
+            response.entities.push(entityMap);
         }
 
-        const rpcCount = reader.u32()!;
-        enterWorldResponse.rpcs = [];
+        const rpcCount = reader.u32();
+        if (rpcCount === undefined) {
+            return undefined;
+        }
+
+        response.rpcs = [];
         for (let i = 0; i < rpcCount; ++i) {
             let rpc: Rpc = {};
             rpc.index = i;
             rpc.nameHash = reader.u32();
+            if (rpc.nameHash === undefined) {
+                return undefined;
+            }
 
-            const parameterCount = reader.u8()!;
-            rpc.isArray = reader.u8() != 0;
+            const parameterCount = reader.u8();
+            if (parameterCount === undefined) {
+                return undefined;
+            }
+            const isArray = reader.u8();
+            if (isArray === undefined) {
+                return undefined;
+            }
+            rpc.isArray = isArray != 0;
+
             rpc.parameters = [];
             for (let j = 0; j < parameterCount; ++j) {
                 let rpcParameter: RpcParameter = {};
@@ -532,31 +631,20 @@ export class Codec {
                 rpc.parameters.push(rpcParameter);
             }
 
-            enterWorldResponse.rpcs.push(rpc);
+            response.rpcs.push(rpc);
         }
 
-        if (reader.canRead()) {
-            enterWorldResponse.mode = reader.string();
-        }
+        response.mode = reader.string();
+        response.map = reader.string();
+        response.udpCookie = reader.u32();
+        response.udpPort = reader.u32();
 
-        if (reader.canRead()) {
-            enterWorldResponse.map = reader.string();
-        }
+        this.entityMaps = response.entities;
 
-        if (reader.canRead()) {
-            enterWorldResponse.udpCookie = reader.u32();
-        }
-
-        if (reader.canRead()) {
-            enterWorldResponse.udpPort = reader.u32();
-        }
-
-        this.entityMaps = enterWorldResponse.entities;
-
-        return enterWorldResponse;
+        return response;
     }
 
-    public encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array {
+    public encodeEnterWorldResponse(response: EnterWorldResponse) {
         const writer = new BufferWriter(0);
 
         writer.u8(PacketId.EnterWorld);
@@ -622,26 +710,28 @@ export class Codec {
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
-    // This entire function is really weird and full of questionable early returns
-    // TODO: Do something about it ^^^, I don't even know
-    public decodeEntityUpdate(data: Uint8Array): EntityUpdate {
+    public decodeEntityUpdate(data: Uint8Array) {
         const reader = new BufferReader(data, 1);
 
         const entityUpdate: EntityUpdate = {};
         entityUpdate.createdEntities = [];
         entityUpdate.deletedEntities = [];
         entityUpdate.updatedEntities = new Map();
+
         entityUpdate.tick = reader.u32();
+        if (entityUpdate.tick === undefined) {
+            return undefined;
+        }
 
         const deletedEntitiesCount = reader.i8();
         if (deletedEntitiesCount === undefined) {
-            return entityUpdate;
+            return undefined;
         }
 
         for (let i = 0; i < deletedEntitiesCount; ++i) {
             const uid = reader.u32();
             if (uid === undefined) {
-                return entityUpdate;
+                return undefined;
             }
 
             entityUpdate.deletedEntities.push(uid);
@@ -650,29 +740,29 @@ export class Codec {
 
         const entityMapsCount = reader.i8();
         if (entityMapsCount === undefined) {
-            return entityUpdate;
+            return undefined;
         }
 
         for (let i = 0; i < entityMapsCount; ++i) {
-            const brandNewEntitiesCount = reader.i8();
-            if (brandNewEntitiesCount === undefined) {
-                return entityUpdate;
+            const newEntitiesCount = reader.i8();
+            if (newEntitiesCount === undefined) {
+                return undefined;
             }
 
             const entityMapId = reader.u32();
             if (entityMapId === undefined) {
-                return entityUpdate;
+                return undefined;
             }
 
             const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
             if (entityMap === undefined) {
-                return entityUpdate;
+                return undefined;
             }
 
-            for (let j = 0; j < brandNewEntitiesCount; ++j) {
+            for (let j = 0; j < newEntitiesCount; ++j) {
                 const uid = reader.u32();
                 if (uid === undefined) {
-                    return entityUpdate;
+                    return undefined;
                 }
 
                 entityMap.sortedUids!.push(uid);
@@ -693,19 +783,19 @@ export class Codec {
         while (reader.canRead()) {
             const entityMapId = reader.u32();
             if (entityMapId === undefined) {
-                return entityUpdate;
+                return undefined;
             }
 
             const entityMap = this.entityMaps.find((e) => e.id === entityMapId);
             if (entityMap === undefined) {
-                return entityUpdate;
+                return undefined;
             }
 
             const absentEntitiesFlags: number[] = [];
             for (let i = 0; i < Math.floor((entityMap.sortedUids!.length + 7) / 8); ++i) {
                 const flag = reader.u8();
                 if (flag === undefined) {
-                    return entityUpdate;
+                    return undefined;
                 }
 
                 absentEntitiesFlags.push(flag);
@@ -722,7 +812,7 @@ export class Codec {
                 for (let j = 0; j < Math.ceil(entityMap.attributes!.length / 8); ++j) {
                     const flag = reader.u8();
                     if (flag === undefined) {
-                        return entityUpdate;
+                        return undefined;
                     }
 
                     updatedEntityFlags.push(flag);
@@ -735,7 +825,7 @@ export class Codec {
                     if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
                         const value = this.decodeEntityMapAttribute(reader, attribute.type!);
                         if (value === undefined) {
-                            return entityUpdate;
+                            return undefined;
                         }
 
                         const attributeName = this.getAttributeName(attribute.nameHash!);
@@ -750,7 +840,7 @@ export class Codec {
         return entityUpdate;
     }
 
-    public encodeEntityUpdate(entityUpdate: EntityUpdate): Uint8Array {
+    public encodeEntityUpdate(entityUpdate: EntityUpdate) {
         const writer = new BufferWriter(0);
 
         writer.u8(PacketId.EntityUpdate);
@@ -837,63 +927,62 @@ export class Codec {
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
     }
 
-    public decodeEnterWorldRequest(data: Uint8Array): EnterWorldRequest | undefined {
+    public decodeEnterWorldRequest(data: Uint8Array) {
         const reader = new BufferReader(data, 1);
 
         const displayName = reader.string();
         if (displayName === undefined) {
             return undefined;
         }
-        // TODO: Emit an error here if the above condition is false
 
         const version = reader.u32();
         if (version === undefined) {
             return undefined;
         }
-        // TODO: Emit an error here if the above condition is false
 
         const pow = reader.u8arr8();
         if (pow === undefined) {
             return undefined;
         }
-        // TODO: Emit an error here if the above condition is false
 
         const proofOfWork = new Uint8Array(pow);
-
         return { displayName, version, proofOfWork };
     }
 
-    public encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array {
-        const writer = new BufferWriter(0);
+    public encodeEnterWorldRequest(request: EnterWorldRequest) {
+        const writer = new BufferWriter();
         writer.u8(PacketId.EnterWorld);
         writer.string(request.displayName);
         writer.u32(request.version);
         writer.u8arr8(request.proofOfWork);
-        return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
+        return new Uint8Array(writer.view.buffer);
     }
 
-    public decodeRpc(def: Rpc, data: Uint8Array) {
-        const reader = new BufferReader(data, 5);
-        let decoded: any = {};
-        let tick: number | undefined = undefined;
+    public decodeRpc(def: Rpc, data: Uint8Array, udp: boolean) {
+        const reader = new BufferReader(data, 1);
+        let decoded: any;
+        let metadata: RpcMetadata = { udpCookie: undefined, tick: undefined, transport: udp ? "udp" : "tcp" };
+
+        if (udp) {
+            metadata.udpCookie = reader.u32();
+        }
+        reader.offset += 4;
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
-        if (rpc === undefined) {
-            return undefined;
-        }
-        // TODO: Emit an error here if the above condition is false
 
-        if (rpc.IsArray) {
+        if (def.isArray) {
             const length = reader.u16();
             if (length === undefined) {
                 return undefined;
             }
+
             decoded = new Array(length);
             for (let i = 0; i < length; ++i) {
                 const obj = this.decodeRpcObject(rpc, def, reader);
                 if (obj === undefined) {
                     return undefined;
                 }
+
                 decoded[i] = obj;
             }
         } else {
@@ -901,28 +990,32 @@ export class Codec {
             if (decoded === undefined) {
                 return undefined;
             }
-            tick = reader.u32();
+
+            metadata.tick = reader.u32();
         }
 
-        return { name: rpc.ClassName, data: decoded, tick: tick };
+        return { name: rpc?.ClassName ?? `R_0x${def.nameHash!.toString(16)}`, data: decoded, metadata: metadata };
     }
 
-    public encodeRpc(name: string, data: object | object[], tick?: number) {
-        const writer = new BufferWriter(0);
+    public encodeRpc(name: string, data: object | object[], udp: boolean = false, tick?: number) {
+        const writer = new BufferWriter();
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.ClassName === name);
         if (rpc === undefined) {
             return undefined;
         }
-        // TODO: Emit an error here if the above condition is false
 
         const def = this.enterWorldResponse.rpcs!.find((r) => r.nameHash === rpc.NameHash);
         if (def === undefined) {
             return undefined;
         }
-        // TODO: Emit an error here if the above condition is false
 
-        writer.u8(PacketId.Rpc);
+        writer.u8(udp ? PacketId.UdpRpc : PacketId.Rpc);
+
+        if (udp) {
+            writer.u32(this.enterWorldResponse.udpCookie!);
+        }
+
         writer.u32(def.index!);
 
         if (rpc.IsArray) {
@@ -938,7 +1031,309 @@ export class Codec {
             }
         }
 
-        return this.crypto.cryptRpc(new Uint8Array(writer.view.buffer));
+        if (udp) {
+            return new Uint8Array(writer.view.buffer);
+        } else {
+            return this.crypto.cryptRpc(new Uint8Array(writer.view.buffer));
+        }
+    }
+
+    public decodeUdpConnectRequest(data: Uint8Array): UdpConnectRequest | undefined {
+        const reader = new BufferReader(data, 1);
+        const request: UdpConnectRequest = {};
+
+        request.cookie = reader.u32();
+        if (request.cookie === undefined) {
+            return undefined;
+        }
+
+        if (request.cookie !== this.enterWorldResponse.udpCookie) {
+            return undefined;
+        }
+
+        return request;
+    }
+
+    public encodeUdpConnectRequest(request: UdpConnectRequest) {
+        const writer = new BufferWriter();
+        writer.u8(PacketId.UdpConnect);
+        writer.u32(request.cookie!);
+        return new Uint8Array(writer.view.buffer);
+    }
+
+    public decodeUdpConnectResponse(data: Uint8Array) {
+        const reader = new BufferReader(data, 1);
+        const response: UdpConnectResponse = {};
+
+        response.cookie = reader.u32();
+        if (response.cookie === undefined) {
+            return undefined;
+        }
+
+        if (response.cookie !== this.enterWorldResponse.udpCookie) {
+            return undefined;
+        }
+
+        response.mtu = reader.u32();
+        if (response.mtu === undefined) {
+            return undefined;
+        }
+
+        return response;
+    }
+
+    public encodeUdpConnectResponse(request: UdpConnectResponse) {
+        const writer = new BufferWriter();
+        writer.u8(PacketId.UdpConnect);
+        writer.u32(request.cookie!);
+        writer.u32(request.mtu!);
+        return new Uint8Array(writer.view.buffer);
+    }
+
+    // TODO: encodeUdpFragment()
+    public decodeUdpFragment(data: Uint8Array) {
+        const reader = new BufferReader(data, 1);
+        const fragment: UdpFragment = {};
+
+        fragment.cookie = reader.u32();
+        if (fragment.cookie === undefined) {
+            return undefined;
+        }
+
+        if (fragment.cookie !== this.enterWorldResponse.udpCookie) {
+            return undefined;
+        }
+
+        fragment.fragmentId = reader.u32();
+        if (fragment.fragmentId === undefined) {
+            return undefined;
+        }
+
+        fragment.fragmentNumber = reader.u8();
+        if (fragment.fragmentNumber === undefined) {
+            return undefined;
+        }
+
+        fragment.totalFragments = reader.u8();
+        if (fragment.totalFragments === undefined) {
+            return undefined;
+        }
+
+        fragment.fragmentLength = data.length - 11;
+
+        fragment.fragment = reader.u8arr(fragment.fragmentLength);
+        if (fragment.fragment === undefined) {
+            return undefined;
+        }
+
+        let fragments = this.fragments.get(fragment.fragmentId);
+        if (!fragments) {
+            fragments = [];
+            this.fragments.set(fragment.fragmentId, fragments);
+        }
+        fragments.push(fragment);
+
+        let buffer: Uint8Array | undefined;
+        if (fragments.length === fragment.totalFragments) {
+            let totalLength = fragments.reduce((v, f) => v + f!.fragment!.length, 0);
+            buffer = new Uint8Array(totalLength);
+
+            let offset = 0;
+            fragments.sort((a, b) => a.fragmentNumber! - b.fragmentNumber!);
+            for (const f of fragments) {
+                buffer.set(f.fragment!, offset);
+                offset += f.fragment!.length;
+            }
+
+            this.fragments.delete(fragment.fragmentId);
+        }
+
+        return { fragment: fragment, buffer: buffer };
+    }
+
+    // TODO: encodeUdpTick()
+    public decodeUdpTick(data: Uint8Array, compressed: boolean) {
+        const reader = new BufferReader(data, 1);
+        const udpTick: UdpTick = {};
+
+        udpTick.byteLength = reader.view.byteLength;
+        udpTick.deletedEntities = [];
+        udpTick.createdEntities = [];
+        udpTick.updatedEntities = new Map();
+
+        udpTick.cookie = reader.u32();
+        if (udpTick.cookie === undefined) {
+            return undefined;
+        }
+
+        if (udpTick.cookie !== this.enterWorldResponse.udpCookie) {
+            return undefined;
+        }
+
+        udpTick.tick = reader.u32();
+        if (udpTick.tick === undefined) {
+            return undefined;
+        }
+
+        if (udpTick.tick < this.highestTickSeen) {
+            return undefined;
+        }
+
+        const uidsReadTemporary: number[] = [];
+        let uidCursor = 0;
+
+        if (compressed) {
+            const uidsReadTemporaryCount = reader.u16();
+            if (uidsReadTemporaryCount === undefined) {
+                return undefined;
+            }
+
+            let lastUid = 0;
+            for (let i = 0; i < uidsReadTemporaryCount; ++i) {
+                const delta = reader.i8();
+                if (delta === undefined) {
+                    return undefined;
+                }
+
+                if (delta === -128) {
+                    const uid = reader.u32();
+                    if (uid === undefined) {
+                        return undefined;
+                    }
+                    lastUid = uid;
+                } else {
+                    lastUid += delta;
+                }
+
+                uidsReadTemporary.push(lastUid);
+            }
+        }
+
+        const deletedEntitiesCount = reader.u16();
+        if (deletedEntitiesCount === undefined) {
+            return undefined;
+        }
+
+        for (let i = 0; i < deletedEntitiesCount; ++i) {
+            const uid = compressed ? uidsReadTemporary[uidCursor++] : reader.u32();
+            if (uid === undefined) {
+                return undefined;
+            }
+
+            udpTick.deletedEntities.push(uid);
+            this.entityList.delete(uid);
+        }
+
+        const newEntitiesCount = reader.u16();
+        if (newEntitiesCount === undefined) {
+            return undefined;
+        }
+
+        for (let i = 0; i < newEntitiesCount; ++i) {
+            const entityMapIndex = reader.u8();
+            if (entityMapIndex === undefined) {
+                return undefined;
+            }
+
+            const entityMap = this.entityMaps[entityMapIndex];
+            if (entityMap === undefined) {
+                return undefined;
+            }
+
+            const uid = compressed ? uidsReadTemporary[uidCursor++] : reader.u32();
+            if (uid === undefined) {
+                return undefined;
+            }
+
+            if (!this.entityList.has(uid)) {
+                udpTick.createdEntities.push(uid);
+                this.entityList.set(uid, {
+                    uid: uid,
+                    type: entityMap.id,
+                    tick: structuredClone(entityMap.defaultTick),
+                });
+            }
+        }
+
+        const updatedEntitiesCount = reader.u16();
+        if (updatedEntitiesCount === undefined) {
+            return undefined;
+        }
+
+        for (let i = 0; i < updatedEntitiesCount; ++i) {
+            const uid = compressed ? uidsReadTemporary[uidCursor++] : reader.u32();
+            if (uid === undefined) {
+                return undefined;
+            }
+
+            const entity = this.entityList.get(uid);
+            if (entity === undefined) {
+                return undefined;
+            }
+
+            const entityMap = this.entityMaps.find((e) => e.id == entity.type);
+            if (entityMap === undefined) {
+                return undefined;
+            }
+
+            const updatedAttributesCount = reader.u8();
+            if (updatedAttributesCount === undefined) {
+                return undefined;
+            }
+
+            const updatedAttributes = new Map<string, any>();
+            for (let i = 0; i < updatedAttributesCount; ++i) {
+                const attributeIndex = reader.u8();
+                if (attributeIndex === undefined) {
+                    return undefined;
+                }
+
+                const attribute = entityMap.attributes![attributeIndex];
+                if (attribute === undefined) {
+                    return undefined;
+                }
+
+                const value = this.decodeEntityMapAttribute(reader, attribute.type!);
+                if (value === undefined) {
+                    return undefined;
+                }
+
+                const name = this.getAttributeName(attribute.nameHash!);
+
+                entity.tick![name] = value;
+                updatedAttributes[name] = { type: attribute.type, value: value };
+            }
+
+            udpTick.updatedEntities.set(uid, updatedAttributes);
+        }
+
+        this.highestTickSeen = udpTick.tick;
+        return udpTick;
+    }
+
+    public decodeUdpAckTickRequest(data: Uint8Array) {
+        const reader = new BufferReader(data, 1);
+        const request: UdpAckTickRequest = {};
+
+        request.cookie = reader.u32();
+        if (request.cookie === undefined) {
+            return undefined;
+        }
+
+        request.tick = reader.u32();
+        if (request.tick === undefined) {
+            return undefined;
+        }
+
+        return request;
+    }
+
+    public encodeUdpAckTickRequest(request: UdpAckTickRequest) {
+        const writer = new BufferWriter();
+        writer.u8(PacketId.UdpAckTick);
+        writer.u32(request.cookie!);
+        writer.u32(request.tick!);
+        return new Uint8Array(writer.view.buffer);
     }
 }
 

@@ -85,7 +85,7 @@ export enum PacketId {
     UdpTick,
     UdpAckTick,
     UdpPong,
-    UdpPingWithCompressedUids,
+    UdpTickWithCompressedUids,
     UdpFragment,
     UdpConnect1300,
     UdpConnect500,
@@ -151,10 +151,49 @@ export interface EnterWorldResponse {
     udpPort?: number;
 }
 
+export interface RpcMetadata {
+    tick?: number;
+    udpCookie?: number;
+    transport: "tcp" | "udp";
+}
+
 export interface EnterWorldRequest {
     displayName: string;
     version: number;
     proofOfWork: Uint8Array;
+}
+
+export interface UdpConnectRequest {
+    cookie?: number;
+}
+
+export interface UdpConnectResponse {
+    cookie?: number;
+    mtu?: number;
+}
+
+export interface UdpFragment {
+    cookie?: number;
+    fragmentId?: number;
+    fragmentNumber?: number;
+    totalFragments?: number;
+    fragment?: Uint8Array;
+    fragmentLength?: number;
+    receivedUnix?: number;
+}
+
+export interface UdpTick {
+    cookie?: number;
+    tick?: number;
+    byteLength?: number;
+    deletedEntities?: number[];
+    createdEntities?: number[];
+    updatedEntities?: Map<number, Map<string, { type: AttributeType; value: any }>>;
+}
+
+export interface UdpAckTickRequest {
+    cookie?: number;
+    tick?: number;
 }
 
 export interface EntityUpdate {

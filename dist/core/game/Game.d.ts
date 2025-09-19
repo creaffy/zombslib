@@ -8,18 +8,22 @@ export declare function rpcMappingFromFile(path: string): DumpedData;
 export interface GameOptions {
     displayName?: string;
     proxy?: Agent;
-    decodeEntityUpdates?: boolean;
-    decodeRpcs?: boolean;
-    parseSchemas?: boolean;
+    schemas?: boolean;
     rpcMapping?: DumpedData;
+    udp?: boolean;
+    autoAckTick?: boolean;
 }
 export declare class Game extends EventEmitter {
-    private socket;
+    private tcpSocket;
+    private udpSocket?;
+    private options;
+    private server;
     codec: Codec;
     on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
     constructor(server: ApiServer, options?: GameOptions);
-    send(data: Uint8Array | undefined): void;
+    private handlePacket;
+    send(data?: Uint8Array, udp?: boolean): void;
     shutdown(): void;
     getEnterWorldResponse(): import("../../types/Packets").EnterWorldResponse;
     getEntityList(): Map<number, import("../../types/Packets").NetworkEntity>;

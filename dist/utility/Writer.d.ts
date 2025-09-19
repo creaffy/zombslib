@@ -2,7 +2,7 @@ import { Vector2 } from "../types/Packets";
 export declare class BufferWriter {
     view: DataView;
     offset: number;
-    constructor(length: number);
+    constructor(length?: number);
     resize(size: number): void;
     toArray(): Uint8Array<ArrayBufferLike>;
     i8(v: number): void;
@@ -20,6 +20,7 @@ export declare class BufferWriter {
     i32arr32(arr: Int32Array): void;
     u8arr8(arr: Uint8Array): void;
     u8arr32(arr: Uint8Array): void;
+    u8arr(arr: Uint8Array): void;
     varint(v: number): void;
     string(str: string): void;
     compressedString(str: string): void;

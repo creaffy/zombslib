@@ -9,12 +9,14 @@ import { GameEvents } from "./GameEvents";
 import {
     CompressedDataRpc,
     EntityType,
+    EntityUpdate,
     InputRpc,
     MetricsRpc,
     PacketId,
     SetSkinRpc,
     Vector2,
 } from "../../types/Packets";
+import { createSocket, Socket } from "node:dgram";
 
 export function rpcMappingFromFile(path: string): DumpedData {
     return JSON.parse(
@@ -25,16 +27,25 @@ export function rpcMappingFromFile(path: string): DumpedData {
 }
 
 export interface GameOptions {
+    // Bot in-game name
     displayName?: string;
+    // Connection proxy
     proxy?: Agent;
-    decodeEntityUpdates?: boolean;
-    decodeRpcs?: boolean;
-    parseSchemas?: boolean;
+    // Parse CompressedDataRpc contents
+    schemas?: boolean;
+    // Custom codec mapping
     rpcMapping?: DumpedData;
+    // Communicate over UDP
+    udp?: boolean;
+    // Automatically acknowledge UDP Ticks
+    autoAckTick?: boolean;
 }
 
 export class Game extends EventEmitter {
-    private socket: WebSocket;
+    private tcpSocket: WebSocket;
+    private udpSocket?: Socket;
+    private options: GameOptions;
+    private server: ApiServer;
     public codec: Codec;
 
     override on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
@@ -48,30 +59,37 @@ export class Game extends EventEmitter {
     public constructor(server: ApiServer, options?: GameOptions) {
         super();
 
-        const displayName = options?.displayName ?? "Player";
-        const proxy = options?.proxy;
-        const decodeEntityUpdates = options?.decodeEntityUpdates ?? true;
-        const decodeRpcs = options?.decodeRpcs ?? true;
-        const parseSchemas = options?.parseSchemas ?? true;
-        const rpcMapping = options?.rpcMapping ?? rpcMappingFromFile(join(__dirname, "../../../rpcs.json"));
+        this.options = {
+            displayName: options?.displayName ?? "Player",
+            proxy: options?.proxy,
+            schemas: options?.schemas ?? true,
+            rpcMapping: options?.rpcMapping ?? rpcMappingFromFile(join(__dirname, "../../../rpcs.json")),
+            udp: options?.udp ?? false,
+            autoAckTick: options?.autoAckTick ?? true,
+        };
 
-        this.codec = new Codec(rpcMapping);
+        this.server = server;
+        this.codec = new Codec(this.options.rpcMapping!);
 
         const url = `wss://${server.hostnameV4}/${server.endpoint}`;
 
-        this.socket = new WebSocket(url, { agent: proxy });
-        this.socket.binaryType = "arraybuffer";
+        if (this.options.udp) {
+            this.udpSocket = createSocket("udp4");
+        }
 
-        this.socket.on("open", () => {
+        this.tcpSocket = new WebSocket(url, { agent: this.options.proxy });
+        this.tcpSocket.binaryType = "arraybuffer";
+
+        this.tcpSocket.once("open", () => {
             const pow = this.codec.crypto.generateProofOfWork(
                 server.endpoint,
                 this.codec.rpcMapping.Platform,
                 server.discreteFourierTransformBias
             );
 
-            this.socket.send(
+            this.tcpSocket.send(
                 this.codec.encodeEnterWorldRequest({
-                    displayName: displayName,
+                    displayName: this.options.displayName!,
                     version: this.codec.rpcMapping.Codec,
                     proofOfWork: pow,
                 })
@@ -84,73 +102,128 @@ export class Game extends EventEmitter {
             );
         });
 
-        this.socket.on("message", (data: ArrayBuffer) => {
-            const view = new DataView(data);
-            const dataArray = new Uint8Array(data);
+        this.tcpSocket.on("message", (data: ArrayBuffer) => this.handlePacket(data, false));
+        this.udpSocket?.on("message", (data: Buffer) => this.handlePacket(data.buffer, true));
 
-            this.emit("RawData", dataArray);
+        this.tcpSocket.on("close", (code) => this.emit("close", code));
+        this.udpSocket?.on("close", () => this.emit("close"));
 
-            switch (view.getUint8(0) as PacketId) {
-                case PacketId.EnterWorld: {
-                    this.codec.enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
-                    this.emit("EnterWorldResponse", this.codec.enterWorldResponse);
+        this.tcpSocket.on("error", (error) => this.emit("error", error));
+        this.udpSocket?.on("error", (error) => this.emit("error", error));
 
-                    break;
-                }
-                case PacketId.EntityUpdate: {
-                    if (decodeEntityUpdates) {
-                        const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
-                        this.emit("EntityUpdate", entityUpdate);
-                    }
-
-                    break;
-                }
-                case PacketId.Rpc: {
-                    if (decodeRpcs) {
-                        const decrypedData = this.codec.crypto.cryptRpc(dataArray);
-                        const definition = this.codec.enterWorldResponse.rpcs!.find(
-                            (rpc) => rpc.index === decrypedData[1]
-                        );
-                        // TODO: Emit an error here if 'definition' is undefined
-                        this.emit("RpcRawData", definition!.nameHash!, decrypedData);
-
-                        const rpc = this.codec.decodeRpc(definition!, decrypedData);
-                        if (rpc !== undefined && rpc.name !== null) {
-                            this.emit("Rpc", rpc.name, rpc.data, rpc.tick);
-                            this.emit(rpc.name, rpc.data, rpc.tick);
-                        }
-                        // TODO: Emit an error here if the above condition is false
-                    }
-
-                    break;
-                }
-            }
-        });
-
-        this.socket.on("close", (code) => {
-            this.emit("close", code);
-        });
-
-        this.socket.on("error", (error) => {
-            this.emit("error", error);
-        });
-
-        if (parseSchemas) {
+        if (this.options.schemas) {
             this.on("CompressedDataRpc", (rpc: CompressedDataRpc) => {
-                // TODO: Validate 'rpc.json' here
+                // TODO: Validate
                 this.emit(`Schema${rpc.dataName}`, JSON.parse(rpc.json));
             });
         }
     }
 
-    public send(data: Uint8Array | undefined) {
+    private handlePacket(data: ArrayBufferLike, udp: boolean) {
+        const view = new DataView(data);
+        const dataArray = new Uint8Array(data);
+        const packetId = view.getUint8(0) as PacketId;
+
+        this.emit("RawData", dataArray, udp ? "udp" : "tcp", packetId);
+
+        switch (packetId) {
+            case PacketId.EnterWorld: {
+                const enterWorldResponse = this.codec.decodeEnterWorldResponse(new Uint8Array(data));
+                if (enterWorldResponse !== undefined) {
+                    this.codec.enterWorldResponse = enterWorldResponse;
+                    if (this.options.udp) {
+                        this.udpSocket!.connect(enterWorldResponse.udpPort!, this.server.ipv4!, () => {
+                            this.send(
+                                this.codec.encodeUdpConnectRequest({
+                                    cookie: enterWorldResponse.udpCookie!,
+                                }),
+                                true
+                            );
+                        });
+                    }
+                    this.emit("EnterWorldResponse", enterWorldResponse, dataArray);
+                }
+                break;
+            }
+            case PacketId.Rpc: {
+                const decrypedData = this.codec.crypto.cryptRpc(dataArray);
+                const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === decrypedData[1]);
+                if (definition !== undefined) {
+                    const rpc = this.codec.decodeRpc(definition!, decrypedData, false);
+                    if (rpc !== undefined) {
+                        this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
+                        this.emit(rpc.name, rpc.data, rpc.metadata);
+                    }
+                }
+                break;
+            }
+            case PacketId.UdpRpc: {
+                const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === dataArray[1]);
+                const rpc = this.codec.decodeRpc(definition!, dataArray, true);
+                if (rpc !== undefined) {
+                    this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
+                    this.emit(rpc.name, rpc.data, rpc.metadata);
+                }
+                break;
+            }
+            case PacketId.EntityUpdate: {
+                const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
+                if (entityUpdate !== undefined) {
+                    this.emit("EntityUpdate", entityUpdate, packetId);
+                }
+                break;
+            }
+            case PacketId.UdpTick:
+            case PacketId.UdpTickWithCompressedUids: {
+                const udpTick = this.codec.decodeUdpTick(dataArray, packetId === PacketId.UdpTickWithCompressedUids);
+                if (udpTick !== undefined) {
+                    this.emit("EntityUpdate", udpTick, packetId);
+                    if (this.options.autoAckTick) {
+                        this.send(
+                            this.codec.encodeUdpAckTickRequest({
+                                cookie: udpTick.cookie,
+                                tick: udpTick.tick,
+                            }),
+                            true
+                        );
+                    }
+                }
+                break;
+            }
+            case PacketId.UdpConnect:
+            case PacketId.UdpConnect1300:
+            case PacketId.UdpConnect500: {
+                const udpConnectResponse = this.codec.decodeUdpConnectResponse(dataArray);
+                if (udpConnectResponse !== undefined) {
+                    this.emit("UdpConnectResponse", udpConnectResponse);
+                }
+                break;
+            }
+            case PacketId.UdpFragment: {
+                const fragment = this.codec.decodeUdpFragment(dataArray);
+                if (fragment?.buffer !== undefined) {
+                    this.handlePacket(fragment.buffer.buffer, true);
+                }
+                break;
+            }
+        }
+    }
+
+    public send(data?: Uint8Array, udp: boolean = false) {
         if (data) {
-            this.socket.send(data);
+            if (udp && this.udpSocket) {
+                this.udpSocket.send(data);
+            } else if (!udp) {
+                this.tcpSocket.send(data);
+            }
         }
     }
 
     public shutdown() {
-        this.socket.close();
+        this.tcpSocket.close();
+        if (this.udpSocket) {
+            this.udpSocket.close();
+        }
     }
 
     // --- Utility ---

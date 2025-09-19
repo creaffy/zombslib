@@ -187,6 +187,18 @@ export class BufferReader {
         return result;
     }
 
+    // Uint8 Array
+    u8arr(length: number) {
+        if (!this.canRead(length) || length < 0) {
+            return undefined;
+        }
+        const result = new Uint8Array(length);
+        for (let i = 0; i < length; i++) {
+            result[i] = this.u8()!;
+        }
+        return result;
+    }
+
     // ULEB128
     varint() {
         let result = 0;

@@ -58,7 +58,7 @@ var PacketId;
     PacketId[PacketId["UdpTick"] = 11] = "UdpTick";
     PacketId[PacketId["UdpAckTick"] = 12] = "UdpAckTick";
     PacketId[PacketId["UdpPong"] = 13] = "UdpPong";
-    PacketId[PacketId["UdpPingWithCompressedUids"] = 14] = "UdpPingWithCompressedUids";
+    PacketId[PacketId["UdpTickWithCompressedUids"] = 14] = "UdpTickWithCompressedUids";
     PacketId[PacketId["UdpFragment"] = 15] = "UdpFragment";
     PacketId[PacketId["UdpConnect1300"] = 16] = "UdpConnect1300";
     PacketId[PacketId["UdpConnect500"] = 17] = "UdpConnect500";
