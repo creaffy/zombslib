@@ -19,32 +19,32 @@ class BufferWriter {
     toArray() {
         return new Uint8Array(this.view.buffer, 0, this.offset);
     }
-    i8(v) {
+    i8(v = 0) {
         this.resize(1);
         this.view.setInt8(this.offset, v);
         this.offset += 1;
     }
-    u8(v) {
+    u8(v = 0) {
         this.resize(1);
         this.view.setUint8(this.offset, v);
         this.offset += 1;
     }
-    i16(v, le = true) {
+    i16(v = 0, le = true) {
         this.resize(2);
         this.view.setInt16(this.offset, v, le);
         this.offset += 2;
     }
-    u16(v, le = true) {
+    u16(v = 0, le = true) {
         this.resize(2);
         this.view.setUint16(this.offset, v, le);
         this.offset += 2;
     }
-    i32(v, le = true) {
+    i32(v = 0, le = true) {
         this.resize(4);
         this.view.setInt32(this.offset, v, le);
         this.offset += 4;
     }
-    u32(v, le = true) {
+    u32(v = 0, le = true) {
         this.resize(4);
         this.view.setUint32(this.offset, v, le);
         this.offset += 4;
@@ -111,7 +111,7 @@ class BufferWriter {
         }
     }
     // ULEB128
-    varint(v) {
+    varint(v = 0) {
         do {
             let byte = v & 0x7f;
             v >>>= 7;

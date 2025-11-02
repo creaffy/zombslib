@@ -10,6 +10,10 @@ export declare class MasonService extends EventEmitter {
     on<K extends keyof MasonEvents>(event: K, listener: MasonEvents[K]): this;
     on(event: string, listener: (...args: any[]) => void): this;
     constructor(options?: MasonServiceOptions);
+    static parse(message: string): {
+        event: string;
+        parameter: any;
+    } | undefined;
     send(data: string): void;
     shutdown(): void;
     sendPing(): void;

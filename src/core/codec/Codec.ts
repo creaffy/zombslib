@@ -859,7 +859,9 @@ export class Codec {
             const brandNewEntities = entityUpdate.createdEntities!.filter((uid) => entityMap.sortedUids?.includes(uid));
             writer.i8(brandNewEntities.length);
             writer.u32(entityMap.id!);
-            for (const uid of brandNewEntities) writer.u32(uid);
+            for (const uid of brandNewEntities) {
+                writer.u32(uid);
+            }
         }
 
         for (const entityMap of this.entityMaps) {

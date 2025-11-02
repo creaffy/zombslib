@@ -5,12 +5,12 @@ export declare class BufferWriter {
     constructor(length?: number);
     resize(size: number): void;
     toArray(): Uint8Array<ArrayBufferLike>;
-    i8(v: number): void;
-    u8(v: number): void;
-    i16(v: number, le?: boolean): void;
-    u16(v: number, le?: boolean): void;
-    i32(v: number, le?: boolean): void;
-    u32(v: number, le?: boolean): void;
+    i8(v?: number | undefined): void;
+    u8(v?: number | undefined): void;
+    i16(v?: number | undefined, le?: boolean): void;
+    u16(v?: number | undefined, le?: boolean): void;
+    i32(v?: number | undefined, le?: boolean): void;
+    u32(v?: number | undefined, le?: boolean): void;
     i64(v: bigint, le?: boolean): void;
     u64(v: bigint, le?: boolean): void;
     u8vec2(v: Vector2): void;
@@ -21,7 +21,7 @@ export declare class BufferWriter {
     u8arr8(arr: Uint8Array): void;
     u8arr32(arr: Uint8Array): void;
     u8arr(arr: Uint8Array): void;
-    varint(v: number): void;
+    varint(v?: number | undefined): void;
     string(str: string): void;
     compressedString(str: string): void;
 }

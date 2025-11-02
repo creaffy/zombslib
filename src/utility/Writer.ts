@@ -24,37 +24,37 @@ export class BufferWriter {
         return new Uint8Array(this.view.buffer, 0, this.offset);
     }
 
-    i8(v: number) {
+    i8(v: number | undefined = 0) {
         this.resize(1);
         this.view.setInt8(this.offset, v);
         this.offset += 1;
     }
 
-    u8(v: number) {
+    u8(v: number | undefined = 0) {
         this.resize(1);
         this.view.setUint8(this.offset, v);
         this.offset += 1;
     }
 
-    i16(v: number, le: boolean = true) {
+    i16(v: number | undefined = 0, le: boolean = true) {
         this.resize(2);
         this.view.setInt16(this.offset, v, le);
         this.offset += 2;
     }
 
-    u16(v: number, le: boolean = true) {
+    u16(v: number | undefined = 0, le: boolean = true) {
         this.resize(2);
         this.view.setUint16(this.offset, v, le);
         this.offset += 2;
     }
 
-    i32(v: number, le: boolean = true) {
+    i32(v: number | undefined = 0, le: boolean = true) {
         this.resize(4);
         this.view.setInt32(this.offset, v, le);
         this.offset += 4;
     }
 
-    u32(v: number, le: boolean = true) {
+    u32(v: number | undefined = 0, le: boolean = true) {
         this.resize(4);
         this.view.setUint32(this.offset, v, le);
         this.offset += 4;
@@ -132,7 +132,7 @@ export class BufferWriter {
     }
 
     // ULEB128
-    varint(v: number) {
+    varint(v: number | undefined = 0) {
         do {
             let byte = v & 0x7f;
             v >>>= 7;

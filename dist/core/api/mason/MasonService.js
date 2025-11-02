@@ -25,26 +25,37 @@ class MasonService extends node_events_1.EventEmitter {
             if (isBinary) {
                 return;
             }
-            const dataString = data.toString();
-            if (dataString.startsWith("42")) {
-                const parsed = JSON.parse(dataString.slice(2));
-                const event = parsed[0];
-                let parameter = parsed[1];
+            const message = data.toString();
+            const parsed = MasonService.parse(message);
+            if (parsed === undefined) {
+                return;
+            }
+            this.emit("any", parsed.event, parsed.parameter);
+            this.emit(parsed.event, parsed.parameter);
+        });
+    }
+    static parse(message) {
+        try {
+            if (message.startsWith("42")) {
+                const jsonData = JSON.parse(message.slice(2));
+                const event = jsonData[0];
+                let parameter = jsonData[1];
                 if (event === "partyMetadataUpdated") {
                     parameter = JSON.parse(parameter);
                 }
                 else if (event === "loggedIn") {
                     parameter = parameter.userData;
                 }
-                this.emit("any", event, parameter);
-                this.emit(event, parameter);
+                return { event, parameter };
             }
-            else if (dataString.startsWith("0")) {
-                const parsed = JSON.parse(dataString.slice(1));
-                this.emit("socketIoSessionData", parsed);
-                this.emit("any", "socketIoSessionData", parsed);
+            else if (message.startsWith("0")) {
+                const jsonData = JSON.parse(message.slice(1));
+                return { event: "socketIoSessionData", parameter: jsonData };
             }
-        });
+        }
+        catch (e) {
+            return undefined;
+        }
     }
     send(data) {
         this.socket.send(data);
