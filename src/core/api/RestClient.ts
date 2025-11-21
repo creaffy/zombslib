@@ -14,7 +14,7 @@ import {
     ApiUserRewardsClaimResponse,
     ApiUserRewardsResponse,
     ApiValidateDeviceResponse,
-} from "../../../types/Api";
+} from "../../types/Api";
 
 export interface RestClientOptions {
     url?: string;

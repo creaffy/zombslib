@@ -9,7 +9,7 @@ import {
     ApiServer,
     ApiUser,
     SocketIOSessionData,
-} from "../../../types/Api";
+} from "../../types/Api";
 
 export interface MasonEvents {
     clansData: (clans: ApiClan[]) => void;
