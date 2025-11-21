@@ -1,4 +1,4 @@
-import { ApiBuyRewardTrackResponse, ApiGetConfigResponse, ApiGetUserResponse, ApiLeaderboardResponse, ApiPackOpenResponse, ApiPollAvailableResponse, ApiProfileResponse, ApiQuestAvailableResponse, ApiResponse, ApiShopAvailableResponse, ApiSkipRewardTrackResponse, ApiUserBuyItemResponse, ApiUserRewardsClaimResponse, ApiUserRewardsResponse, ApiValidateDeviceResponse } from "../../types/Api";
+import { ApiBuyRewardTrackResponse, ApiGetConfigResponse, ApiGetUserResponse, ApiLeaderboardResponse, ApiPackOpenResponse, ApiPollAvailableResponse, ApiProfileResponse, ApiQuestAvailableResponse, ApiResponse, ApiShopAvailableResponse, ApiSkipRewardTrackResponse, ApiUserBuyItemResponse, ApiUserRewardsClaimResponse, ApiUserRewardsResponse, ApiValidateDeviceResponse } from "../../../types/Api";
 export interface RestClientOptions {
     url?: string;
     unsafe?: boolean;
