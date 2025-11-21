@@ -16,8 +16,8 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./core/codec/Codec"), exports);
 __exportStar(require("./core/codec/ZRCrypto"), exports);
-__exportStar(require("./core/api/mason/MasonService"), exports);
-__exportStar(require("./core/api/rest/RestClient"), exports);
+__exportStar(require("./core/api/MasonService"), exports);
+__exportStar(require("./core/api/RestClient"), exports);
 __exportStar(require("./core/game/Game"), exports);
 __exportStar(require("./utility/Writer"), exports);
 __exportStar(require("./utility/Reader"), exports);
