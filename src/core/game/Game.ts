@@ -22,7 +22,7 @@ export function rpcMappingFromFile(path: string): DumpedData {
     return JSON.parse(
         readFileSync(path, {
             encoding: "utf-8",
-        })
+        }),
     );
 }
 
@@ -39,6 +39,8 @@ export interface GameOptions {
     udp?: boolean;
     // Automatically acknowledge UDP Ticks
     autoAckTick?: boolean;
+    // Try to connect to via wss
+    ssl?: boolean;
 }
 
 export class Game extends EventEmitter {
@@ -66,12 +68,13 @@ export class Game extends EventEmitter {
             rpcMapping: options?.rpcMapping ?? rpcMappingFromFile(join(__dirname, "../../../rpcs.json")),
             udp: options?.udp ?? false,
             autoAckTick: options?.autoAckTick ?? true,
+            ssl: options?.ssl ?? true,
         };
 
         this.server = server;
         this.codec = new Codec(this.options.rpcMapping!);
 
-        const url = `wss://${server.hostnameV4}/${server.endpoint}`;
+        const url = `${this.options.ssl ? "wss" : "ws"}://${server.hostnameV4}/${server.endpoint}`;
 
         if (this.options.udp) {
             this.udpSocket = createSocket("udp4");
@@ -84,7 +87,7 @@ export class Game extends EventEmitter {
             const pow = this.codec.crypto.generateProofOfWork(
                 server.endpoint,
                 this.codec.rpcMapping.Platform,
-                server.discreteFourierTransformBias
+                server.discreteFourierTransformBias,
             );
 
             this.tcpSocket.send(
@@ -92,13 +95,13 @@ export class Game extends EventEmitter {
                     displayName: this.options.displayName!,
                     version: this.codec.rpcMapping.Codec,
                     proofOfWork: pow,
-                })
+                }),
             );
 
             this.codec.crypto.computeRpcKey(
                 this.codec.rpcMapping.Codec,
                 new TextEncoder().encode("/" + server.endpoint),
-                pow
+                pow,
             );
         });
 
@@ -137,7 +140,7 @@ export class Game extends EventEmitter {
                                 this.codec.encodeUdpConnectRequest({
                                     cookie: enterWorldResponse.udpCookie!,
                                 }),
-                                true
+                                true,
                             );
                         });
                     }
@@ -151,8 +154,8 @@ export class Game extends EventEmitter {
                 if (definition !== undefined) {
                     const rpc = this.codec.decodeRpc(definition!, decrypedData, false);
                     if (rpc !== undefined) {
-                        this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
-                        this.emit(rpc.name, rpc.data, rpc.metadata);
+                        this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
+                        this.emit(rpc.name, rpc.data, rpc.extra);
                     }
                 }
                 break;
@@ -161,8 +164,8 @@ export class Game extends EventEmitter {
                 const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === dataArray[1]);
                 const rpc = this.codec.decodeRpc(definition!, dataArray, true);
                 if (rpc !== undefined) {
-                    this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
-                    this.emit(rpc.name, rpc.data, rpc.metadata);
+                    this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
+                    this.emit(rpc.name, rpc.data, rpc.extra);
                 }
                 break;
             }
@@ -184,7 +187,7 @@ export class Game extends EventEmitter {
                                 cookie: udpTick.cookie,
                                 tick: udpTick.tick,
                             }),
-                            true
+                            true,
                         );
                     }
                 }
@@ -240,8 +243,12 @@ export class Game extends EventEmitter {
         return new Map(Array.from(this.codec.entityList).filter(([k, v]) => v.type === type));
     }
 
-    public getMyUid() {
+    public getSelfUid() {
         return this.codec.enterWorldResponse.uid!;
+    }
+
+    public getSelf() {
+        return this.getEntityByUid(this.codec.enterWorldResponse.uid!);
     }
 
     public getEntityByUid(uid: number) {
@@ -285,7 +292,7 @@ export class Game extends EventEmitter {
                 buildingUid: buildingUid,
                 doorIndex: doorIndex,
                 close: close,
-            })
+            }),
         );
     }
 
@@ -306,7 +313,7 @@ export class Game extends EventEmitter {
             this.codec.encodeRpc("SendChatMessageRpc", {
                 channel: channel,
                 message: message,
-            })
+            }),
         );
     }
 
@@ -320,7 +327,7 @@ export class Game extends EventEmitter {
                 dataIndex: dataIndex,
                 x: x,
                 y: y,
-            })
+            }),
         );
     }
 
@@ -329,7 +336,7 @@ export class Game extends EventEmitter {
             this.codec.encodeRpc("SwapItemRpc", {
                 inventorySlot1: inventorySlot1,
                 inventorySlot2: inventorySlot2,
-            })
+            }),
         );
     }
 
@@ -337,7 +344,7 @@ export class Game extends EventEmitter {
         this.send(
             this.codec.encodeRpc("SetBuildingModeRpc", {
                 isBuilding: isBuilding,
-            })
+            }),
         );
     }
 
@@ -353,7 +360,7 @@ export class Game extends EventEmitter {
         this.send(
             this.codec.encodeRpc("RespawnRpc", {
                 respawnWithHalf: respawnWithHalf,
-            })
+            }),
         );
     }
 
@@ -382,7 +389,7 @@ export class Game extends EventEmitter {
             this.codec.encodeRpc("PickupItemRpc", {
                 itemUid: itemUid,
                 inventorySlot: inventorySlot,
-            })
+            }),
         );
     }
 
@@ -394,7 +401,7 @@ export class Game extends EventEmitter {
         this.send(
             this.codec.encodeRpc("EquipItemRpc", {
                 inventorySlot: inventorySlot,
-            })
+            }),
         );
     }
 
@@ -408,7 +415,7 @@ export class Game extends EventEmitter {
                 sprayIndex2: sprayIndex2,
                 x: x,
                 y: y,
-            })
+            }),
         );
     }
 
@@ -422,7 +429,7 @@ export class Game extends EventEmitter {
                 inventorySlot: inventorySlot,
                 x: x,
                 y: y,
-            })
+            }),
         );
     }
 
@@ -438,8 +445,32 @@ export class Game extends EventEmitter {
         this.send(this.codec.encodeRpc("ExitVehicleRpc", {}));
     }
 
-    public inputRpc(rpc: InputRpc) {
-        this.send(this.codec.encodeRpc("InputRpc", rpc));
+    public inputRpc(rpc: Partial<InputRpc>) {
+        const defaultInput: InputRpc = {
+            inputUid: 0,
+            acknowledgedTickNumber: 0,
+            isPing: 0,
+            left: 0,
+            right: 0,
+            down: 0,
+            up: 0,
+            space: 0,
+            moveDirection: -1,
+            use: 0,
+            worldX: 0,
+            worldY: 0,
+            distance: 0,
+            yaw: 0,
+            mouseDown: -1,
+            mouseMovedWhileDown: -1,
+            mouseMoved: -1,
+            mouseUp: 1,
+            moveSpeed: 1,
+            rightMouseDown: 0,
+            zoomFactor: 1,
+            unknown: 5,
+        };
+        this.send(this.codec.encodeRpc("InputRpc", { ...defaultInput, ...rpc }));
     }
 
     public reloadRpc() {
@@ -455,7 +486,7 @@ export class Game extends EventEmitter {
             this.codec.encodeRpc("StartTcpStreamRpc", {
                 attemptedUdp: attemptedUdp,
                 received500: received500,
-            })
+            }),
         );
     }
 

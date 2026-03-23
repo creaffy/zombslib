@@ -12,6 +12,7 @@ export interface GameOptions {
     rpcMapping?: DumpedData;
     udp?: boolean;
     autoAckTick?: boolean;
+    ssl?: boolean;
 }
 export declare class Game extends EventEmitter {
     private tcpSocket;
@@ -28,7 +29,8 @@ export declare class Game extends EventEmitter {
     getEnterWorldResponse(): import("../../types/Packets").EnterWorldResponse;
     getEntityList(): Map<number, import("../../types/Packets").NetworkEntity>;
     getEntitiesByType(type: EntityType): Map<number, import("../../types/Packets").NetworkEntity>;
-    getMyUid(): number;
+    getSelfUid(): number;
+    getSelf(): import("../../types/Packets").NetworkEntity | undefined;
     getEntityByUid(uid: number): import("../../types/Packets").NetworkEntity | undefined;
     getPlayerByName(name: string): import("../../types/Packets").NetworkEntity | undefined;
     toServerPos(worldPos: Vector2): Vector2;
@@ -63,7 +65,7 @@ export declare class Game extends EventEmitter {
     respawnPendingRpc(): void;
     reloadServerRpc(): void;
     exitVehicleRpc(): void;
-    inputRpc(rpc: InputRpc): void;
+    inputRpc(rpc: Partial<InputRpc>): void;
     reloadRpc(): void;
     spectateRpc(uid: number): void;
     startTcpStreamRpc(attemptedUdp: number, received500: number): void;

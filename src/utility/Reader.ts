@@ -91,7 +91,7 @@ export class BufferReader {
             return undefined;
         }
         const x = this.view.getUint8(this.offset);
-        const y = this.view.getUint8(this.offset);
+        const y = this.view.getUint8(this.offset + 1);
         this.offset += 2;
         return { x, y };
     }
@@ -101,8 +101,8 @@ export class BufferReader {
         if (!this.canRead(8)) {
             return undefined;
         }
-        const x = this.view.getInt32(this.offset);
-        const y = this.view.getInt32(this.offset);
+        const x = this.view.getInt32(this.offset, true);
+        const y = this.view.getInt32(this.offset + 4, true);
         this.offset += 8;
         return { x, y };
     }

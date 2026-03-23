@@ -833,9 +833,9 @@ class Codec {
     decodeRpc(def, data, udp) {
         const reader = new Reader_1.BufferReader(data, 1);
         let decoded;
-        let metadata = { udpCookie: undefined, tick: undefined, transport: udp ? "udp" : "tcp" };
+        let extra = { udpCookie: undefined, tick: undefined, transport: udp ? "udp" : "tcp" };
         if (udp) {
-            metadata.udpCookie = reader.u32();
+            extra.udpCookie = reader.u32();
         }
         reader.offset += 4;
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
@@ -858,9 +858,9 @@ class Codec {
             if (decoded === undefined) {
                 return undefined;
             }
-            metadata.tick = reader.u32();
+            extra.tick = reader.u32();
         }
-        return { name: rpc?.ClassName ?? `R_0x${def.nameHash.toString(16)}`, data: decoded, metadata: metadata };
+        return { name: rpc?.ClassName ?? `R_0x${def.nameHash.toString(16)}`, data: decoded, extra: extra };
     }
     encodeRpc(name, data, udp = false, tick) {
         const writer = new Writer_1.BufferWriter();
@@ -904,9 +904,6 @@ class Codec {
         if (request.cookie === undefined) {
             return undefined;
         }
-        if (request.cookie !== this.enterWorldResponse.udpCookie) {
-            return undefined;
-        }
         return request;
     }
     encodeUdpConnectRequest(request) {
@@ -920,9 +917,6 @@ class Codec {
         const response = {};
         response.cookie = reader.u32();
         if (response.cookie === undefined) {
-            return undefined;
-        }
-        if (response.cookie !== this.enterWorldResponse.udpCookie) {
             return undefined;
         }
         response.mtu = reader.u32();
@@ -944,9 +938,6 @@ class Codec {
         const fragment = {};
         fragment.cookie = reader.u32();
         if (fragment.cookie === undefined) {
-            return undefined;
-        }
-        if (fragment.cookie !== this.enterWorldResponse.udpCookie) {
             return undefined;
         }
         fragment.fragmentId = reader.u32();
@@ -996,9 +987,6 @@ class Codec {
         udpTick.updatedEntities = new Map();
         udpTick.cookie = reader.u32();
         if (udpTick.cookie === undefined) {
-            return undefined;
-        }
-        if (udpTick.cookie !== this.enterWorldResponse.udpCookie) {
             return undefined;
         }
         udpTick.tick = reader.u32();

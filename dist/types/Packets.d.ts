@@ -139,7 +139,7 @@ export interface EnterWorldResponse {
     udpCookie?: number;
     udpPort?: number;
 }
-export interface RpcMetadata {
+export interface RpcExtra {
     tick?: number;
     udpCookie?: number;
     transport: "tcp" | "udp";

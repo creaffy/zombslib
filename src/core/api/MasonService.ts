@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import { Agent } from "node:http";
 import { RawData, WebSocket } from "ws";
 import { MasonEvents } from "./MasonEvents";
+import { ServerRegion } from "../../types/Api";
 
 export interface MasonServiceOptions {
     url?: string;
@@ -175,7 +176,7 @@ export class MasonService extends EventEmitter {
     }
 
     public setPartyRegion(
-        region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania"
+        region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania" | ServerRegion
     ): void {
         this.socket.send(`42["setPartyRegion", "${region}"]`);
     }

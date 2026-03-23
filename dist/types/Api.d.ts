@@ -1,3 +1,10 @@
+export declare enum ServerRegion {
+    Europe = "vultr-frankfurt",
+    USEast = "vultr-miami",
+    USWest = "vultr-la",
+    Asia = "vultr-singapore",
+    Oceania = "i3d-oceania"
+}
 export interface ApiServer {
     version: number;
     mode: string;

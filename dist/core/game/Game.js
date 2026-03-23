@@ -27,10 +27,11 @@ class Game extends node_events_1.EventEmitter {
             rpcMapping: options?.rpcMapping ?? rpcMappingFromFile((0, node_path_1.join)(__dirname, "../../../rpcs.json")),
             udp: options?.udp ?? false,
             autoAckTick: options?.autoAckTick ?? true,
+            ssl: options?.ssl ?? true,
         };
         this.server = server;
         this.codec = new Codec_1.Codec(this.options.rpcMapping);
-        const url = `wss://${server.hostnameV4}/${server.endpoint}`;
+        const url = `${this.options.ssl ? "wss" : "ws"}://${server.hostnameV4}/${server.endpoint}`;
         if (this.options.udp) {
             this.udpSocket = (0, node_dgram_1.createSocket)("udp4");
         }
@@ -85,8 +86,8 @@ class Game extends node_events_1.EventEmitter {
                 if (definition !== undefined) {
                     const rpc = this.codec.decodeRpc(definition, decrypedData, false);
                     if (rpc !== undefined) {
-                        this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
-                        this.emit(rpc.name, rpc.data, rpc.metadata);
+                        this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
+                        this.emit(rpc.name, rpc.data, rpc.extra);
                     }
                 }
                 break;
@@ -95,8 +96,8 @@ class Game extends node_events_1.EventEmitter {
                 const definition = this.codec.enterWorldResponse.rpcs.find((rpc) => rpc.index === dataArray[1]);
                 const rpc = this.codec.decodeRpc(definition, dataArray, true);
                 if (rpc !== undefined) {
-                    this.emit("Rpc", rpc.name, rpc.data, rpc.metadata);
-                    this.emit(rpc.name, rpc.data, rpc.metadata);
+                    this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
+                    this.emit(rpc.name, rpc.data, rpc.extra);
                 }
                 break;
             }
@@ -165,8 +166,11 @@ class Game extends node_events_1.EventEmitter {
     getEntitiesByType(type) {
         return new Map(Array.from(this.codec.entityList).filter(([k, v]) => v.type === type));
     }
-    getMyUid() {
+    getSelfUid() {
         return this.codec.enterWorldResponse.uid;
+    }
+    getSelf() {
+        return this.getEntityByUid(this.codec.enterWorldResponse.uid);
     }
     getEntityByUid(uid) {
         return this.getEntityList().get(uid);
@@ -308,7 +312,31 @@ class Game extends node_events_1.EventEmitter {
         this.send(this.codec.encodeRpc("ExitVehicleRpc", {}));
     }
     inputRpc(rpc) {
-        this.send(this.codec.encodeRpc("InputRpc", rpc));
+        const defaultInput = {
+            inputUid: 0,
+            acknowledgedTickNumber: 0,
+            isPing: 0,
+            left: 0,
+            right: 0,
+            down: 0,
+            up: 0,
+            space: 0,
+            moveDirection: -1,
+            use: 0,
+            worldX: 0,
+            worldY: 0,
+            distance: 0,
+            yaw: 0,
+            mouseDown: -1,
+            mouseMovedWhileDown: -1,
+            mouseMoved: -1,
+            mouseUp: 1,
+            moveSpeed: 1,
+            rightMouseDown: 0,
+            zoomFactor: 1,
+            unknown: 5,
+        };
+        this.send(this.codec.encodeRpc("InputRpc", { ...defaultInput, ...rpc }));
     }
     reloadRpc() {
         this.send(this.codec.encodeRpc("ReloadRpc", {}));

@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import { Agent } from "node:http";
 import { MasonEvents } from "./MasonEvents";
+import { ServerRegion } from "../../types/Api";
 export interface MasonServiceOptions {
     url?: string;
     proxy?: Agent;
@@ -36,7 +37,7 @@ export declare class MasonService extends EventEmitter {
     setName(name: string): void;
     setPartyAutofill(autofill: boolean): void;
     setPartyGameMode(gameMode: "Solo" | "Duo" | "Squad" | "Limited" | "CrystalClash" | "Hangout" | "PrivateZombieDuo" | "PrivateZombieSquad"): void;
-    setPartyRegion(region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania"): void;
+    setPartyRegion(region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania" | ServerRegion): void;
     setPartyTournamentCode(code: string): void;
     setPartyVersion(version: string): void;
     setPlatform(platform: "android" | "web" | "windows" | "ios"): void;

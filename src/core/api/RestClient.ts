@@ -36,7 +36,7 @@ export class RestClient {
             method?: "GET" | "POST";
             queryParams?: Record<string, any>;
             body?: any;
-        }
+        },
     ): Promise<T> {
         const { method = "GET", queryParams, body } = options || {};
         const queryString = queryParams
@@ -67,7 +67,7 @@ export class RestClient {
             timedDealId?: number;
             itemId?: number;
             packId?: number;
-        }
+        },
     ) {
         if (this.unsafe) {
             return this.makeRequest<ApiUserBuyItemResponse>(`/api/user/${userKey}/buy`, {
@@ -128,7 +128,7 @@ export class RestClient {
 
     public async claimRewards(
         userKey: string,
-        type: "first" | "gift" | "recurring" | "bonus" | "instagram" | "nitro" | "coming_soon"
+        type: "first" | "gift" | "recurring" | "bonus" | "instagram" | "nitro" | "coming_soon",
     ) {
         if (this.unsafe) {
             return this.makeRequest<ApiUserRewardsClaimResponse>(`/api/user/${userKey}/rewards/claim`, {

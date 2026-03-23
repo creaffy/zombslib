@@ -1,3 +1,16 @@
+export enum ServerRegion {
+    // Amsterdam
+    Europe = "vultr-frankfurt",
+    // New Jeresey
+    USEast = "vultr-miami",
+    // Los Angeles
+    USWest = "vultr-la",
+    // Singapore
+    Asia = "vultr-singapore",
+    // Sydney
+    Oceania = "i3d-oceania",
+}
+
 export interface ApiServer {
     version: number;
     mode: string;

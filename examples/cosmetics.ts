@@ -8,6 +8,7 @@ import {
     ItemSkinSlot,
     RestClient,
     ApiItem,
+    ServerRegion,
 } from "zombslib";
 
 const mason = new MasonService();
@@ -17,12 +18,12 @@ mason.on("socketIoSessionData", (d: SocketIOSessionData) => {
     setInterval(() => mason.sendPing(), d.pingInterval);
     mason.createParty();
     mason.setPartyGameMode("Solo");
-    mason.setPartyRegion("vultr-frankfurt");
+    mason.setPartyRegion(ServerRegion.Europe);
     mason.setReady(true);
 });
 
 mason.on("partyJoinServer", (s: ApiServer) => {
-    const game = new Game(s, { displayName: "Donald Tusk" });
+    const game = new Game(s, { displayName: "Example" });
 
     game.on("EnterWorldResponse", (r: EnterWorldResponse) => {
         if (r.allowed) {

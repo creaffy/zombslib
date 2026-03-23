@@ -12,7 +12,7 @@ import {
     EntityUpdate,
     ParameterType,
     PacketId,
-    RpcMetadata,
+    RpcExtra,
     UdpConnectRequest,
     UdpConnectResponse,
     UdpFragment,
@@ -963,10 +963,10 @@ export class Codec {
     public decodeRpc(def: Rpc, data: Uint8Array, udp: boolean) {
         const reader = new BufferReader(data, 1);
         let decoded: any;
-        let metadata: RpcMetadata = { udpCookie: undefined, tick: undefined, transport: udp ? "udp" : "tcp" };
+        let extra: RpcExtra = { udpCookie: undefined, tick: undefined, transport: udp ? "udp" : "tcp" };
 
         if (udp) {
-            metadata.udpCookie = reader.u32();
+            extra.udpCookie = reader.u32();
         }
         reader.offset += 4;
 
@@ -993,10 +993,10 @@ export class Codec {
                 return undefined;
             }
 
-            metadata.tick = reader.u32();
+            extra.tick = reader.u32();
         }
 
-        return { name: rpc?.ClassName ?? `R_0x${def.nameHash!.toString(16)}`, data: decoded, metadata: metadata };
+        return { name: rpc?.ClassName ?? `R_0x${def.nameHash!.toString(16)}`, data: decoded, extra: extra };
     }
 
     public encodeRpc(name: string, data: object | object[], udp: boolean = false, tick?: number) {
@@ -1049,10 +1049,6 @@ export class Codec {
             return undefined;
         }
 
-        if (request.cookie !== this.enterWorldResponse.udpCookie) {
-            return undefined;
-        }
-
         return request;
     }
 
@@ -1069,10 +1065,6 @@ export class Codec {
 
         response.cookie = reader.u32();
         if (response.cookie === undefined) {
-            return undefined;
-        }
-
-        if (response.cookie !== this.enterWorldResponse.udpCookie) {
             return undefined;
         }
 
@@ -1099,10 +1091,6 @@ export class Codec {
 
         fragment.cookie = reader.u32();
         if (fragment.cookie === undefined) {
-            return undefined;
-        }
-
-        if (fragment.cookie !== this.enterWorldResponse.udpCookie) {
             return undefined;
         }
 
@@ -1165,10 +1153,6 @@ export class Codec {
 
         udpTick.cookie = reader.u32();
         if (udpTick.cookie === undefined) {
-            return undefined;
-        }
-
-        if (udpTick.cookie !== this.enterWorldResponse.udpCookie) {
             return undefined;
         }
 

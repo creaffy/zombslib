@@ -34,7 +34,7 @@ import {
     UpdateMarkerRpc,
     ACInitRpc,
     ObserverRpc,
-    RpcMetadata,
+    RpcExtra,
     UdpConnectResponse,
     PacketId,
     UdpFragment,
@@ -66,42 +66,42 @@ export interface GameEvents {
     RawData: (data: Uint8Array, transport: "tpc" | "udp", packetId: PacketId) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate | UdpTick, packetId: PacketId) => void; // PACKET_ENTITY_UPDATE, PACKET_UDP_TICK, PACKET_UDP_TICK_WITH_COMPRESSED_UIDS
-    Rpc: (name: string, rpc: object, metadata: RpcMetadata) => void; // PACKET_RPC, PACKET_UDP_RPC
+    Rpc: (name: string, rpc: object, extra: RpcExtra) => void; // PACKET_RPC, PACKET_UDP_RPC
     UdpConnectResponse: (udpConnectResponse: UdpConnectResponse, packetId: PacketId) => void; // PACKET_UDP_CONNECT, PACKET_UDP_CONNECT_500, PACKET_UDP_CONNECT_1300
 
-    ObserverRpc: (rpc: ObserverRpc, metadata: RpcMetadata) => void;
-    ACInitRpc: (rpc: ACInitRpc, metadata: RpcMetadata) => void;
-    ACToClientRpc: (rpc: ACToClientRpc, metadata: RpcMetadata) => void;
-    DamageRpc: (rpc: DamageRpc, metadata: RpcMetadata) => void;
-    DeadRpc: (rpc: DeadRpc, metadata: RpcMetadata) => void;
-    InventoryUpdateEquipRpc: (rpc: InventoryUpdateEquipRpc, metadata: RpcMetadata) => void;
-    DayNightRpc: (rpc: DayNightRpc, metadata: RpcMetadata) => void;
-    ResetGameRpc: (rpc: ResetGameRpc, metadata: RpcMetadata) => void;
-    InventoryUpdateRpc: (rpc: InventoryUpdateRpc, metadata: RpcMetadata) => void;
-    AccountSessionRpc: (rpc: AccountSessionRpc, metadata: RpcMetadata) => void;
-    ShutdownRpc: (rpc: ShutdownRpc, metadata: RpcMetadata) => void;
-    GameTimerRpc: (rpc: GameTimerRpc, metadata: RpcMetadata) => void;
-    PartyLeftRpc: (rpc: PartyLeftRpc, metadata: RpcMetadata) => void;
-    AirDropRpc: (rpc: AirDropRpc, metadata: RpcMetadata) => void;
-    CheatingDetectedRpc: (rpc: CheatingDetectedRpc, metadata: RpcMetadata) => void;
-    LootCategoryOverrideRpc: (rpc: LootCategoryOverrideRpc, metadata: RpcMetadata) => void;
-    LeaderboardRpc: (rpc: LeaderboardRpc, metadata: RpcMetadata) => void;
-    PlanePathRpc: (rpc: PlanePathRpc, metadata: RpcMetadata) => void;
-    PartyUpdateRpc: (rpc: PartyUpdateRpc, metadata: RpcMetadata) => void;
-    PlayerCountRpc: (rpc: PlayerCountRpc, metadata: RpcMetadata) => void;
-    DataFinishedRpc: (rpc: DataFinishedRpc, metadata: RpcMetadata) => void;
-    GunGameWeaponRpc: (rpc: GunGameWeaponRpc, metadata: RpcMetadata) => void;
-    UpdateMarkerRpc: (rpc: UpdateMarkerRpc, metadata: RpcMetadata) => void;
-    KillFeedRpc: (rpc: KillFeedRpc, metadata: RpcMetadata) => void;
-    LoginResponseRpc: (rpc: LoginResponseRpc, metadata: RpcMetadata) => void;
-    LoadoutUserRpc: (rpc: LoadoutUserRpc, metadata: RpcMetadata) => void;
-    ReceiveChatMessageRpc: (rpc: ReceiveChatMessageRpc, metadata: RpcMetadata) => void;
-    CompressedDataRpc: (rpc: CompressedDataRpc, metadata: RpcMetadata) => void;
-    EndOfGameStatsRpc: (rpc: EndOfGameStatsRpc, metadata: RpcMetadata) => void;
-    GameStatusRpc: (rpc: GameStatusRpc, metadata: RpcMetadata) => void;
-    DataRpc: (rpc: DataRpc, metadata: RpcMetadata) => void;
-    PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc, metadata: RpcMetadata) => void;
-    SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc, metadata: RpcMetadata) => void;
+    ObserverRpc: (rpc: ObserverRpc, extra: RpcExtra) => void;
+    ACInitRpc: (rpc: ACInitRpc, extra: RpcExtra) => void;
+    ACToClientRpc: (rpc: ACToClientRpc, extra: RpcExtra) => void;
+    DamageRpc: (rpc: DamageRpc, extra: RpcExtra) => void;
+    DeadRpc: (rpc: DeadRpc, extra: RpcExtra) => void;
+    InventoryUpdateEquipRpc: (rpc: InventoryUpdateEquipRpc, extra: RpcExtra) => void;
+    DayNightRpc: (rpc: DayNightRpc, extra: RpcExtra) => void;
+    ResetGameRpc: (rpc: ResetGameRpc, extra: RpcExtra) => void;
+    InventoryUpdateRpc: (rpc: InventoryUpdateRpc, extra: RpcExtra) => void;
+    AccountSessionRpc: (rpc: AccountSessionRpc, extra: RpcExtra) => void;
+    ShutdownRpc: (rpc: ShutdownRpc, extra: RpcExtra) => void;
+    GameTimerRpc: (rpc: GameTimerRpc, extra: RpcExtra) => void;
+    PartyLeftRpc: (rpc: PartyLeftRpc, extra: RpcExtra) => void;
+    AirDropRpc: (rpc: AirDropRpc, extra: RpcExtra) => void;
+    CheatingDetectedRpc: (rpc: CheatingDetectedRpc, extra: RpcExtra) => void;
+    LootCategoryOverrideRpc: (rpc: LootCategoryOverrideRpc, extra: RpcExtra) => void;
+    LeaderboardRpc: (rpc: LeaderboardRpc, extra: RpcExtra) => void;
+    PlanePathRpc: (rpc: PlanePathRpc, extra: RpcExtra) => void;
+    PartyUpdateRpc: (rpc: PartyUpdateRpc, extra: RpcExtra) => void;
+    PlayerCountRpc: (rpc: PlayerCountRpc, extra: RpcExtra) => void;
+    DataFinishedRpc: (rpc: DataFinishedRpc, extra: RpcExtra) => void;
+    GunGameWeaponRpc: (rpc: GunGameWeaponRpc, extra: RpcExtra) => void;
+    UpdateMarkerRpc: (rpc: UpdateMarkerRpc, extra: RpcExtra) => void;
+    KillFeedRpc: (rpc: KillFeedRpc, extra: RpcExtra) => void;
+    LoginResponseRpc: (rpc: LoginResponseRpc, extra: RpcExtra) => void;
+    LoadoutUserRpc: (rpc: LoadoutUserRpc, extra: RpcExtra) => void;
+    ReceiveChatMessageRpc: (rpc: ReceiveChatMessageRpc, extra: RpcExtra) => void;
+    CompressedDataRpc: (rpc: CompressedDataRpc, extra: RpcExtra) => void;
+    EndOfGameStatsRpc: (rpc: EndOfGameStatsRpc, extra: RpcExtra) => void;
+    GameStatusRpc: (rpc: GameStatusRpc, extra: RpcExtra) => void;
+    DataRpc: (rpc: DataRpc, extra: RpcExtra) => void;
+    PlaceBuildingFailedRpc: (rpc: PlaceBuildingFailedRpc, extra: RpcExtra) => void;
+    SetClientLoadoutRpc: (rpc: SetClientLoadoutRpc, extra: RpcExtra) => void;
 
     SchemaAmmos: (data: SchemaAmmo[]) => void;
     SchemaBuildings: (data: SchemaBuilding[]) => void;

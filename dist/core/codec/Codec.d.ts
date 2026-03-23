@@ -1,4 +1,4 @@
-import { EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate, RpcMetadata, UdpConnectRequest, UdpConnectResponse, UdpFragment, UdpTick, UdpAckTickRequest } from "../../types/Packets";
+import { EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate, RpcExtra, UdpConnectRequest, UdpConnectResponse, UdpFragment, UdpTick, UdpAckTickRequest } from "../../types/Packets";
 import { ZRCrypto } from "./ZRCrypto";
 export declare class Codec {
     crypto: ZRCrypto;
@@ -15,9 +15,9 @@ export declare class Codec {
     private encodeRpcObject;
     getAttributeName(nameHash: number): string;
     decodeEnterWorldResponse(data: Uint8Array): EnterWorldResponse | undefined;
-    encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array<ArrayBuffer | SharedArrayBuffer>;
+    encodeEnterWorldResponse(response: EnterWorldResponse): Uint8Array<ArrayBuffer>;
     decodeEntityUpdate(data: Uint8Array): EntityUpdate | undefined;
-    encodeEntityUpdate(entityUpdate: EntityUpdate): Uint8Array<ArrayBuffer | SharedArrayBuffer>;
+    encodeEntityUpdate(entityUpdate: EntityUpdate): Uint8Array<ArrayBuffer>;
     decodeEnterWorldRequest(data: Uint8Array): {
         displayName: string;
         version: number;
@@ -27,7 +27,7 @@ export declare class Codec {
     decodeRpc(def: Rpc, data: Uint8Array, udp: boolean): {
         name: string;
         data: any;
-        metadata: RpcMetadata;
+        extra: RpcExtra;
     } | undefined;
     encodeRpc(name: string, data: object | object[], udp?: boolean, tick?: number): Uint8Array<ArrayBufferLike> | undefined;
     decodeUdpConnectRequest(data: Uint8Array): UdpConnectRequest | undefined;
