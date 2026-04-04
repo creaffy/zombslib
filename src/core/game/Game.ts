@@ -153,15 +153,15 @@ export class Game extends TypedEmitter<GameEvents> {
                 }
                 break;
             }
-            case PacketId.UdpRpc: {
-                const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === dataArray[1]);
-                const rpc = this.codec.decodeRpc(definition!, dataArray, true);
-                if (rpc !== undefined) {
-                    this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
-                    this.emit(rpc.name, rpc.data, rpc.extra);
-                }
-                break;
-            }
+            // case PacketId.UdpRpc: {
+            //     const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === dataArray[5]);
+            //     const rpc = this.codec.decodeRpc(definition!, dataArray, true);
+            //     if (rpc !== undefined) {
+            //         this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
+            //         this.emit(rpc.name, rpc.data, rpc.extra);
+            //      }
+            //     break;
+            // }
             case PacketId.EntityUpdate: {
                 const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
                 if (entityUpdate !== undefined) {

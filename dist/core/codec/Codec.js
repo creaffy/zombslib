@@ -882,7 +882,7 @@ class Codec {
         if (def === undefined) {
             return undefined;
         }
-        writer.u8(udp ? Packets_1.PacketId.UdpRpc : Packets_1.PacketId.Rpc);
+        writer.u8(Packets_1.PacketId.Rpc);
         if (udp) {
             writer.u32(this.enterWorldResponse.udpCookie);
         }

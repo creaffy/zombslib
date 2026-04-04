@@ -1030,7 +1030,7 @@ export class Codec {
             return undefined;
         }
 
-        writer.u8(udp ? PacketId.UdpRpc : PacketId.Rpc);
+        writer.u8(PacketId.Rpc);
 
         if (udp) {
             writer.u32(this.enterWorldResponse.udpCookie!);
