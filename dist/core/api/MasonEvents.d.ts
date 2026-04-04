@@ -1,5 +1,5 @@
 import { ApiClan, ApiFriend, ApiFriendRequest, ApiParty, ApiPartyInvite, ApiPartyMetadata, ApiPartyPlayer, ApiServer, ApiUser, SocketIOSessionData } from "../../types/Api";
-export interface MasonEvents {
+export type MasonEvents = {
     clansData: (clans: ApiClan[]) => void;
     partyInviteReceived: (partyInvite: ApiPartyInvite) => void;
     partyData: (party: ApiParty) => void;
@@ -23,5 +23,5 @@ export interface MasonEvents {
     friendRequestReceived: (friendRequest: ApiFriendRequest) => void;
     partyRegionUpdated: (region: string) => void;
     socketIoSessionData: (data: SocketIOSessionData) => void;
-    any: (event: string, data: any) => void;
-}
+    any: (event: string, data: any, raw: string) => void;
+};

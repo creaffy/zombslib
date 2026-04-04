@@ -6,6 +6,8 @@ export declare class Codec {
     enterWorldResponse: EnterWorldResponse;
     readonly rpcMapping: DumpedData;
     readonly entityList: Map<number, NetworkEntity>;
+    readonly entityMapsIndexByEntity: Map<number, number>;
+    readonly entityMapAttributeIndexByName: Map<string, number>;
     private readonly fragments;
     private highestTickSeen;
     constructor(rpcMapping: DumpedData);
@@ -38,7 +40,9 @@ export declare class Codec {
         fragment: UdpFragment;
         buffer: Uint8Array<ArrayBufferLike> | undefined;
     } | undefined;
+    encodeUdpFragment(fragment: UdpFragment): Uint8Array<ArrayBufferLike>;
     decodeUdpTick(data: Uint8Array, compressed: boolean): UdpTick | undefined;
+    encodeUdpTick(udpTick: UdpTick, compressed: boolean): Uint8Array<ArrayBufferLike> | undefined;
     decodeUdpAckTickRequest(data: Uint8Array): UdpAckTickRequest | undefined;
     encodeUdpAckTickRequest(request: UdpAckTickRequest): Uint8Array<ArrayBufferLike>;
 }

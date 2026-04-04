@@ -1,20 +1,20 @@
-import { EventEmitter } from "node:events";
 import { Agent } from "node:http";
+import { WebSocket } from "ws";
 import { MasonEvents } from "./MasonEvents";
 import { ServerRegion } from "../../types/Api";
+import { TypedEmitter } from "../../utility/TypedEmitter";
 export interface MasonServiceOptions {
     url?: string;
     proxy?: Agent;
 }
-export declare class MasonService extends EventEmitter {
-    private socket;
-    on<K extends keyof MasonEvents>(event: K, listener: MasonEvents[K]): this;
-    on(event: string, listener: (...args: any[]) => void): this;
+export declare class MasonService extends TypedEmitter<MasonEvents> {
+    socket: WebSocket;
     constructor(options?: MasonServiceOptions);
     static parse(message: string): {
         event: string;
         parameter: any;
     } | undefined;
+    static stringify(event: string, data: any): string;
     send(data: string): void;
     shutdown(): void;
     sendPing(): void;

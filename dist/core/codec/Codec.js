@@ -11,6 +11,8 @@ class Codec {
         this.entityMaps = [];
         this.enterWorldResponse = {};
         this.entityList = new Map();
+        this.entityMapsIndexByEntity = new Map();
+        this.entityMapAttributeIndexByName = new Map();
         this.fragments = new Map();
         this.highestTickSeen = 0;
         this.rpcMapping = rpcMapping;
@@ -535,8 +537,10 @@ class Codec {
                 if (value === undefined) {
                     return undefined;
                 }
-                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)];
+                const attributeName = this.getAttributeName(entityMapAttribute.nameHash);
+                entityMap.defaultTick[attributeName] = value;
                 entityMap.attributes.push(entityMapAttribute);
+                this.entityMapAttributeIndexByName.set(attributeName, j);
             }
             response.entities.push(entityMap);
         }
@@ -552,6 +556,7 @@ class Codec {
             if (rpc.nameHash === undefined) {
                 return undefined;
             }
+            const definition = this.rpcMapping.Rpcs.find((r) => r.NameHash === rpc.nameHash);
             const parameterCount = reader.u8();
             if (parameterCount === undefined) {
                 return undefined;
@@ -565,8 +570,9 @@ class Codec {
             for (let j = 0; j < parameterCount; ++j) {
                 let rpcParameter = {};
                 rpcParameter.nameHash = reader.u32();
+                const paramDefinition = definition?.Parameters.find((p) => p.NameHash === rpcParameter.nameHash);
                 rpcParameter.type = reader.u8();
-                rpcParameter.internalIndex = -1;
+                rpcParameter.internalIndex = paramDefinition?.InternalIndex ?? -1;
                 rpc.parameters.push(rpcParameter);
             }
             response.rpcs.push(rpc);
@@ -679,6 +685,7 @@ class Codec {
                     type: entityMapId,
                     tick: structuredClone(entityMap.defaultTick),
                 });
+                this.entityMapsIndexByEntity.set(uid, this.entityMaps.findIndex((m) => m.id === entityMapId));
                 entityUpdate.createdEntities.push(uid);
             }
             entityMap.sortedUids.sort((a, b) => a - b);
@@ -705,7 +712,7 @@ class Codec {
             }
             for (let i = 0; i < entityMap.sortedUids.length; ++i) {
                 const uid = entityMap.sortedUids[i];
-                if ((absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !== 0) {
+                if ((absentEntitiesFlags[Math.floor(i / 8)] & (1 << (i % 8))) !== 0) {
                     continue;
                 }
                 const updatedEntityFlags = [];
@@ -720,7 +727,7 @@ class Codec {
                 const tick = this.entityList.get(uid).tick;
                 for (let j = 0; j < entityMap.attributes.length; ++j) {
                     const attribute = entityMap.attributes[j];
-                    if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
+                    if (updatedEntityFlags[Math.floor(j / 8)] & (1 << (j % 8))) {
                         const value = this.decodeEntityMapAttribute(reader, attribute.type);
                         if (value === undefined) {
                             return undefined;
@@ -787,7 +794,7 @@ class Codec {
                     const attribute = entityMap.attributes[i];
                     const attributeName = this.getAttributeName(attribute.nameHash);
                     if (Array.from(updatedAttributes.keys()).includes(attributeName)) {
-                        updatedFlags[Math.floor(i / 8)] |= 1 << i % 8;
+                        updatedFlags[Math.floor(i / 8)] |= 1 << (i % 8);
                         updatedValues.push({
                             type: attribute.type,
                             value: entity.tick[attributeName],
@@ -797,10 +804,12 @@ class Codec {
                 if (!updatedFlags.some((f) => f !== 0)) {
                     continue;
                 }
-                for (const flag of updatedFlags)
+                for (const flag of updatedFlags) {
                     writer.u8(flag);
-                for (const { type, value } of updatedValues)
+                }
+                for (const { type, value } of updatedValues) {
                     this.encodeEntityMapAttribute(writer, type, value);
+                }
             }
         }
         return new Uint8Array(writer.view.buffer.slice(0, writer.offset));
@@ -837,6 +846,7 @@ class Codec {
         if (udp) {
             extra.udpCookie = reader.u32();
         }
+        // rpc index
         reader.offset += 4;
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
         if (def.isArray) {
@@ -932,7 +942,6 @@ class Codec {
         writer.u32(request.mtu);
         return new Uint8Array(writer.view.buffer);
     }
-    // TODO: encodeUdpFragment()
     decodeUdpFragment(data) {
         const reader = new Reader_1.BufferReader(data, 1);
         const fragment = {};
@@ -976,6 +985,17 @@ class Codec {
             this.fragments.delete(fragment.fragmentId);
         }
         return { fragment: fragment, buffer: buffer };
+    }
+    // TODO: fragmentizeData()
+    encodeUdpFragment(fragment) {
+        const writer = new Writer_1.BufferWriter();
+        writer.u8(Packets_1.PacketId.UdpFragment);
+        writer.u32(fragment.cookie);
+        writer.u32(fragment.fragmentId);
+        writer.u8(fragment.fragmentNumber);
+        writer.u8(fragment.totalFragments);
+        writer.u8arr(fragment.fragment);
+        return new Uint8Array(writer.view.buffer);
     }
     // TODO: encodeUdpTick()
     decodeUdpTick(data, compressed) {
@@ -1103,6 +1123,74 @@ class Codec {
         }
         this.highestTickSeen = udpTick.tick;
         return udpTick;
+    }
+    encodeUdpTick(udpTick, compressed) {
+        const writer = new Writer_1.BufferWriter();
+        writer.u8(compressed ? Packets_1.PacketId.UdpTickWithCompressedUids : Packets_1.PacketId.UdpTick);
+        writer.u32(udpTick.cookie);
+        writer.u32(udpTick.tick);
+        let uids = [
+            ...(udpTick.deletedEntities ?? []),
+            ...(udpTick.createdEntities ?? []),
+            ...Array.from(udpTick.updatedEntities?.keys() ?? []),
+        ];
+        if (compressed) {
+            writer.u16(uids.length);
+            let lastUid = 0;
+            let first = true;
+            for (const uid of uids) {
+                if (first) {
+                    writer.i8(-128);
+                    writer.u32(uid);
+                    first = false;
+                }
+                else {
+                    const delta = uid - lastUid;
+                    if (delta < -127 || delta > 127) {
+                        writer.i8(-128);
+                        writer.u32(uid);
+                    }
+                    else {
+                        writer.i8(delta);
+                    }
+                }
+                lastUid = uid;
+            }
+        }
+        writer.u16(udpTick.deletedEntities?.length);
+        if (!compressed && udpTick.deletedEntities) {
+            for (const uid of udpTick.deletedEntities) {
+                writer.u32(uid);
+            }
+        }
+        writer.u16(udpTick.createdEntities?.length);
+        if (udpTick.createdEntities) {
+            for (const uid of udpTick.createdEntities) {
+                const entityMapIndex = this.entityMapsIndexByEntity.get(uid);
+                if (!entityMapIndex) {
+                    return undefined;
+                }
+                writer.u8(entityMapIndex);
+                if (!compressed) {
+                    writer.u32(uid);
+                }
+            }
+        }
+        writer.u16(udpTick.updatedEntities?.size);
+        if (udpTick.updatedEntities) {
+            for (const [uid, attributes] of udpTick.updatedEntities) {
+                if (!compressed) {
+                    writer.u32(uid);
+                }
+                writer.u8(attributes.size);
+                for (const [name, attribute] of attributes) {
+                    const attributeIndex = this.entityMapAttributeIndexByName.get(name);
+                    writer.u8(attributeIndex);
+                    this.encodeEntityMapAttribute(writer, attribute.type, attribute.value);
+                }
+            }
+        }
+        return new Uint8Array(writer.view.buffer);
     }
     decodeUdpAckTickRequest(data) {
         const reader = new Reader_1.BufferReader(data, 1);

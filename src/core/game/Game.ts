@@ -17,6 +17,7 @@ import {
     Vector2,
 } from "../../types/Packets";
 import { createSocket, Socket } from "node:dgram";
+import { TypedEmitter } from "../../utility/TypedEmitter";
 
 export function rpcMappingFromFile(path: string): DumpedData {
     return JSON.parse(
@@ -43,20 +44,12 @@ export interface GameOptions {
     ssl?: boolean;
 }
 
-export class Game extends EventEmitter {
+export class Game extends TypedEmitter<GameEvents> {
     private tcpSocket: WebSocket;
     private udpSocket?: Socket;
     private options: GameOptions;
     private server: ApiServer;
     public codec: Codec;
-
-    override on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
-
-    override on(event: string, listener: (...args: any[]) => void): this;
-
-    override on(event: string, listener: (...args: any[]) => void): this {
-        return super.on(event, listener);
-    }
 
     public constructor(server: ApiServer, options?: GameOptions) {
         super();
@@ -86,7 +79,7 @@ export class Game extends EventEmitter {
         this.tcpSocket.once("open", () => {
             const pow = this.codec.crypto.generateProofOfWork(
                 server.endpoint,
-                this.codec.rpcMapping.Platform,
+                this.codec.rpcMapping.Platform as any,
                 server.discreteFourierTransformBias,
             );
 

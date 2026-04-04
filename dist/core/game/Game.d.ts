@@ -1,9 +1,9 @@
-import { EventEmitter } from "node:events";
 import { Agent } from "node:http";
 import { Codec, DumpedData } from "../codec/Codec";
 import { ApiServer } from "../../types/Api";
 import { GameEvents } from "./GameEvents";
 import { EntityType, InputRpc, MetricsRpc, SetSkinRpc, Vector2 } from "../../types/Packets";
+import { TypedEmitter } from "../../utility/TypedEmitter";
 export declare function rpcMappingFromFile(path: string): DumpedData;
 export interface GameOptions {
     displayName?: string;
@@ -14,14 +14,12 @@ export interface GameOptions {
     autoAckTick?: boolean;
     ssl?: boolean;
 }
-export declare class Game extends EventEmitter {
+export declare class Game extends TypedEmitter<GameEvents> {
     private tcpSocket;
     private udpSocket?;
     private options;
     private server;
     codec: Codec;
-    on<K extends keyof GameEvents>(event: K, listener: GameEvents[K]): this;
-    on(event: string, listener: (...args: any[]) => void): this;
     constructor(server: ApiServer, options?: GameOptions);
     private handlePacket;
     send(data?: Uint8Array, udp?: boolean): void;

@@ -1,6 +1,6 @@
 import { AccountSessionRpc, ACToClientRpc, AirDropRpc, CheatingDetectedRpc, CompressedDataRpc, DamageRpc, DataFinishedRpc, DataRpc, DayNightRpc, DeadRpc, EndOfGameStatsRpc, EnterWorldResponse, EntityUpdate, GameStatusRpc, GameTimerRpc, GunGameWeaponRpc, InventoryUpdateEquipRpc, InventoryUpdateRpc, KillFeedRpc, LeaderboardRpc, LoadoutUserRpc, LoginResponseRpc, LootCategoryOverrideRpc, PartyLeftRpc, PartyUpdateRpc, PlaceBuildingFailedRpc, PlanePathRpc, PlayerCountRpc, ReceiveChatMessageRpc, ResetGameRpc, SetClientLoadoutRpc, ShutdownRpc, UpdateMarkerRpc, ACInitRpc, ObserverRpc, RpcExtra, UdpConnectResponse, PacketId, UdpTick } from "../../types/Packets";
 import { SchemaAmmo, SchemaBuilding, SchemaEmote, SchemaGas, SchemaGeneral, SchemaGunGameGun, SchemaHealingItem, SchemaLoadout, SchemaMap, SchemaModifier, SchemaNpc, SchemaPlayer, SchemaPlayerBuilding, SchemaProjectile, SchemaProp, SchemaTier, SchemaVehicle, SchemaWeapon, SchemaZombie } from "../../types/Schemas";
-export interface GameEvents {
+export type GameEvents = {
     RawData: (data: Uint8Array, transport: "tpc" | "udp", packetId: PacketId) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate | UdpTick, packetId: PacketId) => void;
@@ -59,4 +59,4 @@ export interface GameEvents {
     SchemaVehicles: (data: SchemaVehicle[]) => void;
     SchemaWeapons: (data: SchemaWeapon[]) => void;
     SchemaZombies: (data: SchemaZombie[]) => void;
-}
+};

@@ -11,9 +11,9 @@ export class ZRCrypto {
 
     public generateProofOfWork(
         endpoint: string,
-        platform: string = "Android",
+        platform: "Android" | "Windows" | "Web",
         difficulty: number = 13,
-        size: number = 24
+        size: number = 24,
     ): Buffer<ArrayBuffer> {
         const config = platformConfigs[platform];
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
@@ -41,7 +41,7 @@ export class ZRCrypto {
 
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
+                if ((digest[Math.floor(d / 8)] & (128 >> (d % 8))) == 0) {
                     break;
                 }
                 if (++d === difficulty) {
@@ -51,12 +51,11 @@ export class ZRCrypto {
         }
     }
 
-    // TODO: Rewrite to return string | undefined (up for discussion)
     public validateProofOfWork(
         proofOfWork: Uint8Array,
         endpoint: string,
         difficulty: number = 13,
-        size: number = 24
+        size: number = 24,
     ): { valid: boolean; platform?: string } {
         const powBuffer = Buffer.from(proofOfWork);
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
@@ -77,7 +76,7 @@ export class ZRCrypto {
 
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
+                if ((digest[Math.floor(d / 8)] & (128 >> (d % 8))) == 0) {
                     break;
                 }
                 if (++d === difficulty) {

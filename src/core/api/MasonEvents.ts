@@ -11,7 +11,7 @@ import {
     SocketIOSessionData,
 } from "../../types/Api";
 
-export interface MasonEvents {
+export type MasonEvents = {
     clansData: (clans: ApiClan[]) => void;
     partyInviteReceived: (partyInvite: ApiPartyInvite) => void;
     partyData: (party: ApiParty) => void;
@@ -37,5 +37,5 @@ export interface MasonEvents {
     // privateMessageReceived: () => void;
     // clanMessageReceived: () => void;
     socketIoSessionData: (data: SocketIOSessionData) => void;
-    any: (event: string, data: any) => void;
-}
+    any: (event: string, data: any, raw: string) => void;
+};

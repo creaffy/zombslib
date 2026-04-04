@@ -62,7 +62,7 @@ import {
     SchemaZombie,
 } from "../../types/Schemas";
 
-export interface GameEvents {
+export type GameEvents = {
     RawData: (data: Uint8Array, transport: "tpc" | "udp", packetId: PacketId) => void;
     EnterWorldResponse: (enterWorldResponse: EnterWorldResponse) => void;
     EntityUpdate: (entityUpdate: EntityUpdate | UdpTick, packetId: PacketId) => void; // PACKET_ENTITY_UPDATE, PACKET_UDP_TICK, PACKET_UDP_TICK_WITH_COMPRESSED_UIDS
@@ -123,4 +123,4 @@ export interface GameEvents {
     SchemaVehicles: (data: SchemaVehicle[]) => void;
     SchemaWeapons: (data: SchemaWeapon[]) => void;
     SchemaZombies: (data: SchemaZombie[]) => void;
-}
+};

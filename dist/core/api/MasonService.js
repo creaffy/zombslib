@@ -1,12 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MasonService = void 0;
-const node_events_1 = require("node:events");
 const ws_1 = require("ws");
-class MasonService extends node_events_1.EventEmitter {
-    on(event, listener) {
-        return super.on(event, listener);
-    }
+const TypedEmitter_1 = require("../../utility/TypedEmitter");
+class MasonService extends TypedEmitter_1.TypedEmitter {
     constructor(options) {
         super();
         const url = options?.url ?? "wss://mason-ipv4.zombsroyale.io/gateway/?EIO=4&transport=websocket";
@@ -30,7 +27,7 @@ class MasonService extends node_events_1.EventEmitter {
             if (parsed === undefined) {
                 return;
             }
-            this.emit("any", parsed.event, parsed.parameter);
+            this.emit("any", parsed.event, parsed.parameter, message);
             this.emit(parsed.event, parsed.parameter);
         });
     }
@@ -56,6 +53,21 @@ class MasonService extends node_events_1.EventEmitter {
         catch (e) {
             return undefined;
         }
+    }
+    // Only supports message payloads (42)
+    static stringify(event, data) {
+        let message = `42["${event}",`;
+        if (event === "partyMetadataUpdated") {
+            message += `${JSON.stringify(JSON.stringify(data))}`;
+        }
+        else if (event === "loggedIn") {
+            message += JSON.stringify({ userData: data });
+        }
+        else {
+            message += JSON.stringify(data);
+        }
+        message += "]";
+        return message;
     }
     send(data) {
         this.socket.send(data);

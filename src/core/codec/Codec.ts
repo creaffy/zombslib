@@ -27,6 +27,8 @@ export class Codec {
     public enterWorldResponse: EnterWorldResponse = {};
     public readonly rpcMapping: DumpedData;
     public readonly entityList = new Map<number, NetworkEntity>();
+    public readonly entityMapsIndexByEntity = new Map<number, number>();
+    public readonly entityMapAttributeIndexByName = new Map<string, number>();
     private readonly fragments = new Map<number, UdpFragment[]>();
     private highestTickSeen: number = 0;
 
@@ -591,8 +593,10 @@ export class Codec {
                     return undefined;
                 }
 
-                entityMap.defaultTick[this.getAttributeName(entityMapAttribute.nameHash)];
+                const attributeName = this.getAttributeName(entityMapAttribute.nameHash);
+                entityMap.defaultTick[attributeName] = value;
                 entityMap.attributes.push(entityMapAttribute);
+                this.entityMapAttributeIndexByName.set(attributeName, j);
             }
 
             response.entities.push(entityMap);
@@ -606,11 +610,14 @@ export class Codec {
         response.rpcs = [];
         for (let i = 0; i < rpcCount; ++i) {
             let rpc: Rpc = {};
+
             rpc.index = i;
             rpc.nameHash = reader.u32();
             if (rpc.nameHash === undefined) {
                 return undefined;
             }
+
+            const definition = this.rpcMapping.Rpcs.find((r) => r.NameHash === rpc.nameHash);
 
             const parameterCount = reader.u8();
             if (parameterCount === undefined) {
@@ -625,9 +632,14 @@ export class Codec {
             rpc.parameters = [];
             for (let j = 0; j < parameterCount; ++j) {
                 let rpcParameter: RpcParameter = {};
+
                 rpcParameter.nameHash = reader.u32();
+
+                const paramDefinition = definition?.Parameters.find((p) => p.NameHash === rpcParameter.nameHash);
+
                 rpcParameter.type = reader.u8();
-                rpcParameter.internalIndex = -1;
+                rpcParameter.internalIndex = paramDefinition?.InternalIndex ?? -1;
+
                 rpc.parameters.push(rpcParameter);
             }
 
@@ -675,7 +687,7 @@ export class Codec {
                 this.encodeEntityMapAttribute(
                     writer,
                     attribute.type!,
-                    entity.defaultTick![this.getAttributeName(attribute.nameHash!)]
+                    entity.defaultTick![this.getAttributeName(attribute.nameHash!)],
                 );
             }
         }
@@ -771,6 +783,7 @@ export class Codec {
                     type: entityMapId,
                     tick: structuredClone(entityMap.defaultTick),
                 });
+                this.entityMapsIndexByEntity.set(uid, this.entityMaps.findIndex((m) => m.id === entityMapId)!);
                 entityUpdate.createdEntities.push(uid);
             }
             entityMap.sortedUids!.sort((a, b) => a - b);
@@ -804,7 +817,7 @@ export class Codec {
             for (let i = 0; i < entityMap.sortedUids!.length; ++i) {
                 const uid = entityMap.sortedUids![i];
 
-                if ((absentEntitiesFlags[Math.floor(i / 8)] & (1 << i % 8)) !== 0) {
+                if ((absentEntitiesFlags[Math.floor(i / 8)] & (1 << (i % 8))) !== 0) {
                     continue;
                 }
 
@@ -822,7 +835,7 @@ export class Codec {
                 const tick = this.entityList.get(uid)!.tick!;
                 for (let j = 0; j < entityMap.attributes!.length; ++j) {
                     const attribute = entityMap.attributes![j];
-                    if (updatedEntityFlags[Math.floor(j / 8)] & (1 << j % 8)) {
+                    if (updatedEntityFlags[Math.floor(j / 8)] & (1 << (j % 8))) {
                         const value = this.decodeEntityMapAttribute(reader, attribute.type!);
                         if (value === undefined) {
                             return undefined;
@@ -850,7 +863,7 @@ export class Codec {
         for (const uid of entityUpdate.deletedEntities!) writer.u32(uid);
 
         const entityMaps = this.entityMaps.filter((map) =>
-            entityUpdate.createdEntities?.some((uid) => map.sortedUids?.includes(uid))
+            entityUpdate.createdEntities?.some((uid) => map.sortedUids?.includes(uid)),
         );
 
         writer.i8(entityMaps.length);
@@ -907,7 +920,7 @@ export class Codec {
                     const attributeName = this.getAttributeName(attribute.nameHash!);
 
                     if (Array.from(updatedAttributes.keys()).includes(attributeName)) {
-                        updatedFlags[Math.floor(i / 8)] |= 1 << i % 8;
+                        updatedFlags[Math.floor(i / 8)] |= 1 << (i % 8);
 
                         updatedValues.push({
                             type: attribute.type!,
@@ -920,9 +933,13 @@ export class Codec {
                     continue;
                 }
 
-                for (const flag of updatedFlags) writer.u8(flag);
+                for (const flag of updatedFlags) {
+                    writer.u8(flag);
+                }
 
-                for (const { type, value } of updatedValues) this.encodeEntityMapAttribute(writer, type, value);
+                for (const { type, value } of updatedValues) {
+                    this.encodeEntityMapAttribute(writer, type, value);
+                }
             }
         }
 
@@ -968,6 +985,7 @@ export class Codec {
         if (udp) {
             extra.udpCookie = reader.u32();
         }
+        // rpc index
         reader.offset += 4;
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
@@ -1084,7 +1102,6 @@ export class Codec {
         return new Uint8Array(writer.view.buffer);
     }
 
-    // TODO: encodeUdpFragment()
     public decodeUdpFragment(data: Uint8Array) {
         const reader = new BufferReader(data, 1);
         const fragment: UdpFragment = {};
@@ -1139,6 +1156,18 @@ export class Codec {
         }
 
         return { fragment: fragment, buffer: buffer };
+    }
+
+    // TODO: fragmentizeData()
+    public encodeUdpFragment(fragment: UdpFragment) {
+        const writer = new BufferWriter();
+        writer.u8(PacketId.UdpFragment);
+        writer.u32(fragment.cookie);
+        writer.u32(fragment.fragmentId);
+        writer.u8(fragment.fragmentNumber);
+        writer.u8(fragment.totalFragments);
+        writer.u8arr(fragment.fragment!);
+        return new Uint8Array(writer.view.buffer);
     }
 
     // TODO: encodeUdpTick()
@@ -1297,6 +1326,88 @@ export class Codec {
         return udpTick;
     }
 
+    public encodeUdpTick(udpTick: UdpTick, compressed: boolean) {
+        const writer = new BufferWriter();
+
+        writer.u8(compressed ? PacketId.UdpTickWithCompressedUids : PacketId.UdpTick);
+        writer.u32(udpTick.cookie);
+        writer.u32(udpTick.tick);
+
+        let uids: number[] = [
+            ...(udpTick.deletedEntities ?? []),
+            ...(udpTick.createdEntities ?? []),
+            ...Array.from(udpTick.updatedEntities?.keys() ?? []),
+        ];
+
+        if (compressed) {
+            writer.u16(uids.length);
+            let lastUid = 0;
+            let first = true;
+            for (const uid of uids) {
+                if (first) {
+                    writer.i8(-128);
+                    writer.u32(uid);
+                    first = false;
+                } else {
+                    const delta = uid - lastUid;
+                    if (delta < -127 || delta > 127) {
+                        writer.i8(-128);
+                        writer.u32(uid);
+                    } else {
+                        writer.i8(delta);
+                    }
+                }
+                lastUid = uid;
+            }
+        }
+
+        writer.u16(udpTick.deletedEntities?.length);
+
+        if (!compressed && udpTick.deletedEntities) {
+            for (const uid of udpTick.deletedEntities) {
+                writer.u32(uid);
+            }
+        }
+
+        writer.u16(udpTick.createdEntities?.length);
+
+        if (udpTick.createdEntities) {
+            for (const uid of udpTick.createdEntities) {
+                const entityMapIndex = this.entityMapsIndexByEntity.get(uid);
+
+                if (!entityMapIndex) {
+                    return undefined;
+                }
+
+                writer.u8(entityMapIndex);
+
+                if (!compressed) {
+                    writer.u32(uid);
+                }
+            }
+        }
+
+        writer.u16(udpTick.updatedEntities?.size);
+
+        if (udpTick.updatedEntities) {
+            for (const [uid, attributes] of udpTick.updatedEntities) {
+                if (!compressed) {
+                    writer.u32(uid);
+                }
+
+                writer.u8(attributes.size);
+
+                for (const [name, attribute] of attributes) {
+                    const attributeIndex = this.entityMapAttributeIndexByName.get(name);
+                    writer.u8(attributeIndex);
+                    this.encodeEntityMapAttribute(writer, attribute.type, attribute.value);
+                }
+            }
+        }
+
+        return new Uint8Array(writer.view.buffer);
+    }
+
     public decodeUdpAckTickRequest(data: Uint8Array) {
         const reader = new BufferReader(data, 1);
         const request: UdpAckTickRequest = {};
@@ -1323,7 +1434,6 @@ export class Codec {
     }
 }
 
-// TODO: Rework all of these (and also scripts) so instead of null unions, optional fields are used
 export interface DumpedRpcParam {
     InternalIndex: number;
     Key: number | null;

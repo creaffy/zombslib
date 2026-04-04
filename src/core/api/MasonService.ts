@@ -3,22 +3,15 @@ import { Agent } from "node:http";
 import { RawData, WebSocket } from "ws";
 import { MasonEvents } from "./MasonEvents";
 import { ServerRegion } from "../../types/Api";
+import { TypedEmitter } from "../../utility/TypedEmitter";
 
 export interface MasonServiceOptions {
     url?: string;
     proxy?: Agent;
 }
 
-export class MasonService extends EventEmitter {
-    private socket: WebSocket;
-
-    override on<K extends keyof MasonEvents>(event: K, listener: MasonEvents[K]): this;
-
-    override on(event: string, listener: (...args: any[]) => void): this;
-
-    override on(event: string, listener: (...args: any[]) => void): this {
-        return super.on(event, listener);
-    }
+export class MasonService extends TypedEmitter<MasonEvents> {
+    public socket: WebSocket;
 
     public constructor(options?: MasonServiceOptions) {
         super();
@@ -51,7 +44,7 @@ export class MasonService extends EventEmitter {
                 return;
             }
 
-            this.emit("any", parsed.event, parsed.parameter);
+            this.emit("any", parsed.event, parsed.parameter, message);
             this.emit(parsed.event, parsed.parameter);
         });
     }
@@ -75,6 +68,20 @@ export class MasonService extends EventEmitter {
         } catch (e) {
             return undefined;
         }
+    }
+
+    // Only supports message payloads (42)
+    public static stringify(event: string, data: any) {
+        let message = `42["${event}",`;
+        if (event === "partyMetadataUpdated") {
+            message += `${JSON.stringify(JSON.stringify(data))}`;
+        } else if (event === "loggedIn") {
+            message += JSON.stringify({ userData: data });
+        } else {
+            message += JSON.stringify(data);
+        }
+        message += "]";
+        return message;
     }
 
     public send(data: string): void {
@@ -170,13 +177,13 @@ export class MasonService extends EventEmitter {
             | "CrystalClash"
             | "Hangout"
             | "PrivateZombieDuo"
-            | "PrivateZombieSquad"
+            | "PrivateZombieSquad",
     ): void {
         this.socket.send(`42["setPartyGameMode", "${gameMode}"]`);
     }
 
     public setPartyRegion(
-        region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania" | ServerRegion
+        region: "vultr-frankfurt" | "vultr-miami" | "vultr-la" | "vultr-singapore" | "i3d-oceania" | ServerRegion,
     ): void {
         this.socket.send(`42["setPartyRegion", "${region}"]`);
     }

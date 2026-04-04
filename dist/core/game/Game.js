@@ -2,22 +2,19 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Game = void 0;
 exports.rpcMappingFromFile = rpcMappingFromFile;
-const node_events_1 = require("node:events");
 const node_fs_1 = require("node:fs");
 const node_path_1 = require("node:path");
 const ws_1 = require("ws");
 const Codec_1 = require("../codec/Codec");
 const Packets_1 = require("../../types/Packets");
 const node_dgram_1 = require("node:dgram");
+const TypedEmitter_1 = require("../../utility/TypedEmitter");
 function rpcMappingFromFile(path) {
     return JSON.parse((0, node_fs_1.readFileSync)(path, {
         encoding: "utf-8",
     }));
 }
-class Game extends node_events_1.EventEmitter {
-    on(event, listener) {
-        return super.on(event, listener);
-    }
+class Game extends TypedEmitter_1.TypedEmitter {
     constructor(server, options) {
         super();
         this.options = {

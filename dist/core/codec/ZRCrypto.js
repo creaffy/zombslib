@@ -14,7 +14,7 @@ class ZRCrypto {
         for (let i = 0; i < targetUrl.length; ++i)
             this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
     }
-    generateProofOfWork(endpoint, platform = "Android", difficulty = 13, size = 24) {
+    generateProofOfWork(endpoint, platform, difficulty = 13, size = 24) {
         const config = platformConfigs[platform];
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
         const powBuffer = Buffer.alloc(size + pathBytes.length);
@@ -35,7 +35,7 @@ class ZRCrypto {
             const digest = Buffer.from(hash.digest()).swap32();
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
+                if ((digest[Math.floor(d / 8)] & (128 >> (d % 8))) == 0) {
                     break;
                 }
                 if (++d === difficulty) {
@@ -44,7 +44,6 @@ class ZRCrypto {
             }
         }
     }
-    // TODO: Rewrite to return string | undefined (up for discussion)
     validateProofOfWork(proofOfWork, endpoint, difficulty = 13, size = 24) {
         const powBuffer = Buffer.from(proofOfWork);
         const pathBytes = Buffer.from("/" + endpoint, "utf8");
@@ -60,7 +59,7 @@ class ZRCrypto {
             const digest = Buffer.from(hash.digest()).swap32();
             let d = 0;
             while (true) {
-                if ((digest[Math.floor(d / 8)] & (128 >> d % 8)) == 0) {
+                if ((digest[Math.floor(d / 8)] & (128 >> (d % 8))) == 0) {
                     break;
                 }
                 if (++d === difficulty) {
