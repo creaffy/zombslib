@@ -309,7 +309,7 @@ class Game extends TypedEmitter_1.TypedEmitter {
         this.send(this.codec.encodeRpc("ExitVehicleRpc", {}));
     }
     inputRpc(rpc) {
-        const defaultInput = {
+        const defaultRpc = {
             inputUid: 0,
             acknowledgedTickNumber: 0,
             isPing: 0,
@@ -333,7 +333,7 @@ class Game extends TypedEmitter_1.TypedEmitter {
             zoomFactor: 1,
             unknown: 5,
         };
-        this.send(this.codec.encodeRpc("InputRpc", { ...defaultInput, ...rpc }));
+        this.send(this.codec.encodeRpc("InputRpc", { ...defaultRpc, ...rpc }));
     }
     reloadRpc() {
         this.send(this.codec.encodeRpc("ReloadRpc", {}));

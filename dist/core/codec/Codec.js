@@ -997,7 +997,6 @@ class Codec {
         writer.u8arr(fragment.fragment);
         return new Uint8Array(writer.view.buffer);
     }
-    // TODO: encodeUdpTick()
     decodeUdpTick(data, compressed) {
         const reader = new Reader_1.BufferReader(data, 1);
         const udpTick = {};
@@ -1117,7 +1116,7 @@ class Codec {
                 }
                 const name = this.getAttributeName(attribute.nameHash);
                 entity.tick[name] = value;
-                updatedAttributes[name] = { type: attribute.type, value: value };
+                updatedAttributes.set(name, { type: attribute.type, value: value });
             }
             udpTick.updatedEntities.set(uid, updatedAttributes);
         }
@@ -1167,7 +1166,7 @@ class Codec {
         if (udpTick.createdEntities) {
             for (const uid of udpTick.createdEntities) {
                 const entityMapIndex = this.entityMapsIndexByEntity.get(uid);
-                if (!entityMapIndex) {
+                if (entityMapIndex === undefined) {
                     return undefined;
                 }
                 writer.u8(entityMapIndex);
@@ -1177,7 +1176,7 @@ class Codec {
             }
         }
         writer.u16(udpTick.updatedEntities?.size);
-        if (udpTick.updatedEntities) {
+        if (udpTick.updatedEntities !== undefined) {
             for (const [uid, attributes] of udpTick.updatedEntities) {
                 if (!compressed) {
                     writer.u32(uid);

@@ -36,11 +36,11 @@ export interface GameOptions {
     schemas?: boolean;
     // Custom codec mapping
     rpcMapping?: DumpedData;
-    // Communicate over UDP
+    // Communicate over UDP where possible
     udp?: boolean;
-    // Automatically acknowledge UDP Ticks
+    // Automatically acknowledge UDP ticks
     autoAckTick?: boolean;
-    // Try to connect to via wss
+    // Connect to via wss
     ssl?: boolean;
 }
 
@@ -439,7 +439,7 @@ export class Game extends TypedEmitter<GameEvents> {
     }
 
     public inputRpc(rpc: Partial<InputRpc>) {
-        const defaultInput: InputRpc = {
+        const defaultRpc: InputRpc = {
             inputUid: 0,
             acknowledgedTickNumber: 0,
             isPing: 0,
@@ -463,7 +463,7 @@ export class Game extends TypedEmitter<GameEvents> {
             zoomFactor: 1,
             unknown: 5,
         };
-        this.send(this.codec.encodeRpc("InputRpc", { ...defaultInput, ...rpc }));
+        this.send(this.codec.encodeRpc("InputRpc", { ...defaultRpc, ...rpc }));
     }
 
     public reloadRpc() {
