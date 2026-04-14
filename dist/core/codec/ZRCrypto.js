@@ -74,6 +74,9 @@ class ZRCrypto {
         return { valid: false };
     }
     cryptRpc(data) {
+        if (data === undefined) {
+            return undefined;
+        }
         let rpc = new Uint8Array(data);
         for (let i = 1; i < rpc.length; ++i) {
             rpc[i] ^= this.rpcKey[i % this.rpcKey.length];

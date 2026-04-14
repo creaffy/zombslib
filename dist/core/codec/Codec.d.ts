@@ -31,7 +31,13 @@ export declare class Codec {
         data: any;
         extra: RpcExtra;
     } | undefined;
-    encodeRpc(name: string, data: object | object[], udp?: boolean, tick?: number): Uint8Array<ArrayBufferLike> | undefined;
+    decodeUdpRpc(data: Uint8Array): {
+        name: string;
+        data: any;
+        extra: RpcExtra;
+    } | undefined;
+    encodeRpc(name: string, data: object | object[], tick?: number, udp?: boolean): Uint8Array<ArrayBufferLike> | undefined;
+    encodeUdpRpc(name: string, data: object | object[], tick?: number): Uint8Array<ArrayBufferLike> | undefined;
     decodeUdpConnectRequest(data: Uint8Array): UdpConnectRequest | undefined;
     encodeUdpConnectRequest(request: UdpConnectRequest): Uint8Array<ArrayBufferLike>;
     decodeUdpConnectResponse(data: Uint8Array): UdpConnectResponse | undefined;

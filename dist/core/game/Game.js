@@ -78,23 +78,13 @@ class Game extends TypedEmitter_1.TypedEmitter {
                 break;
             }
             case Packets_1.PacketId.Rpc: {
-                const decrypedData = this.codec.crypto.cryptRpc(dataArray);
-                const rpc = this.codec.decodeRpc(decrypedData, false);
+                const rpc = this.codec.decodeRpc(this.codec.crypto.cryptRpc(dataArray));
                 if (rpc !== undefined) {
                     this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
                     this.emit(rpc.name, rpc.data, rpc.extra);
                 }
                 break;
             }
-            // case PacketId.UdpRpc: {
-            //     const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === dataArray[5]);
-            //     const rpc = this.codec.decodeRpc(definition!, dataArray, true);
-            //     if (rpc !== undefined) {
-            //         this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
-            //         this.emit(rpc.name, rpc.data, rpc.extra);
-            //      }
-            //     break;
-            // }
             case Packets_1.PacketId.EntityUpdate: {
                 const entityUpdate = this.codec.decodeEntityUpdate(dataArray);
                 if (entityUpdate !== undefined) {
@@ -136,10 +126,10 @@ class Game extends TypedEmitter_1.TypedEmitter {
     }
     send(data, udp = false) {
         if (data) {
-            if (udp && this.udpSocket) {
-                this.udpSocket.send(data);
+            if (udp) {
+                this.udpSocket?.send(data);
             }
-            else if (!udp) {
+            else {
                 this.tcpSocket.send(data);
             }
         }
@@ -184,128 +174,128 @@ class Game extends TypedEmitter_1.TypedEmitter {
         return { x: serverPos.x / 100, y: -serverPos.y / 100 };
     }
     // --- Rpcs ---
-    acToServerRpc(data) {
-        this.send(this.codec.encodeRpc("ACToServerRpc", { data: data }));
+    acToServerRpc(data, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("ACToServerRpc", { data: data }, tick)));
     }
-    startUdpStreamRpc() {
-        this.send(this.codec.encodeRpc("StartUdpStreamRpc", {}));
+    startUdpStreamRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("StartUdpStreamRpc", {}, tick)));
     }
-    setPlatformRpc(platform) {
-        this.send(this.codec.encodeRpc("SetPlatformRpc", { platform: platform }));
+    setPlatformRpc(platform, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SetPlatformRpc", { platform: platform }, tick)));
     }
-    interactDoorRpc(buildingUid, doorIndex, close) {
-        this.send(this.codec.encodeRpc("InteractDoorRpc", {
+    interactDoorRpc(buildingUid, doorIndex, close, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("InteractDoorRpc", {
             buildingUid: buildingUid,
             doorIndex: doorIndex,
             close: close,
-        }));
+        }, tick)));
     }
-    enterVehicleRpc(uid) {
-        this.send(this.codec.encodeRpc("EnterVehicleRpc", { uid: uid }));
+    enterVehicleRpc(uid, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("EnterVehicleRpc", { uid: uid }, tick)));
     }
-    autoFillRpc() {
-        this.send(this.codec.encodeRpc("AutoFillRpc", {}));
+    autoFillRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("AutoFillRpc", {}, tick)));
     }
-    startCircleRpc() {
-        this.send(this.codec.encodeRpc("StartCircleRpc", {}));
+    startCircleRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("StartCircleRpc", {}, tick)));
     }
-    sendChatMessageRpc(channel, message) {
-        this.send(this.codec.encodeRpc("SendChatMessageRpc", {
+    sendChatMessageRpc(channel, message, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SendChatMessageRpc", {
             channel: channel,
             message: message,
-        }));
+        }, tick)));
     }
-    joinTeamRpc(key, players) {
-        this.send(this.codec.encodeRpc("JoinTeamRpc", { key: key, players: players }));
+    joinTeamRpc(key, players, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("JoinTeamRpc", { key: key, players: players }, tick)));
     }
-    placeBuildingRpc(dataIndex, x, y) {
-        this.send(this.codec.encodeRpc("PlaceBuildingRpc", {
+    placeBuildingRpc(dataIndex, x, y, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("PlaceBuildingRpc", {
             dataIndex: dataIndex,
             x: x,
             y: y,
-        }));
+        }, tick)));
     }
-    swapItemRpc(inventorySlot1, inventorySlot2) {
-        this.send(this.codec.encodeRpc("SwapItemRpc", {
+    swapItemRpc(inventorySlot1, inventorySlot2, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SwapItemRpc", {
             inventorySlot1: inventorySlot1,
             inventorySlot2: inventorySlot2,
-        }));
+        }, tick)));
     }
-    setBuildingModeRpc(isBuilding) {
-        this.send(this.codec.encodeRpc("SetBuildingModeRpc", {
+    setBuildingModeRpc(isBuilding, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SetBuildingModeRpc", {
             isBuilding: isBuilding,
-        }));
+        }, tick)));
     }
-    startReviveRpc(uid) {
-        this.send(this.codec.encodeRpc("StartReviveRpc", { uid: uid }));
+    startReviveRpc(uid, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("StartReviveRpc", { uid: uid }, tick)));
     }
-    loginRpc(token) {
-        this.send(this.codec.encodeRpc("LoginRpc", { token: token }));
+    loginRpc(token, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("LoginRpc", { token: token }, tick)));
     }
-    respawnRpc(respawnWithHalf) {
-        this.send(this.codec.encodeRpc("RespawnRpc", {
+    respawnRpc(respawnWithHalf, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("RespawnRpc", {
             respawnWithHalf: respawnWithHalf,
-        }));
+        }, tick)));
     }
-    consumeRpc() {
-        this.send(this.codec.encodeRpc("ConsumeRpc", {}));
+    consumeRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("ConsumeRpc", {}, tick)));
     }
-    dropAmmoRpc(ammoIndex) {
-        this.send(this.codec.encodeRpc("DropAmmoRpc", { ammoIndex: ammoIndex }));
+    dropAmmoRpc(ammoIndex, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("DropAmmoRpc", { ammoIndex: ammoIndex }, tick)));
     }
-    setEmoteRpc(emote) {
-        this.send(this.codec.encodeRpc("SetEmoteRpc", { emote2: emote }));
+    setEmoteRpc(emote, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SetEmoteRpc", { emote2: emote }, tick)));
     }
-    startLobbyRpc() {
-        this.send(this.codec.encodeRpc("StartLobbyRpc", {}));
+    startLobbyRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("StartLobbyRpc", {}, tick)));
     }
-    setMarkerRpc(x, y, valid) {
-        this.send(this.codec.encodeRpc("SetMarkerRpc", { x: x, y: y, valid: valid }));
+    setMarkerRpc(x, y, valid, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SetMarkerRpc", { x: x, y: y, valid: valid }, tick)));
     }
-    pickupItemRpc(itemUid, inventorySlot) {
-        this.send(this.codec.encodeRpc("PickupItemRpc", {
+    pickupItemRpc(itemUid, inventorySlot, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("PickupItemRpc", {
             itemUid: itemUid,
             inventorySlot: inventorySlot,
-        }));
+        }, tick)));
     }
-    setSkinRpc(rpcs) {
-        this.send(this.codec.encodeRpc("SetSkinRpc", rpcs));
+    setSkinRpc(rpcs, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SetSkinRpc", rpcs, tick)));
     }
-    equipItemRpc(inventorySlot) {
-        this.send(this.codec.encodeRpc("EquipItemRpc", {
+    equipItemRpc(inventorySlot, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("EquipItemRpc", {
             inventorySlot: inventorySlot,
-        }));
+        }, tick)));
     }
-    setPartyColorRpc(party) {
-        this.send(this.codec.encodeRpc("SetPartyColorRpc", { party: party }));
+    setPartyColorRpc(party, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SetPartyColorRpc", { party: party }, tick)));
     }
-    sprayRpc(sprayIndex, x, y) {
-        this.send(this.codec.encodeRpc("SprayRpc", {
+    sprayRpc(sprayIndex, x, y, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SprayRpc", {
             sprayIndex2: sprayIndex,
             x: x,
             y: y,
-        }));
+        }, tick)));
     }
-    setLoadoutRpc(index) {
-        this.send(this.codec.encodeRpc("SetLoadoutRpc", { index: index }));
+    setLoadoutRpc(index, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SetLoadoutRpc", { index: index }, tick)));
     }
-    dropItemRpc(inventorySlot, x, y) {
-        this.send(this.codec.encodeRpc("DropItemRpc", {
+    dropItemRpc(inventorySlot, x, y, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("DropItemRpc", {
             inventorySlot: inventorySlot,
             x: x,
             y: y,
-        }));
+        }, tick)));
     }
-    respawnPendingRpc() {
-        this.send(this.codec.encodeRpc("RespawnPendingRpc", {}));
+    respawnPendingRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("RespawnPendingRpc", {}, tick)));
     }
-    reloadServerRpc() {
-        this.send(this.codec.encodeRpc("ReloadServerRpc", {}));
+    reloadServerRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("ReloadServerRpc", {}, tick)));
     }
-    exitVehicleRpc() {
-        this.send(this.codec.encodeRpc("ExitVehicleRpc", {}));
+    exitVehicleRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("ExitVehicleRpc", {}, tick)));
     }
-    inputRpc(rpc) {
+    inputRpc(rpc, tick) {
         const defaultRpc = {
             inputUid: 0,
             acknowledgedTickNumber: 0,
@@ -330,31 +320,39 @@ class Game extends TypedEmitter_1.TypedEmitter {
             zoomFactor: 1,
             unknown: 5,
         };
-        this.send(this.codec.encodeRpc("InputRpc", { ...defaultRpc, ...rpc }));
+        // InputRpc is the only one sent over UDP (if UDP is enabled ofc)
+        if (this.options.udp) {
+            const e = this.codec.encodeUdpRpc("InputRpc", { ...defaultRpc, ...rpc }, tick);
+            console.log(this.codec.decodeUdpRpc(e));
+            this.send(e, true);
+        }
+        else {
+            this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("InputRpc", { ...defaultRpc, ...rpc }, tick)));
+        }
     }
-    reloadRpc() {
-        this.send(this.codec.encodeRpc("ReloadRpc", {}));
+    reloadRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("ReloadRpc", {}, tick)));
     }
-    spectateRpc(uid) {
-        this.send(this.codec.encodeRpc("SpectateRpc", { uid: uid }));
+    spectateRpc(uid, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("SpectateRpc", { uid: uid }, tick)));
     }
-    startTcpStreamRpc(attemptedUdp, received500) {
-        this.send(this.codec.encodeRpc("StartTcpStreamRpc", {
+    startTcpStreamRpc(attemptedUdp, received500, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("StartTcpStreamRpc", {
             attemptedUdp: attemptedUdp,
             received500: received500,
-        }));
+        }, tick)));
     }
-    cancelActionRpc() {
-        this.send(this.codec.encodeRpc("CancelActionRpc", {}));
+    cancelActionRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("CancelActionRpc", {}, tick)));
     }
-    lootChestRpc(chestUid) {
-        this.send(this.codec.encodeRpc("LootChestRpc", { chestUid: chestUid }));
+    lootChestRpc(chestUid, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("LootChestRpc", { chestUid: chestUid }, tick)));
     }
-    metricsRpc(rpc) {
-        this.send(this.codec.encodeRpc("MetricsRpc", rpc));
+    metricsRpc(rpc, tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("MetricsRpc", rpc, tick)));
     }
-    parachuteRpc() {
-        this.send(this.codec.encodeRpc("ParachuteRpc", {}));
+    parachuteRpc(tick) {
+        this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("ParachuteRpc", {}, tick)));
     }
 }
 exports.Game = Game;

@@ -98,7 +98,11 @@ export class ZRCrypto {
         return { valid: false };
     }
 
-    public cryptRpc(data: Uint8Array): Uint8Array {
+    public cryptRpc(data: Uint8Array | undefined): Uint8Array | undefined {
+        if (data === undefined) {
+            return undefined;
+        }
+
         let rpc = new Uint8Array(data);
 
         for (let i = 1; i < rpc.length; ++i) {

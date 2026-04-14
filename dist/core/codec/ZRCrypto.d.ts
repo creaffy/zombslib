@@ -6,6 +6,6 @@ export declare class ZRCrypto {
         valid: boolean;
         platform?: string;
     };
-    cryptRpc(data: Uint8Array): Uint8Array;
+    cryptRpc(data: Uint8Array | undefined): Uint8Array | undefined;
     private applyCommonMask;
 }

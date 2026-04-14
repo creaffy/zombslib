@@ -218,8 +218,8 @@ class Codec {
                         break;
                     }
                 }
-                obj[fieldName] = value;
             }
+            obj[fieldName] = value;
         }
         return obj;
     }
@@ -878,7 +878,11 @@ class Codec {
         }
         return { name: rpc?.ClassName ?? `R_0x${def.nameHash.toString(16)}`, data: decoded, extra: extra };
     }
-    encodeRpc(name, data, udp = false, tick) {
+    // Equal to Codec.decodeRpc(data, true)
+    decodeUdpRpc(data) {
+        return this.decodeRpc(data, true);
+    }
+    encodeRpc(name, data, tick, udp = false) {
         const writer = new Writer_1.BufferWriter();
         const rpc = this.rpcMapping.Rpcs.find((r) => r.ClassName === name);
         if (rpc === undefined) {
@@ -906,12 +910,11 @@ class Codec {
                 writer.u32(tick);
             }
         }
-        if (udp) {
-            return new Uint8Array(writer.view.buffer);
-        }
-        else {
-            return this.crypto.cryptRpc(new Uint8Array(writer.view.buffer));
-        }
+        return new Uint8Array(writer.view.buffer);
+    }
+    // Equal to Codec.encodeRpc(name, data, tick, true)
+    encodeUdpRpc(name, data, tick) {
+        return this.encodeRpc(name, data, tick, true);
     }
     decodeUdpConnectRequest(data) {
         const reader = new Reader_1.BufferReader(data, 1);

@@ -243,8 +243,9 @@ export class Codec {
                         break;
                     }
                 }
-                obj[fieldName] = value;
             }
+
+            obj[fieldName] = value;
         }
         return obj;
     }
@@ -1025,7 +1026,12 @@ export class Codec {
         return { name: rpc?.ClassName ?? `R_0x${def.nameHash!.toString(16)}`, data: decoded, extra: extra };
     }
 
-    public encodeRpc(name: string, data: object | object[], udp: boolean = false, tick?: number) {
+    // Equal to Codec.decodeRpc(data, true)
+    public decodeUdpRpc(data: Uint8Array) {
+        return this.decodeRpc(data, true);
+    }
+
+    public encodeRpc(name: string, data: object | object[], tick?: number, udp: boolean = false) {
         const writer = new BufferWriter();
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.ClassName === name);
@@ -1054,16 +1060,18 @@ export class Codec {
             }
         } else {
             this.encodeRpcObject(writer, rpc, def, data);
+
             if (tick !== undefined) {
                 writer.u32(tick);
             }
         }
 
-        if (udp) {
-            return new Uint8Array(writer.view.buffer);
-        } else {
-            return this.crypto.cryptRpc(new Uint8Array(writer.view.buffer));
-        }
+        return new Uint8Array(writer.view.buffer);
+    }
+
+    // Equal to Codec.encodeRpc(name, data, tick, true)
+    public encodeUdpRpc(name: string, data: object | object[], tick?: number) {
+        return this.encodeRpc(name, data, tick, true);
     }
 
     public decodeUdpConnectRequest(data: Uint8Array): UdpConnectRequest | undefined {
