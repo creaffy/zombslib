@@ -1,12 +1,22 @@
 import { sha1 } from "js-sha1";
 
 export class ZRCrypto {
-    private rpcKey = new Uint8Array(8);
+    public rpcKey = new Uint8Array(8);
 
     public computeRpcKey(codecVersion: number, targetUrl: Uint8Array, proofOfWork: Uint8Array) {
-        for (let i = 0; i < proofOfWork.length; ++i) this.rpcKey[i % this.rpcKey.length] ^= proofOfWork[i];
-        for (let i = 0; i < this.rpcKey.length; ++i) this.rpcKey[i] ^= codecVersion;
-        for (let i = 0; i < targetUrl.length; ++i) this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
+        for (let i = 0; i < proofOfWork.length; ++i) {
+            this.rpcKey[i % this.rpcKey.length] ^= proofOfWork[i];
+        }
+
+        for (let i = 0; i < this.rpcKey.length; ++i) {
+            this.rpcKey[i] ^= codecVersion;
+        }
+
+        for (let i = 0; i < targetUrl.length; ++i) {
+            this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
+        }
+
+        return this.rpcKey;
     }
 
     public generateProofOfWork(
@@ -90,7 +100,11 @@ export class ZRCrypto {
 
     public cryptRpc(data: Uint8Array): Uint8Array {
         let rpc = new Uint8Array(data);
-        for (let i = 1; i < rpc.length; ++i) rpc[i] ^= this.rpcKey[i % this.rpcKey.length];
+
+        for (let i = 1; i < rpc.length; ++i) {
+            rpc[i] ^= this.rpcKey[i % this.rpcKey.length];
+        }
+
         return rpc;
     }
 

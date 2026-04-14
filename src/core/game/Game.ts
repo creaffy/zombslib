@@ -143,13 +143,10 @@ export class Game extends TypedEmitter<GameEvents> {
             }
             case PacketId.Rpc: {
                 const decrypedData = this.codec.crypto.cryptRpc(dataArray);
-                const definition = this.codec.enterWorldResponse.rpcs!.find((rpc) => rpc.index === decrypedData[1]);
-                if (definition !== undefined) {
-                    const rpc = this.codec.decodeRpc(definition!, decrypedData, false);
-                    if (rpc !== undefined) {
-                        this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
-                        this.emit(rpc.name, rpc.data, rpc.extra);
-                    }
+                const rpc = this.codec.decodeRpc(decrypedData, false);
+                if (rpc !== undefined) {
+                    this.emit("Rpc", rpc.name, rpc.data, rpc.extra);
+                    this.emit(rpc.name, rpc.data, rpc.extra);
                 }
                 break;
             }
@@ -176,7 +173,7 @@ export class Game extends TypedEmitter<GameEvents> {
                     this.emit("EntityUpdate", udpTick, packetId);
                     if (this.options.autoAckTick) {
                         this.send(
-                            this.codec.encodeUdpAckTickRequest({
+                            this.codec.encodeUdpAckTick({
                                 cookie: udpTick.cookie,
                                 tick: udpTick.tick,
                             }),
@@ -365,8 +362,8 @@ export class Game extends TypedEmitter<GameEvents> {
         this.send(this.codec.encodeRpc("DropAmmoRpc", { ammoIndex: ammoIndex }));
     }
 
-    public setEmoteRpc(emote2: number) {
-        this.send(this.codec.encodeRpc("SetEmoteRpc", { emote2: emote2 }));
+    public setEmoteRpc(emote: number) {
+        this.send(this.codec.encodeRpc("SetEmoteRpc", { emote2: emote }));
     }
 
     public startLobbyRpc() {
@@ -402,10 +399,10 @@ export class Game extends TypedEmitter<GameEvents> {
         this.send(this.codec.encodeRpc("SetPartyColorRpc", { party: party }));
     }
 
-    public sprayRpc(sprayIndex2: number, x: number, y: number) {
+    public sprayRpc(sprayIndex: number, x: number, y: number) {
         this.send(
             this.codec.encodeRpc("SprayRpc", {
-                sprayIndex2: sprayIndex2,
+                sprayIndex2: sprayIndex,
                 x: x,
                 y: y,
             }),

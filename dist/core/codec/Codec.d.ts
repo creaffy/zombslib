@@ -1,4 +1,4 @@
-import { EnterWorldResponse, EnterWorldRequest, EntityMap, Rpc, NetworkEntity, EntityUpdate, RpcExtra, UdpConnectRequest, UdpConnectResponse, UdpFragment, UdpTick, UdpAckTickRequest } from "../../types/Packets";
+import { EnterWorldResponse, EnterWorldRequest, EntityMap, NetworkEntity, EntityUpdate, RpcExtra, UdpConnectRequest, UdpConnectResponse, UdpFragment, UdpTick, UdpAckTickRequest } from "../../types/Packets";
 import { ZRCrypto } from "./ZRCrypto";
 export declare class Codec {
     crypto: ZRCrypto;
@@ -6,8 +6,8 @@ export declare class Codec {
     enterWorldResponse: EnterWorldResponse;
     readonly rpcMapping: DumpedData;
     readonly entityList: Map<number, NetworkEntity>;
-    readonly entityMapsIndexByEntity: Map<number, number>;
-    readonly entityMapAttributeIndexByName: Map<string, number>;
+    private readonly entityMapsIndexByEntity;
+    private readonly entityMapAttributeIndexByName;
     private readonly fragments;
     private highestTickSeen;
     constructor(rpcMapping: DumpedData);
@@ -26,7 +26,7 @@ export declare class Codec {
         proofOfWork: Uint8Array<ArrayBuffer>;
     } | undefined;
     encodeEnterWorldRequest(request: EnterWorldRequest): Uint8Array<ArrayBufferLike>;
-    decodeRpc(def: Rpc, data: Uint8Array, udp: boolean): {
+    decodeRpc(data: Uint8Array, udp?: boolean): {
         name: string;
         data: any;
         extra: RpcExtra;
@@ -43,8 +43,8 @@ export declare class Codec {
     encodeUdpFragment(fragment: UdpFragment): Uint8Array<ArrayBufferLike>;
     decodeUdpTick(data: Uint8Array, compressed: boolean): UdpTick | undefined;
     encodeUdpTick(udpTick: UdpTick, compressed: boolean): Uint8Array<ArrayBufferLike> | undefined;
-    decodeUdpAckTickRequest(data: Uint8Array): UdpAckTickRequest | undefined;
-    encodeUdpAckTickRequest(request: UdpAckTickRequest): Uint8Array<ArrayBufferLike>;
+    decodeUdpAckTick(data: Uint8Array): UdpAckTickRequest | undefined;
+    encodeUdpAckTick(request: UdpAckTickRequest): Uint8Array<ArrayBufferLike>;
 }
 export interface DumpedRpcParam {
     InternalIndex: number;

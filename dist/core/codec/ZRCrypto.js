@@ -7,12 +7,16 @@ class ZRCrypto {
         this.rpcKey = new Uint8Array(8);
     }
     computeRpcKey(codecVersion, targetUrl, proofOfWork) {
-        for (let i = 0; i < proofOfWork.length; ++i)
+        for (let i = 0; i < proofOfWork.length; ++i) {
             this.rpcKey[i % this.rpcKey.length] ^= proofOfWork[i];
-        for (let i = 0; i < this.rpcKey.length; ++i)
+        }
+        for (let i = 0; i < this.rpcKey.length; ++i) {
             this.rpcKey[i] ^= codecVersion;
-        for (let i = 0; i < targetUrl.length; ++i)
+        }
+        for (let i = 0; i < targetUrl.length; ++i) {
             this.rpcKey[i % this.rpcKey.length] ^= targetUrl[i];
+        }
+        return this.rpcKey;
     }
     generateProofOfWork(endpoint, platform, difficulty = 13, size = 24) {
         const config = platformConfigs[platform];
@@ -71,8 +75,9 @@ class ZRCrypto {
     }
     cryptRpc(data) {
         let rpc = new Uint8Array(data);
-        for (let i = 1; i < rpc.length; ++i)
+        for (let i = 1; i < rpc.length; ++i) {
             rpc[i] ^= this.rpcKey[i % this.rpcKey.length];
+        }
         return rpc;
     }
     applyCommonMask(buffer) {

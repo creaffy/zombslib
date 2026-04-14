@@ -50,14 +50,14 @@ export declare class Game extends TypedEmitter<GameEvents> {
     respawnRpc(respawnWithHalf: number): void;
     consumeRpc(): void;
     dropAmmoRpc(ammoIndex: number): void;
-    setEmoteRpc(emote2: number): void;
+    setEmoteRpc(emote: number): void;
     startLobbyRpc(): void;
     setMarkerRpc(x: number, y: number, valid: number): void;
     pickupItemRpc(itemUid: number, inventorySlot: number): void;
     setSkinRpc(rpcs: SetSkinRpc[]): void;
     equipItemRpc(inventorySlot: number): void;
     setPartyColorRpc(party: number): void;
-    sprayRpc(sprayIndex2: number, x: number, y: number): void;
+    sprayRpc(sprayIndex: number, x: number, y: number): void;
     setLoadoutRpc(index: number): void;
     dropItemRpc(inventorySlot: number, x: number, y: number): void;
     respawnPendingRpc(): void;

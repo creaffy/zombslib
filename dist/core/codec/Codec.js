@@ -130,7 +130,7 @@ class Codec {
                 writer.u32(0);
         }
     }
-    decodeRpcObject(rpc, def, reader) {
+    decodeRpcObject(reader, rpc, def) {
         let obj = {};
         for (const param of def.parameters) {
             const match = rpc?.Parameters.find((p) => p.NameHash === param.nameHash);
@@ -223,7 +223,7 @@ class Codec {
         }
         return obj;
     }
-    encodeRpcObject(rpc, def, writer, data) {
+    encodeRpcObject(writer, rpc, def, data) {
         for (const param of def.parameters) {
             const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
             if (!match) {
@@ -839,15 +839,21 @@ class Codec {
         writer.u8arr8(request.proofOfWork);
         return new Uint8Array(writer.view.buffer);
     }
-    decodeRpc(def, data, udp) {
+    decodeRpc(data, udp = false) {
         const reader = new Reader_1.BufferReader(data, 1);
         let decoded;
         let extra = { udpCookie: undefined, tick: undefined, transport: udp ? "udp" : "tcp" };
         if (udp) {
             extra.udpCookie = reader.u32();
         }
-        // rpc index
-        reader.offset += 4;
+        const rpcIndex = reader.u32();
+        if (rpcIndex === undefined) {
+            return undefined;
+        }
+        const def = this.enterWorldResponse.rpcs.find((rpc) => rpc.index === rpcIndex);
+        if (def === undefined) {
+            return undefined;
+        }
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
         if (def.isArray) {
             const length = reader.u16();
@@ -856,7 +862,7 @@ class Codec {
             }
             decoded = new Array(length);
             for (let i = 0; i < length; ++i) {
-                const obj = this.decodeRpcObject(rpc, def, reader);
+                const obj = this.decodeRpcObject(reader, rpc, def);
                 if (obj === undefined) {
                     return undefined;
                 }
@@ -864,7 +870,7 @@ class Codec {
             }
         }
         else {
-            decoded = this.decodeRpcObject(rpc, def, reader);
+            decoded = this.decodeRpcObject(reader, rpc, def);
             if (decoded === undefined) {
                 return undefined;
             }
@@ -891,11 +897,11 @@ class Codec {
             const dataArray = data;
             writer.u16(dataArray.length);
             for (const obj of dataArray) {
-                this.encodeRpcObject(rpc, def, writer, obj);
+                this.encodeRpcObject(writer, rpc, def, obj);
             }
         }
         else {
-            this.encodeRpcObject(rpc, def, writer, data);
+            this.encodeRpcObject(writer, rpc, def, data);
             if (tick !== undefined) {
                 writer.u32(tick);
             }
@@ -1191,7 +1197,7 @@ class Codec {
         }
         return new Uint8Array(writer.view.buffer);
     }
-    decodeUdpAckTickRequest(data) {
+    decodeUdpAckTick(data) {
         const reader = new Reader_1.BufferReader(data, 1);
         const request = {};
         request.cookie = reader.u32();
@@ -1204,7 +1210,7 @@ class Codec {
         }
         return request;
     }
-    encodeUdpAckTickRequest(request) {
+    encodeUdpAckTick(request) {
         const writer = new Writer_1.BufferWriter();
         writer.u8(Packets_1.PacketId.UdpAckTick);
         writer.u32(request.cookie);

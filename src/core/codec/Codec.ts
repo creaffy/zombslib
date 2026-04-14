@@ -27,8 +27,8 @@ export class Codec {
     public enterWorldResponse: EnterWorldResponse = {};
     public readonly rpcMapping: DumpedData;
     public readonly entityList = new Map<number, NetworkEntity>();
-    public readonly entityMapsIndexByEntity = new Map<number, number>();
-    public readonly entityMapAttributeIndexByName = new Map<string, number>();
+    private readonly entityMapsIndexByEntity = new Map<number, number>();
+    private readonly entityMapAttributeIndexByName = new Map<string, number>();
     private readonly fragments = new Map<number, UdpFragment[]>();
     private highestTickSeen: number = 0;
 
@@ -149,7 +149,7 @@ export class Codec {
         }
     }
 
-    private decodeRpcObject(rpc: DumpedRpc | undefined, def: Rpc, reader: BufferReader) {
+    private decodeRpcObject(reader: BufferReader, rpc: DumpedRpc | undefined, def: Rpc) {
         let obj = {};
         for (const param of def.parameters!) {
             const match = rpc?.Parameters.find((p) => p.NameHash === param.nameHash);
@@ -249,7 +249,7 @@ export class Codec {
         return obj;
     }
 
-    private encodeRpcObject(rpc: DumpedRpc, def: Rpc, writer: BufferWriter, data: object) {
+    private encodeRpcObject(writer: BufferWriter, rpc: DumpedRpc, def: Rpc, data: object) {
         for (const param of def.parameters!) {
             const match = rpc.Parameters.find((p) => param.nameHash === p.NameHash);
 
@@ -977,7 +977,7 @@ export class Codec {
         return new Uint8Array(writer.view.buffer);
     }
 
-    public decodeRpc(def: Rpc, data: Uint8Array, udp: boolean) {
+    public decodeRpc(data: Uint8Array, udp: boolean = false) {
         const reader = new BufferReader(data, 1);
         let decoded: any;
         let extra: RpcExtra = { udpCookie: undefined, tick: undefined, transport: udp ? "udp" : "tcp" };
@@ -985,8 +985,16 @@ export class Codec {
         if (udp) {
             extra.udpCookie = reader.u32();
         }
-        // rpc index
-        reader.offset += 4;
+
+        const rpcIndex = reader.u32();
+        if (rpcIndex === undefined) {
+            return undefined;
+        }
+
+        const def = this.enterWorldResponse.rpcs!.find((rpc) => rpc.index === rpcIndex);
+        if (def === undefined) {
+            return undefined;
+        }
 
         const rpc = this.rpcMapping.Rpcs.find((r) => r.NameHash === def.nameHash);
 
@@ -998,7 +1006,7 @@ export class Codec {
 
             decoded = new Array(length);
             for (let i = 0; i < length; ++i) {
-                const obj = this.decodeRpcObject(rpc, def, reader);
+                const obj = this.decodeRpcObject(reader, rpc, def);
                 if (obj === undefined) {
                     return undefined;
                 }
@@ -1006,7 +1014,7 @@ export class Codec {
                 decoded[i] = obj;
             }
         } else {
-            decoded = this.decodeRpcObject(rpc, def, reader);
+            decoded = this.decodeRpcObject(reader, rpc, def);
             if (decoded === undefined) {
                 return undefined;
             }
@@ -1042,10 +1050,10 @@ export class Codec {
             const dataArray = data as object[];
             writer.u16(dataArray.length);
             for (const obj of dataArray) {
-                this.encodeRpcObject(rpc, def, writer, obj);
+                this.encodeRpcObject(writer, rpc, def, obj);
             }
         } else {
-            this.encodeRpcObject(rpc, def, writer, data);
+            this.encodeRpcObject(writer, rpc, def, data);
             if (tick !== undefined) {
                 writer.u32(tick);
             }
@@ -1407,7 +1415,7 @@ export class Codec {
         return new Uint8Array(writer.view.buffer);
     }
 
-    public decodeUdpAckTickRequest(data: Uint8Array) {
+    public decodeUdpAckTick(data: Uint8Array) {
         const reader = new BufferReader(data, 1);
         const request: UdpAckTickRequest = {};
 
@@ -1424,7 +1432,7 @@ export class Codec {
         return request;
     }
 
-    public encodeUdpAckTickRequest(request: UdpAckTickRequest) {
+    public encodeUdpAckTick(request: UdpAckTickRequest) {
         const writer = new BufferWriter();
         writer.u8(PacketId.UdpAckTick);
         writer.u32(request.cookie!);
