@@ -322,9 +322,7 @@ class Game extends TypedEmitter_1.TypedEmitter {
         };
         // InputRpc is the only one sent over UDP (if UDP is enabled ofc)
         if (this.options.udp) {
-            const e = this.codec.encodeUdpRpc("InputRpc", { ...defaultRpc, ...rpc }, tick);
-            console.log(this.codec.decodeUdpRpc(e));
-            this.send(e, true);
+            this.send(this.codec.encodeUdpRpc("InputRpc", { ...defaultRpc, ...rpc }, tick), true);
         }
         else {
             this.send(this.codec.crypto.cryptRpc(this.codec.encodeRpc("InputRpc", { ...defaultRpc, ...rpc }, tick)));
