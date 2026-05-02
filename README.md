@@ -1,3 +1,10 @@
+# DISCONTINUED ❌
+
+Following recent game updates, dumping the protocol has become a task far more complex and time-intensive than we can reasonably sustain. As a result, we have unfortunately been forced to abandon this project. 
+
+Thanks for stopping by. <br/>
+_\~ xor&pray_
+
 # zombslib
 
 Easily create interactive bots for [ZombsRoyale.io](https://zombsroyale.io/).
@@ -81,10 +88,6 @@ Here are some more simple usage examples: <br/>
 - **[examples/echo.ts](examples/echo.ts)** - Repeat all chat messages coming from other players.<br/>
 - **[examples/leaderboard.ts](examples/leaderboard.ts)** - Fetch from the API and print the leaderboard.<br/>
 - **[examples/cosmetics.ts](examples/cosmetics.ts)** - Query cosmetics' data by name and equip them in-game.
-
-## Future
-
-We cannot say for sure how long this project is going to be kept up-to-date with the game. However, considering the lack of content updates, probably quite a while. In the meantime, there's still some things that need to be implemented into the codebase, like a comprehensive error handling system, as currently all decoders fail silently.
 
 ## Disclaimer
 
